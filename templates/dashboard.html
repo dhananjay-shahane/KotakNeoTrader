@@ -642,7 +642,7 @@
                             <div class="card-body text-center">
                                 <i class="fas fa-refresh fa-2x text-primary mb-2"></i>
                                 <h6 class="text-primary">Last Updated</h6>
-                                <small class="text-light" id="portfolioLastUpdate">{{ moment().format('HH:mm:ss') }}</small>
+                                <small class="text-light" id="portfolioLastUpdate">Loading...</small>
                                 <br<button class="btn btn-sm btn-primary mt-2" onclick="window.tradingDashboard.refreshPortfolioDetails()">
                                     <i class="fas fa-sync"></i> Refresh
                                 </button>
@@ -1078,6 +1078,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (lastLoginElement) {
         const now = new Date();
         lastLoginElement.textContent = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
+    }
+    
+    // Set portfolio last update time
+    const portfolioUpdateElement = document.getElementById('portfolioLastUpdate');
+    if (portfolioUpdateElement) {
+        const now = new Date();
+        portfolioUpdateElement.textContent = now.toLocaleTimeString();
     }
 });
 
