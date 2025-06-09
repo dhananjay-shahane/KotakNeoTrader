@@ -94,38 +94,90 @@ class TradingFunctions:
             return []
     
     def place_order(self, client, order_data):
-        """
-        Place a new order
-        
-        INSERT YOUR JUPYTER NOTEBOOK ORDER PLACEMENT CODE HERE
-        This method should implement the order placement logic from your notebook
-        """
+        """Place a new order based on Jupyter notebook implementation"""
         try:
-            # Example order placement (customize based on your notebook code)
-            response = client.place_order(
-                exchange_segment=order_data.get('exchange_segment', 'nse_cm'),
-                product=order_data.get('product', 'CNC'),
-                price=order_data.get('price', '0'),
-                order_type=order_data.get('order_type', 'MARKET'),
-                quantity=int(order_data.get('quantity', 1)),
-                validity=order_data.get('validity', 'DAY'),
-                trading_symbol=order_data.get('trading_symbol', ''),
-                transaction_type=order_data.get('transaction_type', 'BUY'),
-                amo=order_data.get('amo', 'NO'),
-                disclosed_quantity=order_data.get('disclosed_quantity', '0'),
-                market_protection=order_data.get('market_protection', '0'),
-                pf=order_data.get('pf', 'N'),
-                trigger_price=order_data.get('trigger_price', '0'),
-                tag=order_data.get('tag', None)
-            )
+            order_type = order_data.get('order_type', 'MARKET').upper()
+            transaction_type = order_data.get('transaction_type', 'BUY').upper()
+            trading_symbol = order_data.get('trading_symbol', '')
+            quantity = str(order_data.get('quantity', 1))
+            product = order_data.get('product', 'CNC')
+            exchange_segment = order_data.get('exchange_segment', 'nse_cm')
+            
+            self.logger.info(f"📋 Placing {transaction_type} {order_type} order for {quantity} shares of {trading_symbol}")
+            
+            # Market Order
+            if order_type in ['MARKET', 'MKT']:
+                response = client.place_order(
+                    exchange_segment=exchange_segment,
+                    product=product,
+                    price="0",  # Market order - price is 0
+                    order_type="MKT",
+                    quantity=quantity,
+                    validity=order_data.get('validity', 'DAY'),
+                    trading_symbol=trading_symbol,
+                    transaction_type=transaction_type,
+                    amo=order_data.get('amo', 'NO'),
+                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
+                    market_protection=order_data.get('market_protection', '0'),
+                    pf=order_data.get('pf', 'N'),
+                    trigger_price="0",
+                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+                )
+            
+            # Limit Order
+            elif order_type in ['LIMIT', 'L']:
+                price = str(order_data.get('price', 0))
+                response = client.place_order(
+                    exchange_segment=exchange_segment,
+                    product=product,
+                    price=price,
+                    order_type="L",
+                    quantity=quantity,
+                    validity=order_data.get('validity', 'DAY'),
+                    trading_symbol=trading_symbol,
+                    transaction_type=transaction_type,
+                    amo=order_data.get('amo', 'NO'),
+                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
+                    market_protection=order_data.get('market_protection', '0'),
+                    pf=order_data.get('pf', 'N'),
+                    trigger_price="0",
+                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+                )
+            
+            # Stop Loss Order
+            elif order_type in ['STOPLOSS', 'SL']:
+                price = str(order_data.get('price', 0))
+                trigger_price = str(order_data.get('trigger_price', 0))
+                response = client.place_order(
+                    exchange_segment=exchange_segment,
+                    product=product,
+                    price=price,
+                    order_type="SL",
+                    quantity=quantity,
+                    validity=order_data.get('validity', 'DAY'),
+                    trading_symbol=trading_symbol,
+                    transaction_type=transaction_type,
+                    amo=order_data.get('amo', 'NO'),
+                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
+                    market_protection=order_data.get('market_protection', '0'),
+                    pf=order_data.get('pf', 'N'),
+                    trigger_price=trigger_price,
+                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+                )
+            
+            else:
+                return {'success': False, 'message': f'Unsupported order type: {order_type}'}
             
             if response and 'data' in response:
+                self.logger.info("✅ Order placed successfully!")
+                self.logger.info(f"Order Response: {response}")
                 return {'success': True, 'data': response['data']}
             else:
-                return {'success': False, 'message': 'Order placement failed'}
+                self.logger.error(f"❌ Order placement failed: {response}")
+                return {'success': False, 'message': 'Order placement failed', 'response': response}
                 
         except Exception as e:
-            self.logger.error(f"Error placing order: {str(e)}")
+            self.logger.error(f"❌ Error placing order: {str(e)}")
             return {'success': False, 'message': str(e)}
     
     def modify_order(self, client, order_data):
@@ -177,16 +229,13 @@ class TradingFunctions:
             return {'success': False, 'message': str(e)}
     
     def get_quotes(self, client, quote_data):
-        """
-        Get live quotes for instruments
-        
-        INSERT YOUR JUPYTER NOTEBOOK QUOTES FETCHING CODE HERE
-        This method should implement the quotes fetching logic from your notebook
-        """
+        """Get live quotes for instruments based on Jupyter notebook implementation"""
         try:
             instrument_tokens = quote_data.get('instrument_tokens', [])
             quote_type = quote_data.get('quote_type', None)
             is_index = quote_data.get('is_index', False)
+            
+            self.logger.info(f"📊 Fetching quotes for {len(instrument_tokens)} instruments...")
             
             response = client.quotes(
                 instrument_tokens=instrument_tokens,
@@ -195,12 +244,50 @@ class TradingFunctions:
             )
             
             if response and 'data' in response:
-                return {'success': True, 'data': response['data']}
+                self.logger.info("✅ Quotes retrieved successfully!")
+                
+                # Process quotes data
+                processed_quotes = {}
+                quotes_data = response['data']
+                
+                for token, quote_info in quotes_data.items():
+                    processed_quotes[token] = {
+                        'token': token,
+                        'trading_symbol': quote_info.get('trdSym', ''),
+                        'exchange_segment': quote_info.get('exSeg', ''),
+                        'ltp': float(quote_info.get('ltp', 0)),
+                        'last_traded_price': float(quote_info.get('ltp', 0)),
+                        'open': float(quote_info.get('o', 0)),
+                        'high': float(quote_info.get('h', 0)),
+                        'low': float(quote_info.get('l', 0)),
+                        'close': float(quote_info.get('c', 0)),
+                        'volume': int(quote_info.get('v', 0)),
+                        'change': float(quote_info.get('nc', 0)),
+                        'change_percent': float(quote_info.get('cng', 0)),
+                        'bid_price': float(quote_info.get('bp1', 0)),
+                        'ask_price': float(quote_info.get('sp1', 0)),
+                        'bid_quantity': int(quote_info.get('bq1', 0)),
+                        'ask_quantity': int(quote_info.get('sq1', 0)),
+                        'total_traded_value': float(quote_info.get('ttv', 0)),
+                        'total_traded_quantity': int(quote_info.get('ttq', 0)),
+                        'upper_circuit': float(quote_info.get('uc', 0)),
+                        'lower_circuit': float(quote_info.get('lc', 0)),
+                        'average_price': float(quote_info.get('ap', 0)),
+                        'timestamp': quote_info.get('ft', ''),
+                        'exchange_timestamp': quote_info.get('et', '')
+                    }
+                
+                return {
+                    'success': True, 
+                    'data': processed_quotes,
+                    'count': len(processed_quotes)
+                }
             else:
-                return {'success': False, 'message': 'Failed to get quotes'}
+                self.logger.error("❌ Failed to get quotes")
+                return {'success': False, 'message': 'Failed to get quotes', 'response': response}
                 
         except Exception as e:
-            self.logger.error(f"Error getting quotes: {str(e)}")
+            self.logger.error(f"❌ Error getting quotes: {str(e)}")
             return {'success': False, 'message': str(e)}
 
     def get_portfolio_summary(self, client):
