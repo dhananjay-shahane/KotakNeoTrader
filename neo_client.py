@@ -1,6 +1,5 @@
 import logging
 from neo_api_client import NeoAPI
-from neo_api_client import BaseUrl
 
 class NeoClient:
     """Kotak Neo API Client wrapper"""
@@ -11,25 +10,23 @@ class NeoClient:
     def initialize_client(self, credentials):
         """Initialize the Kotak Neo API client"""
         try:
-            # Get base URL
-            base_url = BaseUrl(ucc=credentials['ucc']).get_base_url()
-            self.logger.info(f"Base URL retrieved: {base_url}")
+            # Initialize client with environment-based configuration
+            environment = 'prod'  # Use 'prod' for live trading, 'uat' for testing
             
             # Initialize client
             client = NeoAPI(
                 consumer_key=credentials['consumer_key'],
                 consumer_secret=credentials['consumer_secret'],
-                environment='prod',  # Use 'prod' for live trading, 'uat' for testing
+                environment=environment,
                 access_token=None,
-                neo_fin_key=credentials['neo_fin_key'],
-                base_url=base_url
+                neo_fin_key=credentials['neo_fin_key']
             )
             
-            self.logger.info("✅ Neo API client initialized successfully!")
+            self.logger.info("Neo API client initialized successfully!")
             return client
             
         except Exception as e:
-            self.logger.error(f"❌ Error initializing Neo API client: {str(e)}")
+            self.logger.error(f"Error initializing Neo API client: {str(e)}")
             return None
     
     def login_with_totp(self, client, mobile_number, ucc, totp, mpin):
