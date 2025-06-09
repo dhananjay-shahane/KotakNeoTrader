@@ -109,7 +109,7 @@ class TradingDashboard {
             await this.refreshDashboardSection('quotes');
             await this.refreshDashboardSection('positions');
             await this.refreshDashboardSection('orders');
-            await this.updatePortfolioSummary();
+            await this.refreshPortfolioSummary();
 
             // Only log if debug mode is enabled
             if (window.location.search.includes('debug=true')) {
