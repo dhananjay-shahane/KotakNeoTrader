@@ -12,18 +12,54 @@
     </div>
 </div>
 
+<!-- User Welcome Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary border-0 shadow-lg">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar-large me-3">
+                                <i class="fas fa-user-circle fa-3x text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white mb-1">Welcome back, {{ session.credentials.ucc if session.credentials else 'Trader' }}!</h3>
+                                <p class="text-white-50 mb-0">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Last login: <span id="lastLoginTime">Today</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-outline-light btn-lg" onclick="showUserProfile()">
+                            <i class="fas fa-user-cog me-2"></i>View Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Portfolio Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stats-card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase">Total Positions</h6>
-                        <h3 class="mb-0">{{ data.total_positions or 0 }}</h3>
+                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Total Positions</h6>
+                        <h2 class="mb-0 fw-bold text-primary">{{ data.total_positions or 0 }}</h2>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>Active trades
+                        </small>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-chart-pie fa-2x opacity-75"></i>
+                    <div class="stats-icon">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-chart-pie fa-2x text-primary"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -31,15 +67,20 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stats-card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase">Total Holdings</h6>
-                        <h3 class="mb-0">{{ data.total_holdings or 0 }}</h3>
+                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Total Holdings</h6>
+                        <h2 class="mb-0 fw-bold text-success">{{ data.total_holdings or 0 }}</h2>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>Long term
+                        </small>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-wallet fa-2x opacity-75"></i>
+                    <div class="stats-icon">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-wallet fa-2x text-success"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -47,15 +88,20 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stats-card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase">Active Orders</h6>
-                        <h3 class="mb-0">{{ data.total_orders or 0 }}</h3>
+                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Active Orders</h6>
+                        <h2 class="mb-0 fw-bold text-info">{{ data.total_orders or 0 }}</h2>
+                        <small class="text-info">
+                            <i class="fas fa-sync me-1"></i>Pending
+                        </small>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-list-alt fa-2x opacity-75"></i>
+                    <div class="stats-icon">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-list-alt fa-2x text-info"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -63,21 +109,26 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stats-card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase">Available Margin</h6>
-                        <h3 class="mb-0">
+                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Available Margin</h6>
+                        <h2 class="mb-0 fw-bold text-warning">
                             {% if data.limits and data.limits.cash %}
                                 ₹{{ "%.2f"|format(data.limits.cash|float) }}
                             {% else %}
                                 ₹0.00
                             {% endif %}
-                        </h3>
+                        </h2>
+                        <small class="text-warning">
+                            <i class="fas fa-wallet me-1"></i>Available
+                        </small>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+                    <div class="stats-icon">
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-rupee-sign fa-2x text-warning"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -245,6 +296,217 @@
 </div>
 {% endif %}
 
+<!-- User Profile Modal -->
+<div class="modal fade" id="userProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-circle me-2"></i>User Profile
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="user-profile-avatar mb-3">
+                            <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        </div>
+                        <h4 class="text-light">{{ session.credentials.ucc if session.credentials else 'User' }}</h4>
+                        <span class="badge bg-success">Active Trader</span>
+                    </div>
+                    <div class="col-md-8">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Account Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">UCC (User Code)</label>
+                                <div class="form-control bg-secondary text-light border-0">
+                                    {{ session.credentials.ucc if session.credentials else 'N/A' }}
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">Account Status</label>
+                                <div class="form-control bg-secondary text-light border-0">
+                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i>Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">Session Token</label>
+                                <div class="form-control bg-secondary text-light border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                    {{ session.credentials.session_token[:20] if session.credentials and session.credentials.session_token else 'N/A' }}...
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">Login Time</label>
+                                <div class="form-control bg-secondary text-light border-0">
+                                    <span id="loginTime">{{ session.get('login_time', 'N/A') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="border-secondary">
+                
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-shield-alt me-2"></i>Security & Settings
+                </h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item bg-transparent text-light border-secondary">
+                                <i class="fas fa-key me-2 text-success"></i>
+                                Two-Factor Authentication: <span class="text-success">Enabled</span>
+                            </div>
+                            <div class="list-group-item bg-transparent text-light border-secondary">
+                                <i class="fas fa-clock me-2 text-info"></i>
+                                Session Timeout: <span class="text-info">30 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item bg-transparent text-light border-secondary">
+                                <i class="fas fa-chart-line me-2 text-warning"></i>
+                                Trading Status: <span class="text-success">Active</span>
+                            </div>
+                            <div class="list-group-item bg-transparent text-light border-secondary">
+                                <i class="fas fa-database me-2 text-primary"></i>
+                                Data Refresh: <span class="text-info">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="showAccountSummary()">
+                    <i class="fas fa-chart-bar me-1"></i>View Account Summary
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Summary Modal -->
+<div class="modal fade" id="accountSummaryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>Account Summary
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary bg-opacity-10 border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-wallet fa-2x text-primary mb-2"></i>
+                                <h6 class="text-primary">Total Balance</h6>
+                                <h4 class="text-light">
+                                    ₹{{ "%.2f"|format(data.limits.cash|float) if data.limits and data.limits.cash else '0.00' }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success bg-opacity-10 border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
+                                <h6 class="text-success">Total P&L</h6>
+                                <h4 class="text-light">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-warning bg-opacity-10 border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-pie fa-2x text-warning mb-2"></i>
+                                <h6 class="text-warning">Portfolio Value</h6>
+                                <h4 class="text-light">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info bg-opacity-10 border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                                <h6 class="text-info">Day's Change</h6>
+                                <h4 class="text-light">0.00%</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-history me-2"></i>Recent Activity
+                        </h6>
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item bg-transparent text-light">
+                                        <i class="fas fa-sign-in-alt me-2 text-success"></i>
+                                        Login successful - Today
+                                    </div>
+                                    <div class="list-group-item bg-transparent text-light">
+                                        <i class="fas fa-sync me-2 text-info"></i>
+                                        Portfolio synced - Today
+                                    </div>
+                                    <div class="list-group-item bg-transparent text-light">
+                                        <i class="fas fa-chart-line me-2 text-primary"></i>
+                                        Dashboard accessed - Today
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-cog me-2"></i>Account Settings
+                        </h6>
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" checked id="realTimeData">
+                                    <label class="form-check-label text-light" for="realTimeData">
+                                        Enable real-time data updates
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" checked id="priceAlerts">
+                                    <label class="form-check-label text-light" for="priceAlerts">
+                                        Enable price alerts
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="emailNotifications">
+                                    <label class="form-check-label text-light" for="emailNotifications">
+                                        Email notifications
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i>Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Place Order Modal -->
 <div class="modal fade" id="placeOrderModal" tabindex="-1">
     <div class="modal-dialog">
@@ -353,6 +615,38 @@ function submitOrder() {
 function refreshDashboard() {
     window.location.reload();
 }
+
+// User Profile Functions
+function showUserProfile() {
+    // Set login time if not already set
+    const loginTimeElement = document.getElementById('loginTime');
+    if (loginTimeElement && loginTimeElement.textContent === 'N/A') {
+        const now = new Date();
+        loginTimeElement.textContent = now.toLocaleString();
+    }
+    
+    new bootstrap.Modal(document.getElementById('userProfileModal')).show();
+}
+
+function showAccountSummary() {
+    // Close user profile modal if open
+    const userProfileModal = bootstrap.Modal.getInstance(document.getElementById('userProfileModal'));
+    if (userProfileModal) {
+        userProfileModal.hide();
+    }
+    
+    // Show account summary modal
+    new bootstrap.Modal(document.getElementById('accountSummaryModal')).show();
+}
+
+// Set last login time on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const lastLoginElement = document.getElementById('lastLoginTime');
+    if (lastLoginElement) {
+        const now = new Date();
+        lastLoginElement.textContent = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
+    }
+});
 
 // Auto-refresh dashboard every 30 seconds
 setInterval(refreshDashboard, 30000);

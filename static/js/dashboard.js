@@ -53,7 +53,7 @@ class TradingDashboard {
         event.preventDefault();
         const form = event.target;
         const submitBtn = form.querySelector('button[type="submit"]');
-        
+
         if (submitBtn) {
             submitBtn.classList.add('loading');
             submitBtn.disabled = true;
@@ -86,13 +86,13 @@ class TradingDashboard {
         try {
             // Refresh positions P&L
             await this.updatePositionsPnL();
-            
+
             // Refresh holdings values
             await this.updateHoldingsValues();
-            
+
             // Update portfolio summary
             await this.updatePortfolioSummary();
-            
+
             console.log('Critical data refreshed');
         } catch (error) {
             console.error('Error refreshing critical data:', error);
@@ -181,9 +181,9 @@ class TradingDashboard {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(toast);
-        
+
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (toast.parentNode) {
@@ -202,9 +202,9 @@ class TradingDashboard {
                 },
                 body: JSON.stringify(orderData)
             });
-            
+
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showNotification('Order placed successfully!', 'success');
                 return result.data;
@@ -228,9 +228,9 @@ class TradingDashboard {
                 },
                 body: JSON.stringify(orderData)
             });
-            
+
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showNotification('Order modified successfully!', 'success');
                 return result.data;
@@ -254,9 +254,9 @@ class TradingDashboard {
                 },
                 body: JSON.stringify({ order_id: orderId, isVerify: true })
             });
-            
+
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showNotification('Order cancelled successfully!', 'success');
                 return result.data;
@@ -326,23 +326,35 @@ window.TradingUtils = {
         const minTimer = 50;
         let stepTime = Math.abs(Math.floor(duration / range));
         stepTime = Math.max(stepTime, minTimer);
-        
+
         const startTime = new Date().getTime();
         const endTime = startTime + duration;
-        
+
         function run() {
             const now = new Date().getTime();
             const remaining = Math.max((endTime - now) / duration, 0);
             const value = Math.round(end - (remaining * range));
             element.textContent = value;
-            
+
             if (value === end) {
                 return;
             }
-            
+
             setTimeout(run, stepTime);
         }
-        
+
         run();
     }
 };
+
+// Dashboard-specific JavaScript functions
+function openPlaceOrderModal(type) {
+    const transactionSelect = document.querySelector('select[name="transaction_type"]');
+    if (transactionSelect) {
+        transactionSelect.value = type;
+    }
+    const modal = document.getElementById('placeOrderModal');
+    if (modal) {
+        new bootstrap.Modal(modal).show();
+    }
+}
