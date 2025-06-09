@@ -1,5 +1,6 @@
 
 import logging
+import os
 from neo_api_client import NeoAPI
 
 class NeoClient:
@@ -115,14 +116,20 @@ class NeoClient:
         try:
             self.logger.info("🔐 Starting TOTP login process...")
             
-            # Initialize client for TOTP login
+            # Initialize client for TOTP login with proper credentials
+            # Note: These should be obtained from Kotak Neo developer portal
             client = NeoAPI(
-                consumer_key="",  # Will be set from login response
-                consumer_secret="",  # Will be set from login response
+                consumer_key=os.environ.get('KOTAK_CONSUMER_KEY', ''),
+                consumer_secret=os.environ.get('KOTAK_CONSUMER_SECRET', ''),
                 environment='prod',
                 access_token=None,
                 neo_fin_key="neotradeapi"
             )
+            
+            # Check if consumer credentials are provided
+            if not client.consumer_key or not client.consumer_secret:
+                self.logger.error("❌ Consumer Key and Consumer Secret are required for TOTP login")
+                return {'success': False, 'message': 'Consumer Key and Consumer Secret are required. Please set KOTAK_CONSUMER_KEY and KOTAK_CONSUMER_SECRET environment variables.'}
             
             # Step 1: TOTP Login
             self.logger.info("📱 Attempting TOTP login...")
