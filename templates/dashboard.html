@@ -651,46 +651,104 @@
                     </div>
                 </div>
 
+                <!-- Portfolio Data Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-briefcase me-2"></i>Portfolio Details
+                        </h5>
+                    </div>
+                </div>
+
+                <!-- Raw Portfolio Data Display -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card bg-secondary">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Portfolio Summary Data</h6>
+                                <button class="btn btn-sm btn-primary" onclick="refreshPortfolioData()">
+                                    <i class="fas fa-sync me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="portfolioDataDisplay">
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading portfolio data...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Positions Table -->
                 <div class="table-responsive mt-4">
                     <table class="table table-dark table-hover" id="portfolioPositions">
                         <thead>
                             <tr>
                                 <th>Symbol</th>
-                                <th class="text-center">Quantity</th>
-                                <th class="text-end">Avg Price</th>
-                                <th class="text-end">LTP</th>
-                                <th class="text-end">P&L</th>
+                                <th>Exchange</th>
+                                <th>Product</th>
+                                <th class="text-center">Buy Qty</th>
+                                <th class="text-center">Sell Qty</th>
+                                <th class="text-center">Net Qty</th>
+                                <th>Buy Amount</th>
+                                <th>Sell Amount</th>
+                                <th>P&L</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% if data.positions %}
-                                {% for position in data.positions[:10] %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ position.tradingsymbol or position.sym or 'N/A' }}</strong>
-                                        <br><small class="text-muted">{{ position.exchange or 'N/A' }}</small>
-                                    </td>
-                                    <td class="text-center">
-                                        {% set net_qty = position.netQty|float if position.netQty else 0 %}
-                                        <span class="badge {% if net_qty > 0 %}bg-success{% elif net_qty < 0 %}bg-danger{% else %}bg-secondary{% endif %}">
-                                            {{ net_qty|abs|int }}
-                                        </span>
-                                    </td>
-                                    <td class="text-end">₹{{ "%.2f"|format(position.averageprice|float if position.averageprice else 0) }}</td>
-                                    <td class="text-end">₹{{ "%.2f"|format(position.ltp|float if position.ltp else 0) }}</td>
-                                    <td class="text-end {% if position.pnl|float > 0 %}text-success{% elif position.pnl|float < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                        ₹{{ "%.2f"|format(position.pnl|float if position.pnl else 0) }}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">No positions found</td>
-                                </tr>
-                            {% endif %}
+                        <tbody id="positionsTableBody">
+                            <tr>
+                                <td colspan="10" class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Holdings Table -->
+                <div class="table-responsive mt-4">
+                    <table class="table table-dark table-hover" id="portfolioHoldings">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Exchange</th>
+                                <th class="text-center">Quantity</th>
+                                <th>Avg Price</th>
+                                <th>LTP</th>
+                                <th>Market Value</th>
+                                <th>P&L</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdingsTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading holdings...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Limits Information -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-secondary">
+                            <div class="card-header">
+                                <h6 class="mb-0">Account Limits</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="limitsDisplay">
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading limits data...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-top border-secondary">
@@ -1072,6 +1130,13 @@ async function refreshPortfolioSummary() {
     }
 }
 
+// Add function to refresh portfolio data
+function refreshPortfolioData() {
+    if (window.tradingDashboard) {
+        window.tradingDashboard.refreshPortfolioDetails();
+    }
+}
+
 // Set last login time on page load
 document.addEventListener('DOMContentLoaded', function() {
     const lastLoginElement = document.getElementById('lastLoginTime');
@@ -1079,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         lastLoginElement.textContent = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
     }
-    
+
     // Set portfolio last update time
     const portfolioUpdateElement = document.getElementById('portfolioLastUpdate');
     if (portfolioUpdateElement) {

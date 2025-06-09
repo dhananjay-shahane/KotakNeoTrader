@@ -255,6 +255,7 @@ class TradingDashboard {
             if (data.success) {
                 // Update portfolio section with detailed data
                 this.updatePortfolioSection(data.data);
+                this.displayRawPortfolioData(data.data);
                 this.showNotification('Portfolio details updated', 'success');
             } else {
                 console.error('Failed to refresh portfolio details:', data.message);
@@ -264,6 +265,130 @@ class TradingDashboard {
             console.error('Error refreshing portfolio details:', error);
             this.showNotification('Error updating portfolio details', 'error');
         }
+    }
+
+    displayRawPortfolioData(portfolioData) {
+        const displayElement = document.getElementById('portfolioDataDisplay');
+        if (!displayElement) return;
+
+        let html = '<div class="row">';
+
+        // Display Positions Data
+        if (portfolioData.positions) {
+            html += `
+                <div class="col-md-6 mb-3">
+                    <h6 class="text-info">Positions Data</h6>
+                    <div class="bg-dark p-3 rounded">
+                        <pre class="text-light mb-0" style="font-size: 0.8rem; max-height: 300px; overflow-y: auto;">${JSON.stringify(portfolioData.positions, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display Holdings Data
+        if (portfolioData.holdings) {
+            html += `
+                <div class="col-md-6 mb-3">
+                    <h6 class="text-info">Holdings Data</h6>
+                    <div class="bg-dark p-3 rounded">
+                        <pre class="text-light mb-0" style="font-size: 0.8rem; max-height: 300px; overflow-y: auto;">${JSON.stringify(portfolioData.holdings, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display Limits Data
+        if (portfolioData.limits) {
+            html += `
+                <div class="col-12 mb-3">
+                    <h6 class="text-info">Limits Data</h6>
+                    <div class="bg-dark p-3 rounded">
+                        <pre class="text-light mb-0" style="font-size: 0.8rem; max-height: 200px; overflow-y: auto;">${JSON.stringify(portfolioData.limits, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        displayElement.innerHTML = html;
+
+        // Update detailed tables
+        this.updatePositionsTable(portfolioData.positions?.data || []);
+        this.updateHoldingsTable(portfolioData.holdings?.data || []);
+        this.updateLimitsDisplay(portfolioData.limits);
+    }
+
+    updateHoldingsTable(holdings) {
+        const tableBody = document.getElementById('holdingsTableBody');
+        if (!tableBody) return;
+
+        if (holdings.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No holdings found</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = '';
+
+        holdings.forEach(holding => {
+            const row = document.createElement('tr');
+            const quantity = parseFloat(holding.quantity || 0);
+            const avgPrice = parseFloat(holding.avgPrice || 0);
+            const ltp = parseFloat(holding.ltp || 0);
+            const marketValue = quantity * ltp;
+            const investedValue = quantity * avgPrice;
+            const pnl = marketValue - investedValue;
+
+            row.innerHTML = `
+                <td>
+                    <strong>${holding.trdSym || holding.sym || 'N/A'}</strong>
+                    <br><small class="text-muted">${holding.series || ''}</small>
+                </td>
+                <td><span class="badge bg-info">${holding.exSeg || 'N/A'}</span></td>
+                <td class="text-center">${quantity}</td>
+                <td class="text-end">₹${avgPrice.toFixed(2)}</td>
+                <td class="text-end">₹${ltp.toFixed(2)}</td>
+                <td class="text-end">₹${marketValue.toFixed(2)}</td>
+                <td class="text-end ${pnl >= 0 ? 'text-success' : 'text-danger'}">
+                    ₹${pnl.toFixed(2)}
+                </td>
+                <td class="text-center">
+                    <span class="badge ${holding.sqrFlg === 'Y' ? 'bg-success' : 'bg-warning'}">
+                        ${holding.sqrFlg === 'Y' ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    updateLimitsDisplay(limits) {
+        const displayElement = document.getElementById('limitsDisplay');
+        if (!displayElement) return;
+
+        if (!limits || !limits.data) {
+            displayElement.innerHTML = '<p class="text-muted">No limits data available</p>';
+            return;
+        }
+
+        const limitsData = limits.data;
+        let html = '<div class="row">';
+
+        // Display key limit fields
+        const keyFields = ['cash', 'payin', 'payout', 'buyingPower', 'utilizedMargin', 'availableMargin'];
+        
+        keyFields.forEach(field => {
+            if (limitsData[field] !== undefined) {
+                html += `
+                    <div class="col-md-4 mb-2">
+                        <strong>${field}:</strong> 
+                        <span class="text-success">₹${parseFloat(limitsData[field] || 0).toFixed(2)}</span>
+                    </div>
+                `;
+            }
+        });
+
+        html += '</div>';
+        displayElement.innerHTML = html;
     }
 
     updatePortfolioSection(portfolioData) {
@@ -289,30 +414,48 @@ class TradingDashboard {
     }
 
     updatePositionsTable(positions) {
-        const tableBody = document.querySelector('#portfolioPositions tbody');
+        const tableBody = document.getElementById('positionsTableBody');
         if (!tableBody) return;
+
+        if (positions.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No positions found</td></tr>';
+            return;
+        }
 
         tableBody.innerHTML = '';
 
         positions.forEach(position => {
             const row = document.createElement('tr');
-            const netQty = parseFloat(position.netQty || 0);
-            const pnl = parseFloat(position.pnl || 0);
+            const buyQty = parseFloat(position.flBuyQty || 0);
+            const sellQty = parseFloat(position.flSellQty || 0);
+            const netQty = buyQty - sellQty;
+            const buyAmt = parseFloat(position.buyAmt || 0);
+            const sellAmt = parseFloat(position.sellAmt || 0);
+            const pnl = sellAmt - buyAmt;
 
             row.innerHTML = `
                 <td>
-                    <strong>${position.tradingsymbol || position.sym || 'N/A'}</strong>
-                    <br><small class="text-muted">${position.exchange || 'N/A'}</small>
+                    <strong>${position.trdSym || position.sym || 'N/A'}</strong>
+                    <br><small class="text-muted">${position.series || ''}</small>
                 </td>
+                <td><span class="badge bg-info">${position.exSeg || 'N/A'}</span></td>
+                <td><span class="badge bg-secondary">${position.prod || 'N/A'}</span></td>
+                <td class="text-center text-success">${buyQty}</td>
+                <td class="text-center text-danger">${sellQty}</td>
                 <td class="text-center">
                     <span class="badge ${netQty > 0 ? 'bg-success' : netQty < 0 ? 'bg-danger' : 'bg-secondary'}">
-                        ${Math.abs(netQty)}
+                        ${netQty}
                     </span>
                 </td>
-                <td class="text-end">₹${parseFloat(position.averageprice || 0).toFixed(2)}</td>
-                <td class="text-end">₹${parseFloat(position.ltp || 0).toFixed(2)}</td>
+                <td class="text-end">₹${buyAmt.toFixed(2)}</td>
+                <td class="text-end">₹${sellAmt.toFixed(2)}</td>
                 <td class="text-end ${pnl >= 0 ? 'text-success' : 'text-danger'}">
                     ₹${pnl.toFixed(2)}
+                </td>
+                <td class="text-center">
+                    <span class="badge ${position.sqrFlg === 'Y' ? 'bg-success' : 'bg-warning'}">
+                        ${position.sqrFlg === 'Y' ? 'Active' : 'Inactive'}
+                    </span>
                 </td>
             `;
             tableBody.appendChild(row);
