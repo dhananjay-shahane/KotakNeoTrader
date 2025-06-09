@@ -34,6 +34,7 @@
                     <!-- Token Login Tab -->
                     <div class="tab-pane fade show active" id="token-login" role="tabpanel">
                         <form method="POST" action="{{ url_for('login') }}">
+                            <input type="hidden" name="login_type" value="token">
                             <div class="mb-3">
                                 <label for="access_token" class="form-label">
                                     <i class="fas fa-key me-1"></i>Access Token
@@ -90,7 +91,8 @@
 
                     <!-- TOTP Login Tab -->
                     <div class="tab-pane fade" id="totp-login" role="tabpanel">
-                        <form method="POST" action="{{ url_for('login') }}">
+                        <form method="POST" action="{{ url_for('login') }}" id="totpForm">
+                            <input type="hidden" name="login_type" value="totp">
                             <div class="mb-3">
                                 <label for="mobile_number" class="form-label">
                                     <i class="fas fa-mobile-alt me-1"></i>Mobile Number
@@ -99,7 +101,8 @@
                                        class="form-control bg-dark text-light border-secondary" 
                                        id="mobile_number" 
                                        name="mobile_number" 
-                                       placeholder="+919999999999">
+                                       placeholder="+919999999999"
+                                       required>
                             </div>
                             
                             <div class="mb-3">
@@ -110,7 +113,9 @@
                                        class="form-control bg-dark text-light border-secondary" 
                                        id="totp_ucc" 
                                        name="ucc" 
-                                       placeholder="Your UCC">
+                                       value="ZHZ3J"
+                                       placeholder="Your UCC"
+                                       required>
                             </div>
                             
                             <div class="mb-3">
@@ -121,7 +126,9 @@
                                        class="form-control bg-dark text-light border-secondary" 
                                        id="mpin" 
                                        name="mpin" 
-                                       placeholder="Your MPIN">
+                                       placeholder="Your 4-digit MPIN"
+                                       maxlength="4"
+                                       required>
                             </div>
                             
                             <div class="mb-4">
@@ -133,14 +140,15 @@
                                        id="totp" 
                                        name="totp" 
                                        placeholder="6-digit TOTP from authenticator app" 
-                                       maxlength="6">
+                                       maxlength="6"
+                                       required>
                                 <div class="form-text text-muted">
                                     <i class="fas fa-info-circle me-1"></i>
                                     Enter the 6-digit code from your authenticator app
                                 </div>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary w-100 py-2">
+                            <button type="submit" class="btn btn-primary w-100 py-2" id="totpSubmit">
                                 <i class="fas fa-sign-in-alt me-2"></i>Login with TOTP
                             </button>
                         </form>

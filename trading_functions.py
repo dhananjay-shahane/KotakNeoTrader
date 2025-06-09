@@ -12,53 +12,103 @@ class TradingFunctions:
         """Get dashboard data including positions, holdings, and portfolio summary"""
         try:
             dashboard_data = {}
+            self.logger.info("📊 Fetching comprehensive dashboard data...")
 
-            # Get positions
-            positions_response = client.positions()
-            if positions_response and 'data' in positions_response:
-                dashboard_data['positions'] = positions_response['data']
-                dashboard_data['total_positions'] = len(positions_response['data'])
-            else:
+            # Get positions with better error handling
+            try:
+                self.logger.info("📈 Fetching positions...")
+                positions_response = client.positions()
+                if positions_response and isinstance(positions_response, dict) and 'data' in positions_response:
+                    dashboard_data['positions'] = positions_response['data']
+                    dashboard_data['total_positions'] = len(positions_response['data'])
+                    self.logger.info(f"✅ Found {len(positions_response['data'])} positions")
+                elif positions_response and isinstance(positions_response, list):
+                    dashboard_data['positions'] = positions_response
+                    dashboard_data['total_positions'] = len(positions_response)
+                    self.logger.info(f"✅ Found {len(positions_response)} positions")
+                else:
+                    dashboard_data['positions'] = []
+                    dashboard_data['total_positions'] = 0
+                    self.logger.info("📊 No positions found")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Error fetching positions: {str(e)}")
                 dashboard_data['positions'] = []
                 dashboard_data['total_positions'] = 0
 
-            # Get holdings
-            holdings_response = client.holdings()
-            if holdings_response and 'data' in holdings_response:
-                dashboard_data['holdings'] = holdings_response['data']
-                dashboard_data['total_holdings'] = len(holdings_response['data'])
-            else:
+            # Get holdings with better error handling
+            try:
+                self.logger.info("🏦 Fetching holdings...")
+                holdings_response = client.holdings()
+                if holdings_response and isinstance(holdings_response, dict) and 'data' in holdings_response:
+                    dashboard_data['holdings'] = holdings_response['data']
+                    dashboard_data['total_holdings'] = len(holdings_response['data'])
+                    self.logger.info(f"✅ Found {len(holdings_response['data'])} holdings")
+                elif holdings_response and isinstance(holdings_response, list):
+                    dashboard_data['holdings'] = holdings_response
+                    dashboard_data['total_holdings'] = len(holdings_response)
+                    self.logger.info(f"✅ Found {len(holdings_response)} holdings")
+                else:
+                    dashboard_data['holdings'] = []
+                    dashboard_data['total_holdings'] = 0
+                    self.logger.info("🏦 No holdings found")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Error fetching holdings: {str(e)}")
                 dashboard_data['holdings'] = []
                 dashboard_data['total_holdings'] = 0
 
-            # Get limits
+            # Get limits with better error handling
             try:
+                self.logger.info("💰 Fetching account limits...")
                 limits_response = client.limits()
-                if limits_response and 'data' in limits_response:
-                    dashboard_data['limits'] = limits_response['data']
+                if limits_response:
+                    if isinstance(limits_response, dict) and 'data' in limits_response:
+                        dashboard_data['limits'] = limits_response['data']
+                    else:
+                        dashboard_data['limits'] = limits_response
+                    self.logger.info("✅ Account limits fetched successfully")
                 else:
                     dashboard_data['limits'] = {}
-            except:
+                    self.logger.info("💰 No limits data available")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Error fetching limits: {str(e)}")
                 dashboard_data['limits'] = {}
 
-            # Get order book
+            # Get order book with better error handling
             try:
+                self.logger.info("📋 Fetching order book...")
                 orders_response = client.order_report()
-                if orders_response and 'data' in orders_response:
-                    dashboard_data['recent_orders'] = orders_response['data'][:5]  # Last 5 orders
-                    dashboard_data['total_orders'] = len(orders_response['data'])
+                if orders_response and isinstance(orders_response, dict) and 'data' in orders_response:
+                    orders_data = orders_response['data']
+                    dashboard_data['recent_orders'] = orders_data[:5]  # Last 5 orders
+                    dashboard_data['total_orders'] = len(orders_data)
+                    self.logger.info(f"✅ Found {len(orders_data)} orders")
+                elif orders_response and isinstance(orders_response, list):
+                    dashboard_data['recent_orders'] = orders_response[:5]
+                    dashboard_data['total_orders'] = len(orders_response)
+                    self.logger.info(f"✅ Found {len(orders_response)} orders")
                 else:
                     dashboard_data['recent_orders'] = []
                     dashboard_data['total_orders'] = 0
-            except:
+                    self.logger.info("📋 No orders found")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Error fetching orders: {str(e)}")
                 dashboard_data['recent_orders'] = []
                 dashboard_data['total_orders'] = 0
 
+            self.logger.info("✅ Dashboard data fetched successfully!")
             return dashboard_data
 
         except Exception as e:
-            self.logger.error(f"Error getting dashboard data: {str(e)}")
-            return {}
+            self.logger.error(f"❌ Error getting dashboard data: {str(e)}")
+            return {
+                'positions': [],
+                'holdings': [],
+                'limits': {},
+                'recent_orders': [],
+                'total_positions': 0,
+                'total_holdings': 0,
+                'total_orders': 0
+            }
 
     def get_positions(self, client):
         """Get current positions"""

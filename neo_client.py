@@ -110,26 +110,75 @@ class NeoClient:
             self.logger.error(f"Error initializing Neo API client: {str(e)}")
             return None
     
-    def login_with_totp(self, client, mobile_number, ucc, totp, mpin):
-        """Login using TOTP (Time-based One-Time Password)"""
+    def execute_totp_login(self, mobile_number, ucc, totp, mpin):
+        """Execute complete TOTP login process"""
         try:
-            self.logger.info("🔐 Attempting TOTP login...")
+            self.logger.info("🔐 Starting TOTP login process...")
+            
+            # Initialize client for TOTP login
+            client = NeoAPI(
+                consumer_key="",  # Will be set from login response
+                consumer_secret="",  # Will be set from login response
+                environment='prod',
+                access_token=None,
+                neo_fin_key="neotradeapi"
+            )
             
             # Step 1: TOTP Login
+            self.logger.info("📱 Attempting TOTP login...")
             totp_response = client.totp_login(
                 mobile_number=mobile_number,
                 ucc=ucc,
                 totp=totp
             )
-            self.logger.info("✅ TOTP login successful!")
-            self.logger.debug(f"Login Response: {totp_response}")
             
-            # Step 2: TOTP Validation
-            validation_response = client.totp_validate(mpin=mpin)
-            self.logger.info("✅ TOTP validation successful!")
-            self.logger.debug(f"Validation Response: {validation_response}")
-            
-            return True
+            if totp_response and 'data' in totp_response:
+                self.logger.info("✅ TOTP login successful!")
+                
+                # Step 2: TOTP Validation with MPIN
+                self.logger.info("🔐 Validating with MPIN...")
+                validation_response = client.totp_validate(mpin=mpin)
+                
+                if validation_response and 'data' in validation_response:
+                    self.logger.info("✅ TOTP validation successful!")
+                    
+                    # Extract session data
+                    session_data = validation_response['data']
+                    
+                    # Create authenticated client
+                    authenticated_client = NeoAPI(
+                        consumer_key=session_data.get('consumer_key', ''),
+                        consumer_secret=session_data.get('consumer_secret', ''),
+                        environment='prod',
+                        access_token=session_data.get('access_token'),
+                        neo_fin_key="neotradeapi"
+                    )
+                    
+                    # Set session token
+                    if hasattr(authenticated_client, 'session_token'):
+                        authenticated_client.session_token = session_data.get('session_token')
+                    
+                    return {
+                        'success': True,
+                        'client': authenticated_client,
+                        'session_data': session_data
+                    }
+                else:
+                    self.logger.error("❌ TOTP validation failed")
+                    return {'success': False, 'message': 'TOTP validation failed'}
+            else:
+                self.logger.error("❌ TOTP login failed")
+                return {'success': False, 'message': 'TOTP login failed'}
+                
+        except Exception as e:
+            self.logger.error(f"❌ TOTP Login process failed: {str(e)}")
+            return {'success': False, 'message': str(e)}
+
+    def login_with_totp(self, client, mobile_number, ucc, totp, mpin):
+        """Login using TOTP (Time-based One-Time Password) - Legacy method"""
+        try:
+            result = self.execute_totp_login(mobile_number, ucc, totp, mpin)
+            return result['success']
             
         except Exception as e:
             self.logger.error(f"❌ TOTP Login failed: {str(e)}")

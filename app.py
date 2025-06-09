@@ -102,52 +102,98 @@ def debug_session():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page with token-based authentication"""
+    """Login page with token-based and TOTP authentication"""
     if request.method == 'POST':
         try:
-            # Get credentials from form
-            access_token = request.form.get('access_token', '').strip()
-            session_token = request.form.get('session_token', '').strip()
-            sid = request.form.get('sid', '').strip()
+            # Check which login method is being used
+            login_type = request.form.get('login_type', 'token')
             
-            if not access_token or not session_token:
-                flash('Access Token and Session Token are required', 'error')
-                return render_template('token_login.html')
-            
-            # Initialize client with tokens
-            client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
-            
-            if client:
-                # Store in session
-                session['authenticated'] = True
-                session['access_token'] = access_token
-                session['session_token'] = session_token
-                session['sid'] = sid
-                session['ucc'] = request.form.get('ucc', '').strip()
-                session['client'] = client
-                session.permanent = True
+            if login_type == 'totp':
+                # TOTP Login
+                mobile_number = request.form.get('mobile_number', '').strip()
+                ucc = request.form.get('ucc', '').strip()
+                totp = request.form.get('totp', '').strip()
+                mpin = request.form.get('mpin', '').strip()
                 
-                # Store session persistently
-                session_data = {
-                    'access_token': access_token,
-                    'session_token': session_token,
-                    'sid': sid,
-                    'ucc': session['ucc']
-                }
-                session_manager.store_session('default_user', session_data)
+                if not mobile_number or not ucc or not totp or not mpin:
+                    flash('All TOTP fields are required', 'error')
+                    return render_template('login.html')
                 
-                flash('Successfully authenticated with stored tokens!', 'success')
-                return redirect(url_for('dashboard'))
+                # Execute TOTP login
+                result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+                
+                if result['success']:
+                    client = result['client']
+                    session_data = result['session_data']
+                    
+                    # Store in session
+                    session['authenticated'] = True
+                    session['access_token'] = session_data.get('access_token')
+                    session['session_token'] = session_data.get('session_token')
+                    session['sid'] = session_data.get('sid')
+                    session['ucc'] = ucc
+                    session['client'] = client
+                    session.permanent = True
+                    
+                    # Store session persistently
+                    persistent_data = {
+                        'access_token': session_data.get('access_token'),
+                        'session_token': session_data.get('session_token'),
+                        'sid': session_data.get('sid'),
+                        'ucc': ucc
+                    }
+                    session_manager.store_session('default_user', persistent_data)
+                    
+                    flash('Successfully authenticated with TOTP!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash(f'TOTP login failed: {result.get("message", "Unknown error")}', 'error')
+                    return render_template('login.html')
+            
             else:
-                flash('Failed to authenticate with provided tokens. Please ensure 2FA is completed and tokens are valid.', 'error')
-                return render_template('token_login.html')
+                # Token Login
+                access_token = request.form.get('access_token', '').strip()
+                session_token = request.form.get('session_token', '').strip()
+                sid = request.form.get('sid', '').strip()
+                
+                if not access_token or not session_token:
+                    flash('Access Token and Session Token are required', 'error')
+                    return render_template('login.html')
+                
+                # Initialize client with tokens
+                client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
+                
+                if client:
+                    # Store in session
+                    session['authenticated'] = True
+                    session['access_token'] = access_token
+                    session['session_token'] = session_token
+                    session['sid'] = sid
+                    session['ucc'] = request.form.get('ucc', '').strip()
+                    session['client'] = client
+                    session.permanent = True
+                    
+                    # Store session persistently
+                    session_data = {
+                        'access_token': access_token,
+                        'session_token': session_token,
+                        'sid': sid,
+                        'ucc': session['ucc']
+                    }
+                    session_manager.store_session('default_user', session_data)
+                    
+                    flash('Successfully authenticated with stored tokens!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('Failed to authenticate with provided tokens. Please ensure 2FA is completed and tokens are valid.', 'error')
+                    return render_template('login.html')
                 
         except Exception as e:
             logging.error(f"Login error: {str(e)}")
             flash(f'Login failed: {str(e)}', 'error')
-            return render_template('token_login.html')
+            return render_template('login.html')
     
-    return render_template('token_login.html')
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
