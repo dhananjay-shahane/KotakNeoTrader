@@ -16,16 +16,32 @@ class TradingDashboard {
     }
 
     setupEventListeners() {
+        // Wait for DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.initializeEventListeners();
+            });
+        } else {
+            this.initializeEventListeners();
+        }
+    }
+
+    initializeEventListeners() {
         // Refresh button click handlers
-        document.querySelectorAll('[onclick*="refresh"]').forEach(btn => {
-            btn.addEventListener('click', this.handleRefresh.bind(this));
-        });
+        const refreshButtons = document.querySelectorAll('[onclick*="refresh"]');
+        if (refreshButtons.length > 0) {
+            refreshButtons.forEach(btn => {
+                btn.addEventListener('click', this.handleRefresh.bind(this));
+            });
+        }
 
         // Order form submissions
         const orderForms = document.querySelectorAll('form[id*="Order"]');
-        orderForms.forEach(form => {
-            form.addEventListener('submit', this.handleOrderSubmit.bind(this));
-        });
+        if (orderForms.length > 0) {
+            orderForms.forEach(form => {
+                form.addEventListener('submit', this.handleOrderSubmit.bind(this));
+            });
+        }
 
         // Real-time price updates
         this.setupPriceUpdateHandlers();

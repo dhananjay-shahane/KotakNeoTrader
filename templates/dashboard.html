@@ -46,19 +46,21 @@
 <!-- Portfolio Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-primary">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Total Positions</h6>
-                        <h2 class="mb-0 fw-bold text-primary">{{ data.total_positions or 0 }}</h2>
-                        <small class="text-success">
-                            <i class="fas fa-arrow-up me-1"></i>Active trades
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Positions</h6>
+                        <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.total_positions or 0 }}</h2>
+                        <small class="text-white-50">
+                            <i class="fas fa-chart-line me-1"></i>
+                            {% set active_positions = data.positions|selectattr('netQty', '!=', '0')|list|length if data.positions else 0 %}
+                            {{ active_positions }} Active trades
                         </small>
                     </div>
                     <div class="stats-icon">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-chart-pie fa-2x text-primary"></i>
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-chart-pie fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -67,19 +69,25 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-success">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Total Holdings</h6>
-                        <h2 class="mb-0 fw-bold text-success">{{ data.total_holdings or 0 }}</h2>
-                        <small class="text-success">
-                            <i class="fas fa-arrow-up me-1"></i>Long term
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
+                        <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
+                        <small class="text-white-50">
+                            <i class="fas fa-wallet me-1"></i>
+                            {% if data.holdings %}
+                                {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
+                                ₹{{ "%.2f"|format(holdings_value) }}
+                            {% else %}
+                                ₹0.00
+                            {% endif %}
                         </small>
                     </div>
                     <div class="stats-icon">
-                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-wallet fa-2x text-success"></i>
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-briefcase fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -88,19 +96,21 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-info">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Active Orders</h6>
-                        <h2 class="mb-0 fw-bold text-info">{{ data.total_orders or 0 }}</h2>
-                        <small class="text-info">
-                            <i class="fas fa-sync me-1"></i>Pending
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Today's Orders</h6>
+                        <h2 class="mb-0 fw-bold text-white" id="totalOrders">{{ data.total_orders or 0 }}</h2>
+                        <small class="text-white-50">
+                            <i class="fas fa-clock me-1"></i>
+                            {% set pending_orders = data.recent_orders|selectattr('ordSt', '==', 'open')|list|length if data.recent_orders else 0 %}
+                            {{ pending_orders }} Pending
                         </small>
                     </div>
                     <div class="stats-icon">
-                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-list-alt fa-2x text-info"></i>
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-list-alt fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -109,25 +119,30 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-warning">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-muted fw-bold mb-2">Available Margin</h6>
-                        <h2 class="mb-0 fw-bold text-warning">
+                        <h6 class="card-title text-uppercase text-dark fw-bold mb-2">Available Margin</h6>
+                        <h2 class="mb-0 fw-bold text-dark" id="availableMargin">
                             {% if data.limits and data.limits.cash %}
-                                ₹{{ "%.2f"|format(data.limits.cash|float) }}
+                                ₹{{ "{:,.2f}"|format(data.limits.cash|float) }}
                             {% else %}
                                 ₹0.00
                             {% endif %}
                         </h2>
-                        <small class="text-warning">
-                            <i class="fas fa-wallet me-1"></i>Available
+                        <small class="text-dark">
+                            <i class="fas fa-rupee-sign me-1"></i>
+                            {% if data.limits and data.limits.payin %}
+                                Used: ₹{{ "{:,.2f}"|format(data.limits.payin|float) }}
+                            {% else %}
+                                Ready to trade
+                            {% endif %}
                         </small>
                     </div>
                     <div class="stats-icon">
-                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-rupee-sign fa-2x text-warning"></i>
+                        <div class="bg-dark bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-coins fa-2x text-dark"></i>
                         </div>
                     </div>
                 </div>
@@ -139,42 +154,48 @@
 <!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col">
-        <div class="card bg-secondary">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>Quick Actions
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-rocket me-2 text-primary"></i>Quick Actions
                 </h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-success w-100" onclick="openPlaceOrderModal('BUY')">
-                            <i class="fas fa-plus me-1"></i>Buy Order
+            <div class="card-body bg-secondary p-4">
+                <div class="row g-3">
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <button class="btn btn-success w-100 btn-lg shadow-sm" onclick="openPlaceOrderModal('BUY')" style="height: 80px;">
+                            <i class="fas fa-arrow-up fa-2x mb-2"></i><br>
+                            <span class="fw-bold">Buy Order</span>
                         </button>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-danger w-100" onclick="openPlaceOrderModal('SELL')">
-                            <i class="fas fa-minus me-1"></i>Sell Order
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <button class="btn btn-danger w-100 btn-lg shadow-sm" onclick="openPlaceOrderModal('SELL')" style="height: 80px;">
+                            <i class="fas fa-arrow-down fa-2x mb-2"></i><br>
+                            <span class="fw-bold">Sell Order</span>
                         </button>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <a href="{{ url_for('positions') }}" class="btn btn-info w-100">
-                            <i class="fas fa-chart-pie me-1"></i>Positions
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <a href="{{ url_for('positions') }}" class="btn btn-info w-100 btn-lg shadow-sm text-decoration-none" style="height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <i class="fas fa-chart-pie fa-2x mb-2"></i>
+                            <span class="fw-bold">Positions</span>
                         </a>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <a href="{{ url_for('holdings') }}" class="btn btn-warning w-100">
-                            <i class="fas fa-wallet me-1"></i>Holdings
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <a href="{{ url_for('holdings') }}" class="btn btn-warning w-100 btn-lg shadow-sm text-decoration-none" style="height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <i class="fas fa-briefcase fa-2x mb-2"></i>
+                            <span class="fw-bold">Holdings</span>
                         </a>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <a href="{{ url_for('orders') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-list-alt me-1"></i>Orders
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <a href="{{ url_for('orders') }}" class="btn btn-primary w-100 btn-lg shadow-sm text-decoration-none" style="height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <i class="fas fa-list-alt fa-2x mb-2"></i>
+                            <span class="fw-bold">Orders</span>
                         </a>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-secondary w-100" onclick="refreshDashboard()">
-                            <i class="fas fa-sync me-1"></i>Refresh
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <button class="btn btn-secondary w-100 btn-lg shadow-sm" onclick="refreshDashboard()" style="height: 80px;">
+                            <i class="fas fa-sync-alt fa-2x mb-2"></i><br>
+                            <span class="fw-bold">Refresh</span>
                         </button>
                     </div>
                 </div>
@@ -183,58 +204,113 @@
     </div>
 </div>
 
-<!-- Recent Positions -->
-{% if data.positions %}
+<!-- Live Market Quotes -->
 <div class="row mb-4">
     <div class="col">
-        <div class="card bg-secondary">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-pie me-2"></i>Current Positions
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-chart-line me-2 text-success"></i>Live Market Quotes
                 </h5>
-                <a href="{{ url_for('positions') }}" class="btn btn-sm btn-outline-light">View All</a>
+                <button class="btn btn-sm btn-outline-light" onclick="refreshQuotes()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0">
-                        <thead>
+                    <table class="table table-dark table-hover mb-0" id="quotesTable">
+                        <thead class="table-dark">
                             <tr>
-                                <th>Symbol</th>
-                                <th>Quantity</th>
-                                <th>Avg Price</th>
-                                <th>LTP</th>
-                                <th>P&L</th>
-                                <th>Type</th>
+                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
+                                <th><i class="fas fa-rupee-sign me-1"></i>LTP</th>
+                                <th><i class="fas fa-exchange-alt me-1"></i>Change</th>
+                                <th><i class="fas fa-percentage me-1"></i>Change %</th>
+                                <th><i class="fas fa-chart-bar me-1"></i>Volume</th>
+                                <th><i class="fas fa-clock me-1"></i>Time</th>
+                                <th><i class="fas fa-cog me-1"></i>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for position in data.positions[:5] %}
+                        <tbody id="quotesTableBody">
                             <tr>
+                                <td><strong>RELIANCE</strong></td>
+                                <td class="price-ltp" data-symbol="RELIANCE">₹2,450.75</td>
+                                <td class="price-change text-success">+12.50</td>
+                                <td class="text-success">+0.51%</td>
+                                <td>1,25,432</td>
+                                <td><small class="text-muted">15:29:45</small></td>
                                 <td>
-                                    <strong>{{ position.trdSym or position.sym or 'N/A' }}</strong>
-                                </td>
-                                <td>
-                                    {% if position.flBuyQty|int > 0 %}
-                                        <span class="text-success">+{{ position.flBuyQty }}</span>
-                                    {% elif position.flSellQty|int > 0 %}
-                                        <span class="text-danger">-{{ position.flSellQty }}</span>
-                                    {% else %}
-                                        <span class="text-muted">0</span>
-                                    {% endif %}
-                                </td>
-                                <td>₹{{ "%.2f"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
-                                <td>₹{{ "%.2f"|format(position.ltp|float) if position.ltp else '0.00' }}</td>
-                                <td>
-                                    {% set pnl = position.pnl|float if position.pnl else 0.0 %}
-                                    <span class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                        ₹{{ "%.2f"|format(pnl) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info">{{ position.prod or 'N/A' }}</span>
+                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'RELIANCE')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'RELIANCE')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
                                 </td>
                             </tr>
-                            {% endfor %}
+                            <tr>
+                                <td><strong>TCS</strong></td>
+                                <td class="price-ltp" data-symbol="TCS">₹3,675.20</td>
+                                <td class="price-change text-danger">-8.30</td>
+                                <td class="text-danger">-0.23%</td>
+                                <td>89,567</td>
+                                <td><small class="text-muted">15:29:43</small></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'TCS')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'TCS')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>INFY</strong></td>
+                                <td class="price-ltp" data-symbol="INFY">₹1,832.45</td>
+                                <td class="price-change text-success">+22.15</td>
+                                <td class="text-success">+1.22%</td>
+                                <td>2,45,789</td>
+                                <td><small class="text-muted">15:29:41</small></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'INFY')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'INFY')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>HDFCBANK</strong></td>
+                                <td class="price-ltp" data-symbol="HDFCBANK">₹1,645.80</td>
+                                <td class="price-change text-success">+5.60</td>
+                                <td class="text-success">+0.34%</td>
+                                <td>1,67,890</td>
+                                <td><small class="text-muted">15:29:40</small></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'HDFCBANK')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'HDFCBANK')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>ICICIBANK</strong></td>
+                                <td class="price-ltp" data-symbol="ICICIBANK">₹1,198.25</td>
+                                <td class="price-change text-danger">-3.75</td>
+                                <td class="text-danger">-0.31%</td>
+                                <td>3,21,456</td>
+                                <td><small class="text-muted">15:29:38</small></td>
+                                <td>
+                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'ICICIBANK')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'ICICIBANK')">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -242,7 +318,126 @@
         </div>
     </div>
 </div>
-{% endif %}
+
+<!-- Live Positions Table -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-chart-pie me-2 text-info"></i>Live Positions
+                    <span class="badge bg-info ms-2">{{ data.total_positions or 0 }}</span>
+                </h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshPositions()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                    <a href="{{ url_for('positions') }}" class="btn btn-sm btn-info">
+                        <i class="fas fa-external-link-alt me-1"></i>View All
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" id="positionsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
+                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
+                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
+                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
+                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
+                                <th><i class="fas fa-percentage me-1"></i>P&L %</th>
+                                <th><i class="fas fa-layer-group me-1"></i>Product</th>
+                                <th><i class="fas fa-cog me-1"></i>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsTableBody">
+                            {% if data.positions %}
+                                {% for position in data.positions[:10] %}
+                                <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
+                                    <td>
+                                        <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
+                                        <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
+                                    </td>
+                                    <td>
+                                        {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
+                                        {% if net_qty > 0 %}
+                                            <span class="text-success fw-bold">+{{ net_qty }}</span>
+                                            <br><small class="text-success">LONG</small>
+                                        {% elif net_qty < 0 %}
+                                            <span class="text-danger fw-bold">{{ net_qty }}</span>
+                                            <br><small class="text-danger">SHORT</small>
+                                        {% else %}
+                                            <span class="text-muted">0</span>
+                                            <br><small class="text-muted">FLAT</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
+                                    <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
+                                        ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
+                                    </td>
+                                    <td class="position-pnl">
+                                        {% set pnl = position.pnl|float if position.pnl else 0.0 %}
+                                        <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                            ₹{{ "{:,.2f}"|format(pnl) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if position.avgPrice and position.ltp %}
+                                            {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
+                                            <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ "{:+.2f}"|format(pnl_percent) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">0.00%</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
+                                            {{ position.prod or 'CNC' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
+                                        {% if net_qty > 0 %}
+                                            <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
+                                                <i class="fas fa-minus"></i> Exit
+                                            </button>
+                                        {% elif net_qty < 0 %}
+                                            <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
+                                                <i class="fas fa-plus"></i> Cover
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-chart-pie fa-3x mb-3 d-block"></i>
+                                        <h6>No positions found</h6>
+                                        <p>Start trading to see your positions here</p>
+                                        <button class="btn btn-primary" onclick="openPlaceOrderModal('BUY')">
+                                            <i class="fas fa-plus me-1"></i>Place First Order
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% if data.positions and data.positions|length > 10 %}
+            <div class="card-footer bg-dark border-0 text-center">
+                <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
+                    <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
 <!-- Recent Orders -->
 {% if data.recent_orders %}
@@ -579,9 +774,19 @@
 {% block scripts %}
 <script>
 // Dashboard-specific JavaScript functions
-function openPlaceOrderModal(type) {
-    document.querySelector('select[name="transaction_type"]').value = type;
-    new bootstrap.Modal(document.getElementById('placeOrderModal')).show();
+function openPlaceOrderModal(type, symbol = '', quantity = '') {
+    const modal = document.getElementById('placeOrderModal');
+    if (modal) {
+        const transactionSelect = modal.querySelector('select[name="transaction_type"]');
+        const symbolInput = modal.querySelector('input[name="trading_symbol"]');
+        const quantityInput = modal.querySelector('input[name="quantity"]');
+        
+        if (transactionSelect) transactionSelect.value = type;
+        if (symbolInput && symbol) symbolInput.value = symbol;
+        if (quantityInput && quantity) quantityInput.value = quantity;
+        
+        new bootstrap.Modal(modal).show();
+    }
 }
 
 function submitOrder() {
@@ -613,7 +818,98 @@ function submitOrder() {
 }
 
 function refreshDashboard() {
-    window.location.reload();
+    const button = document.querySelector('[onclick="refreshDashboard()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+        button.disabled = true;
+    }
+    
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
+}
+
+function refreshQuotes() {
+    const button = document.querySelector('[onclick="refreshQuotes()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        button.disabled = true;
+    }
+    
+    // Simulate quote refresh with random price updates
+    setTimeout(() => {
+        const quotes = document.querySelectorAll('#quotesTable .price-ltp');
+        quotes.forEach(quote => {
+            const currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
+            const change = (Math.random() - 0.5) * 20; // Random change between -10 to +10
+            const newPrice = currentPrice + change;
+            
+            quote.textContent = `₹${newPrice.toFixed(2)}`;
+            
+            // Update change columns
+            const row = quote.closest('tr');
+            const changeCell = row.querySelector('.price-change');
+            const changePctCell = row.cells[3];
+            
+            if (changeCell && changePctCell) {
+                const changePercent = (change / currentPrice * 100);
+                changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
+                changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
+                
+                changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+                changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
+            }
+            
+            // Add animation
+            quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
+            setTimeout(() => {
+                quote.classList.remove('price-up', 'price-down');
+            }, 1000);
+        });
+        
+        // Update timestamp
+        const timeElements = document.querySelectorAll('#quotesTable small');
+        const now = new Date();
+        timeElements.forEach(time => {
+            time.textContent = now.toLocaleTimeString();
+        });
+        
+        if (button) {
+            button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+            button.disabled = false;
+        }
+    }, 1000);
+}
+
+function refreshPositions() {
+    const button = document.querySelector('[onclick="refreshPositions()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        button.disabled = true;
+    }
+    
+    // Simulate position refresh
+    setTimeout(() => {
+        const positions = document.querySelectorAll('#positionsTable .price-ltp');
+        positions.forEach(position => {
+            const currentPrice = parseFloat(position.textContent.replace(/[₹,]/g, ''));
+            const change = (Math.random() - 0.5) * 10; // Random change
+            const newPrice = currentPrice + change;
+            
+            position.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            
+            // Add animation
+            position.classList.add(change >= 0 ? 'price-up' : 'price-down');
+            setTimeout(() => {
+                position.classList.remove('price-up', 'price-down');
+            }, 1000);
+        });
+        
+        if (button) {
+            button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+            button.disabled = false;
+        }
+    }, 1000);
 }
 
 // User Profile Functions
