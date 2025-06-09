@@ -35,6 +35,16 @@ def token_login():
     """Quick token login page"""
     return render_template('token_login.html')
 
+@app.route('/debug-session')
+def debug_session():
+    """Debug session state"""
+    return jsonify({
+        'authenticated': session.get('authenticated', False),
+        'has_client': 'client' in session,
+        'has_credentials': 'credentials' in session,
+        'session_keys': list(session.keys())
+    })
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page with token-based authentication"""
@@ -61,6 +71,7 @@ def login():
                         'sid': request.form.get('sid', ''),
                         'ucc': request.form.get('ucc', 'ZHZ3J')
                     }
+                    session.permanent = True
                     flash('Login successful with tokens!', 'success')
                     return redirect(url_for('dashboard'))
                 else:
@@ -131,13 +142,27 @@ def logout():
 def dashboard():
     """Main dashboard with portfolio overview"""
     if not session.get('authenticated'):
-        return redirect(url_for('login'))
+        flash('Please login to access the dashboard.', 'warning')
+        return redirect(url_for('token_login'))
     
     try:
+        # Get client from session or reinitialize if needed
         client = session.get('client')
+        if not client and session.get('credentials', {}).get('access_token'):
+            # Reinitialize client with stored tokens
+            credentials = session.get('credentials', {})
+            client = neo_client.initialize_client_with_tokens(
+                credentials.get('access_token'),
+                credentials.get('session_token'),
+                credentials.get('sid')
+            )
+            if client:
+                session['client'] = client
+        
         if not client:
             flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
+            session.clear()
+            return redirect(url_for('token_login'))
         
         # Fetch dashboard data
         dashboard_data = trading_functions.get_dashboard_data(client)
