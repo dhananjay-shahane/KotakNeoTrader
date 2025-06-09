@@ -3,570 +3,281 @@
 {% block title %}Dashboard - Kotak Neo Trading{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2>
-            <i class="fas fa-tachometer-alt me-2"></i>Trading Dashboard
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Welcome Section -->
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-16 -translate-y-16"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full transform -translate-x-12 translate-y-12"></div>
+
+            <div class="relative z-10">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h1 class="text-2xl md:text-3xl font-bold mb-2">Welcome Back!</h1>
+                        <p class="text-blue-100 text-sm md:text-base">
+                            <i class="fas fa-user mr-2"></i>UCC: {{ session.get('ucc', 'Not Available') }}
+                        </p>
+                        <p class="text-blue-100 text-xs md:text-sm mt-1">
+                            <i class="fas fa-clock mr-2"></i>Last updated: <span id="last-updated">Now</span>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <div class="text-center">
+                            <div class="w-12 h-12 md:w-16 md:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-chart-line text-xl md:text-2xl"></i>
+                            </div>
+                            <div class="text-xs md:text-sm">Trading</div>
+                        </div>
+
+                        <button onclick="refreshDashboard()" class="bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-200 px-4 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <!-- Total Positions -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-pie text-white text-xl"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-white" id="total-positions">
+                        {{ data.get('total_positions', 0) }}
+                    </div>
+                    <div class="text-sm text-gray-400">Active Positions</div>
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 flex items-center">
+                <i class="fas fa-arrow-up text-green-400 mr-1"></i>
+                <span>{{ data.get('positions_change', 0) }} from yesterday</span>
+            </div>
+        </div>
+
+        <!-- Total Holdings -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-briefcase text-white text-xl"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-white" id="total-holdings">
+                        {{ data.get('total_holdings', 0) }}
+                    </div>
+                    <div class="text-sm text-gray-400">Holdings</div>
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 flex items-center">
+                <i class="fas fa-rupee-sign text-blue-400 mr-1"></i>
+                <span>₹{{ "%.2f"|format(data.get('total_investment', 0)) }}</span>
+            </div>
+        </div>
+
+        <!-- Today's Orders -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-list-alt text-white text-xl"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-white" id="todays-orders">
+                        {{ data.get('total_orders', 0) }}
+                    </div>
+                    <div class="text-sm text-gray-400">Today's Orders</div>
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 flex items-center">
+                <i class="fas fa-clock text-yellow-400 mr-1"></i>
+                <span>{{ data.get('pending_orders', 0) }} pending</span>
+            </div>
+        </div>
+
+        <!-- Available Margin -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-wallet text-white text-xl"></i>
+                </div>
+                <div class="text-right">
+                    <div class="text-xl font-bold text-white" id="available-margin">
+                        ₹{{ "%.2f"|format(data.get('available_margin', 0)) }}
+                    </div>
+                    <div class="text-sm text-gray-400">Available Margin</div>
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 flex items-center">
+                <i class="fas fa-shield-alt text-purple-400 mr-1"></i>
+                <span>Ready to trade</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-bolt text-yellow-400 mr-3"></i>Quick Actions
         </h2>
-        <p class="text-muted">Real-time portfolio overview and market data</p>
-    </div>
-</div>
 
-<!-- User Welcome Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-gradient-primary border-0 shadow-lg">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <div class="d-flex align-items-center">
-                            <div class="user-avatar-large me-3">
-                                <i class="fas fa-user-circle fa-3x text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-white mb-1">Welcome back, {{ session.credentials.ucc if session.credentials else 'Trader' }}!</h3>
-                                <p class="text-white-50 mb-0">
-                                    <i class="fas fa-clock me-1"></i>
-                                    Last login: <span id="lastLoginTime">Today</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <button class="btn btn-outline-light btn-lg" onclick="showUserProfile()">
-                            <i class="fas fa-user-cog me-2"></i>View Profile
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+            <button class="bg-green-600 hover:bg-green-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-arrow-up text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Buy Order</span>
+            </button>
 
-<!-- Portfolio Summary Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-gradient-primary">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Positions</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.total_positions or 0 }}</h2>
-                        <small class="text-white-50">
-                            <i class="fas fa-chart-line me-1"></i>
-                            {% set active_positions = data.positions|selectattr('netQty', '!=', '0')|list|length if data.positions else 0 %}
-                            {{ active_positions }} Active trades
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-chart-pie fa-2x text-white"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <button class="bg-red-600 hover:bg-red-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-arrow-down text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Sell Order</span>
+            </button>
+
+            <button class="bg-blue-600 hover:bg-blue-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-chart-pie text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Positions</span>
+            </button>
+
+            <button class="bg-yellow-600 hover:bg-yellow-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-briefcase text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Holdings</span>
+            </button>
+
+            <button class="bg-purple-600 hover:bg-purple-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-list-alt text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Orders</span>
+            </button>
+
+            <button onclick="refreshDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white p-4 md:p-6 rounded-xl transition-all duration-200 flex flex-col items-center space-y-2 group transform hover:scale-105">
+                <i class="fas fa-sync-alt text-2xl md:text-3xl group-hover:scale-110 transition-transform"></i>
+                <span class="text-xs md:text-sm font-medium">Refresh</span>
+            </button>
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-gradient-success">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
-                        <small class="text-white-50" id="holdingsValue">
-                            <i class="fas fa-wallet me-1"></i>
-                            {% if data.holdings %}
-                                {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
-                                ₹{{ "%.2f"|format(holdings_value) }}
-                            {% else %}
-                                ₹0.00
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-briefcase fa-2x text-white"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-gradient-info">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Today's Orders</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalOrders">{{ data.total_orders or 0 }}</h2>
-                        <small class="text-white-50">
-                            <i class="fas fa-clock me-1"></i>
-                            {% set pending_orders = data.recent_orders|selectattr('ordSt', '==', 'open')|list|length if data.recent_orders else 0 %}
-                            {{ pending_orders }} Pending
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-list-alt fa-2x text-white"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-gradient-warning">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-dark fw-bold mb-2">Available Margin</h6>
-                        <h2 class="mb-0 fw-bold text-dark" id="availableMargin">
-                            {% if data.limits and data.limits.cash %}
-                                ₹{{ "{:,.2f}"|format(data.limits.cash|float) }}
-                            {% else %}
-                                ₹0.00
-                            {% endif %}
-                        </h2>
-                        <small class="text-dark" id="marginUsed">
-                            <i class="fas fa-rupee-sign me-1"></i>
-                            {% if data.limits and data.limits.payin %}
-                                Used: ₹{{ "{:,.2f}"|format(data.limits.payin|float) }}
-                            {% else %}
-                                Ready to trade
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-dark bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-coins fa-2x text-dark"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-dark border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 py-3">
-                <h5 class="mb-0 text-light d-flex align-items-center">
-                    <i class="fas fa-rocket me-2 text-primary"></i>Quick Actions
-                </h5>
-            </div>
-            <div class="card-body bg-dark p-4">
-                <div class="row g-3">
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <button class="btn btn-success w-100 shadow-lg position-relative" onclick="openPlaceOrderModal('BUY')" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #28a745, #20c997);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-arrow-up fa-2x text-white mb-1"></i>
-                                <span class="fw-bold text-white">Buy Order</span>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <button class="btn btn-danger w-100 shadow-lg position-relative" onclick="openPlaceOrderModal('SELL')" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #dc3545, #e74c3c);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-arrow-down fa-2x text-white mb-1"></i>
-                                <span class="fw-bold text-white">Sell Order</span>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <a href="{{ url_for('positions') }}" class="btn btn-info w-100 shadow-lg position-relative text-decoration-none" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #17a2b8, #20c997);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-chart-pie fa-2x text-white mb-1"></i>
-                                <span class="fw-bold text-white">Positions</span>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <a href="{{ url_for('holdings') }}" class="btn btn-warning w-100 shadow-lg position-relative text-decoration-none" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #ffc107, #fd7e14);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-briefcase fa-2x text-dark mb-1"></i>
-                                <span class="fw-bold text-dark">Holdings</span>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <a href="{{ url_for('orders') }}" class="btn btn-primary w-100 shadow-lg position-relative text-decoration-none" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #007bff, #6610f2);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-list-alt fa-2x text-white mb-1"></i>
-                                <span class="fw-bold text-white">Orders</span>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <button class="btn btn-secondary w-100 shadow-lg position-relative" onclick="refreshDashboard()" style="height: 80px; border-radius: 15px; border: none; background: linear-gradient(135deg, #6c757d, #495057);">
-                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-sync-alt fa-2x text-white mb-1"></i>
-                                <span class="fw-bold text-white">Refresh</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Live Market Quotes -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-chart-line me-2 text-success"></i>Live Market Quotes
-                </h5>
-                <button class="btn btn-sm btn-outline-light" onclick="refreshQuotes()">
-                    <i class="fas fa-sync me-1"></i>Refresh
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="quotesTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
-                                <th><i class="fas fa-rupee-sign me-1"></i>LTP</th>
-                                <th><i class="fas fa-exchange-alt me-1"></i>Change</th>
-                                <th><i class="fas fa-percentage me-1"></i>Change %</th>
-                                <th><i class="fas fa-chart-bar me-1"></i>Volume</th>
-                                <th><i class="fas fa-clock me-1"></i>Time</th>
-                                <th><i class="fas fa-cog me-1"></i>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="quotesTableBody">
-                            <tr>
-                                <td><strong>RELIANCE</strong></td>
-                                <td class="price-ltp" data-symbol="RELIANCE">₹2,450.75</td>
-                                <td class="price-change text-success">+12.50</td>
-                                <td class="text-success">+0.51%</td>
-                                <td> 1,25,432</td>
-                                <td><small class="text-muted">15:29:45</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'RELIANCE')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'RELIANCE')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>TCS</strong></td>
-                                <td class="price-ltp" data-symbol="TCS">₹3,675.20</td>
-                                <td class="price-change text-danger">-8.30</td>
-                                <td class="text-danger">-0.23%</td>
-                                <td>89,567</td>
-                                <td><small class="text-muted">15:29:43</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'TCS')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'TCS')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>INFY</strong></td>
-                                <td class="price-ltp" data-symbol="INFY">₹1,832.45</td>
-                                <td class="price-change text-success">+22.15</td>
-                                <td class="text-success">+1.22%</td>
-                                <td>2,45,789</td>
-                                <td><small class="text-muted">15:29:41</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'INFY')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'INFY')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>HDFCBANK</strong></td>
-                                <td class="price-ltp" data-symbol="HDFCBANK">₹1,645.80</td>
-                                <td class="price-change text-success">+5.60</td>
-                                <td class="text-success">+0.34%</td>
-                                <td>1,67,890</td>
-                                <td><small class="text-muted">15:29:40</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'HDFCBANK')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'HDFCBANK')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>ICICIBANK</strong></td>
-                                <td class="price-ltp" data-symbol="ICICIBANK">₹1,198.25</td>
-                                <td class="price-change text-danger">-3.75</td>
-                                <td class="text-danger">-0.31%</td>
-                                <td>3,21,456</td>
-                                <td><small class="text-muted">15:29:38</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'ICICIBANK')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'ICICIBANK')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Live Positions Table -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-chart-pie me-2 text-info"></i>Live Positions
-                    <span class="badge bg-info ms-2">{{ data.total_positions or 0 }}</span>
-                </h5>
-                <div>
-                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshPositions()">
-                        <i class="fas fa-sync me-1"></i>Refresh
-                    </button>
-                    <a href="{{ url_for('positions') }}" class="btn btn-sm btn-info">
-                        <i class="fas fa-external-link-alt me-1"></i>View All
+    <!-- Portfolio Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Recent Positions -->
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-chart-pie text-blue-400 mr-3"></i>Recent Positions
+                    </h3>
+                    <a href="{{ url_for('positions') }}" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="positionsTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
-                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
-                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
-                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
-                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
-                                <th><i class="fas fa-percentage me-1"></i>P&L %</th>
-                                <th><i class="fas fa-layer-group me-1"></i>Product</th>
-                                <th><i class="fas fa-cog me-1"></i>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="positionsTableBody">
-                            {% if data.positions %}
-                                {% if data.positions.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    {{ data.positions.error }}
-                                    <br><small>Please refresh your tokens using the token refresh tool</small>
-                                </td></tr>
-                                {% else %}
-                                    {% for position in data.positions[:10] %}
-                                    <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
-                                        <td>
-                                            <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
-                                            <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
-                                        </td>
-                                        <td>
-                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                            {% if net_qty > 0 %}
-                                                <span class="text-success fw-bold">+{{ net_qty }}</span>
-                                                <br><small class="text-success">LONG</small>
-                                            {% elif net_qty < 0 %}
-                                                <span class="text-danger fw-bold">{{ net_qty }}</span>
-                                                <br><small class="text-danger">SHORT</small>
-                                            {% else %}
-                                                <span class="text-muted">0</span>
-                                                <br><small class="text-muted">FLAT</small>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
-                                        <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
-                                            ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
-                                        </td>
-                                        <td class="position-pnl">
-                                            {% set pnl = position.pnl|float if position.pnl else 0.0 %}
-                                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                ₹{{ "{:,.2f}"|format(pnl) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if position.avgPrice and position.ltp %}
-                                                {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
-                                                <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                    {{ "{:+.2f}"|format(pnl_percent) }}%
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">0.00%</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
-                                                {{ position.prod or 'CNC' }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                            {% if net_qty > 0 %}
-                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
-                                                    <i class="fas fa-minus"></i> Exit
-                                                </button>
-                                            {% elif net_qty < 0 %}
-                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
-                                                    <i class="fas fa-plus"></i> Cover
-                                                </button>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% endif %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        <i class="fas fa-chart-pie fa-3x mb-3 d-block"></i>
-                                        <h6>No positions found</h6>
-                                        <p>Start trading to see your positions here</p>
-                                        <button class="btn btn-primary" onclick="openPlaceOrderModal('BUY')">
-                                            <i class="fas fa-plus me-1"></i>Place First Order
-                                        </button>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% if data.positions and data.positions|length > 10 %}
-            <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
-                    <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
-                </a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
 
-<!-- Live Holdings Table -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-briefcase me-2 text-warning"></i>Live Holdings
-                    <span class="badge bg-warning ms-2">{{ data.total_holdings or 0 }}</span>
-                </h5>
-                <div>
-                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshHoldings()">
-                        <i class="fas fa-sync me-1"></i>Refresh
-                    </button>
-                    <a href="{{ url_for('holdings') }}" class="btn btn-sm btn-warning">
-                        <i class="fas fa-external-link-alt me-1"></i>View All
+            <div class="p-6">
+                {% if data.get('positions') %}
+                    <div class="space-y-4">
+                        {% for position in data.positions[:5] %}
+                        <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                            <div class="flex-1">
+                                <div class="font-medium text-white">{{ position.get('tradingsymbol', 'N/A') }}</div>
+                                <div class="text-sm text-gray-400">Qty: {{ position.get('quantity', 0) }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium text-white">₹{{ "%.2f"|format(position.get('ltp', 0)) }}</div>
+                                <div class="text-sm {% if position.get('pnl', 0) >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                                    {{ "%.2f"|format(position.get('pnl', 0)) }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-chart-pie text-4xl mb-4 opacity-50"></i>
+                        <p>No positions found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Holdings -->
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-briefcase text-green-400 mr-3"></i>Recent Holdings
+                    </h3>
+                    <a href="{{ url_for('holdings') }}" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="holdingsTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
-                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
-                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
-                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
-                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody id="holdingsTableBody">
-                            {% if data.holdings %}
-                                {% if data.holdings.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    {{ data.holdings.error }}
-                                    <br><small>Please refresh your tokens using the token refresh tool</small>
-                                </td></tr>
-                                {% else %}
-                                    {% for holding in data.holdings[:5] %}
-                                    <tr>
-                                        <td>{{ holding.get('tradingsymbol', 'N/A') }}</td>
-                                        <td>{{ holding.get('quantity', 0) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</td>
-                                        <td class="{% if holding.get('pnl', 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            ₹{{ "%.2f"|format(holding.get('pnl', 0)) }}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% endif %}
-                            {% else %}
-                                <tr><td colspan="5" class="text-center text-muted">No holdings found</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+
+            <div class="p-6">
+                {% if data.get('holdings') %}
+                    <div class="space-y-4">
+                        {% for holding in data.holdings[:5] %}
+                        <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                            <div class="flex-1">
+                                <div class="font-medium text-white">{{ holding.get('tradingsymbol', 'N/A') }}</div>
+                                <div class="text-sm text-gray-400">Qty: {{ holding.get('quantity', 0) }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium text-white">₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</div>
+                                <div class="text-sm text-gray-400">Avg: ₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-briefcase text-4xl mb-4 opacity-50"></i>
+                        <p>No holdings found</p>
+                    </div>
+                {% endif %}
             </div>
-            {% if data.holdings and data.holdings|length > 5 %}
-            <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('holdings') }}" class="btn btn-outline-light">
-                    <i class="fas fa-eye me-1"></i>View All {{ data.total_holdings }} Holdings
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
-</div>
 
-<!-- Recent Orders -->
-{% if data.recent_orders %}
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-list-alt me-2"></i>Recent Orders
-                </h5>
-                <a href="{{ url_for('orders') }}" class="btn btn-sm btn-outline-light">View All</a>
+    <!-- Recent Orders -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="p-6 border-b border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white flex items-center">
+                    <i class="fas fa-list-alt text-yellow-400 mr-3"></i>Recent Orders
+                </h3>
+                <a href="{{ url_for('orders') }}" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    View All <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0">
+        </div>
+
+        <div class="p-6">
+            {% if data.get('recent_orders') %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
                         <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Symbol</th>
-                                <th>Type</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Status</th>
+                            <tr class="text-left text-gray-400 text-sm">
+                                <th class="pb-3">Symbol</th>
+                                <th class="pb-3">Type</th>
+                                <th class="pb-3">Quantity</th>
+                                <th class="pb-3">Price</th>
+                                <th class="pb-3">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for order in data.recent_orders %}
-                            <tr>
-                                <td>{{ order.orderTime or 'N/A' }}</td>
-                                <td><strong>{{ order.trdSym or 'N/A' }}</strong></td>
-                                <td>
-                                    <span class="badge {% if order.transType == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ order.transType or 'N/A' }}
+                        <tbody class="space-y-2">
+                            {% for order in data.recent_orders[:5] %}
+                            <tr class="border-t border-gray-700">
+                                <td class="py-3 font-medium text-white">{{ order.get('tradingsymbol', 'N/A') }}</td>
+                                <td class="py-3">
+                                    <span class="px-2 py-1 text-xs rounded-full {% if order.get('transactiontype') == 'BUY' %}bg-green-800 text-green-200{% else %}bg-red-800 text-red-200{% endif %}">
+                                        {{ order.get('transactiontype', 'N/A') }}
                                     </span>
                                 </td>
-                                <td>{{ order.qty or '0' }}</td>
-                                <td>₹{{ "%.2f"|format(order.prc|float) if order.prc else '0.00' }}</td>
-                                <td>
-                                    <span class="badge {% if order.ordSt == 'complete' %}bg-success{% elif order.ordSt == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
-                                        {{ order.ordSt or 'N/A' }}
+                                <td class="py-3 text-gray-300">{{ order.get('quantity', 0) }}</td>
+                                <td class="py-3 text-gray-300">₹{{ "%.2f"|format(order.get('price', 0)) }}</td>
+                                <td class="py-3">
+                                    <span class="px-2 py-1 text-xs rounded-full {% if order.get('orderstatus') == 'COMPLETE' %}bg-green-800 text-green-200{% elif order.get('orderstatus') == 'PENDING' %}bg-yellow-800 text-yellow-200{% else %}bg-gray-800 text-gray-200{% endif %}">
+                                        {{ order.get('orderstatus', 'N/A') }}
                                     </span>
                                 </td>
                             </tr>
@@ -574,751 +285,48 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- User Profile Modal -->
-<div class="modal fade" id="userProfileModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title">
-                    <i class="fas fa-user-circle me-2"></i>User Profile
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-4 text-center mb-4">
-                        <div class="user-profile-avatar mb-3">
-                            <i class="fas fa-user-circle fa-5x text-primary"></i>
-                        </div>
-                        <h4 class="text-light">{{ session.credentials.ucc if session.credentials else 'User' }}</h4>
-                        <span class="badge bg-success">Active Trader</span>
-                    </div>
-                    <div class="col-md-8">
-                        <h6 class="text-primary mb-3">
-                            <i class="fas fa-info-circle me-2"></i>Account Information
-                        </h6>
-                        <div class="row">
-                            <div class="col-sm-6 mb-3">
-                                <label class="form-label text-muted">UCC (User Code)</label>
-                                <div class="form-control bg-secondary text-light border-0">
-                                    {{ session.credentials.ucc if session.credentials else 'N/A' }}
-                                </div>
-                            </div>
-                            <div class="col-sm-6 mb-3">
-                                <label class="form-label text-muted">Account Status</label>
-                                <div class="form-control bg-secondary text-light border-0">
-                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i>Active</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6 mb-3">
-                                <label class="form-label text-muted">Session Token</label>
-                                <div class="form-control bg-secondary text-light border-0" style="font-family: monospace; font-size: 0.8rem;">
-                                    {{ session.credentials.session_token[:20] if session.credentials and session.credentials.session_token else 'N/A' }}...
-                                </div>
-                            </div>
-                            <div class="col-sm-6 mb-3">
-                                <label class="form-label text-muted">Login Time</label>
-                                <div class="form-control bg-secondary text-light border-0">
-                                    <span id="loginTime">{{ session.get('login_time', 'N/A') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-list-alt text-4xl mb-4 opacity-50"></i>
+                    <p>No recent orders found</p>
                 </div>
-
-                <hr class="border-secondary">
-
-                <h6 class="text-primary mb-3">
-                    <i class="fas fa-shield-alt me-2"></i>Security & Settings
-                </h6>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item bg-transparent text-light border-secondary">
-                                <i class="fas fa-key me-2 text-success"></i>
-                                Two-Factor Authentication: <span class="text-success">Enabled</span>
-                            </div>
-                            <div class="list-group-item bg-transparent text-light border-secondary">
-                                <i class="fas fa-clock me-2 text-info"></i>
-                                Session Timeout: <span class="text-info">30 minutes</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item bg-transparent text-light border-secondary">
-                                <i class="fas fa-chart-line me-2 text-warning"></i>
-                                Trading Status: <span class="text-success">Active</span>
-                            </div>
-                            <div class="list-group-item bg-transparent text-light border-secondary">
-                                <i class="fas fa-database me-2 text-primary"></i>
-                                Data Refresh: <span class="text-info">Real-time</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="showAccountSummary()">
-                    <i class="fas fa-chart-bar me-1"></i>View Account Summary
-                </button>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Account Summary Modal -->
-<div class="modal fade" id="accountSummaryModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title">
-                    <i class="fas fa-chart-bar me-2"></i>Account Summary
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-4">
-                    <div class="col-md-3 mb-3">
-                        <div class="card bg-primary bg-opacity-10 border-primary">
-                            <div class="card-body text-center">
-                                <i class="fas fa-wallet fa-2x text-primary mb-2"></i>
-                                <h6 class="text-primary">Total Balance</h6>
-                                <h4 class="text-light">
-                                    ₹{{ "%.2f"|format(data.limits.cash|float) if data.limits and data.limits.cash else '0.00' }}
-                                </h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card bg-success bg-opacity-10 border-success">
-                            <div class="card-body text-center">
-                                <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
-                                <h6 class="text-success">Total P&L</h6>
-                                <h4 class="text-light portfolio-pnl">₹{{ "%.2f"|format(data.positions|sum(attribute='pnl')|float if data.positions else 0.0) }}</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card bg-warning bg-opacity-10 border-warning">
-                            <div class="card-body text-center">
-                                <i class="fas fa-chart-pie fa-2x text-warning mb-2"></i>
-                                <h6 class="text-warning">Portfolio Value</h6>
-                                <h4 class="text-light portfolio-investment">₹{{ "%.2f"|format((data.holdings|sum(attribute='quantity')|float * data.holdings|sum(attribute='avgPrice')|float) if data.holdings else 0.0) }}</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card bg-info bg-opacity-10 border-info">
-                            <div class="card-body text-center">
-                                <i class="fas fa-percentage fa-2x text-info mb-2"></i>
-                                <h6 class="text-info">Day's Change</h6>
-                                <h4 class="text-light portfolio-change">0.00%</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card bg-primary bg-opacity-10 border-primary">
-                            <div class="card-body text-center">
-                                <i class="fas fa-refresh fa-2x text-primary mb-2"></i>
-                                <h6 class="text-primary">Last Updated</h6>
-                                <small class="text-light" id="portfolioLastUpdate">Loading...</small>
-                                <br<button class="btn btn-sm btn-primary mt-2" onclick="window.tradingDashboard.refreshPortfolioDetails()">
-                                    <i class="fas fa-sync"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Portfolio Data Section -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-briefcase me-2"></i>Portfolio Details
-                        </h5>
-                    </div>
-                </div>
-
-                <!-- Raw Portfolio Data Display -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card bg-secondary">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Portfolio Summary Data</h6>
-                                <button class="btn btn-sm btn-primary" onclick="refreshPortfolioData()">
-                                    <i class="fas fa-sync me-1"></i>Refresh
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div id="portfolioDataDisplay">
-                                    <div class="text-center py-3">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading portfolio data...
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Positions Table -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-dark table-hover" id="portfolioPositions">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Exchange</th>
-                                <th>Product</th>
-                                <th class="text-center">Buy Qty</th>
-                                <th class="text-center">Sell Qty</th>
-                                <th class="text-center">Net Qty</th>
-                                <th>Buy Amount</th>
-                                <th>Sell Amount</th>
-                                <th>P&L</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="positionsTableBody">
-                            <tr>
-                                <td colspan="10" class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Holdings Table -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-dark table-hover" id="portfolioHoldings">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Exchange</th>
-                                <th class="text-center">Quantity</th>
-                                <th>Avg Price</th>
-                                <th>LTP</th>
-                                <th>Market Value</th>
-                                <th>P&L</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="holdingsTableBody">
-                            <tr>
-                                <td colspan="8" class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading holdings...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Limits Information -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card bg-secondary">
-                            <div class="card-header">
-                                <h6 class="mb-0">Account Limits</h6>
-                            </div>
-                            <div class="card-body">
-                                <div id="limitsDisplay">
-                                    <div class="text-center py-3">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading limits data...
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success">
-                    <i class="fas fa-save me-1"></i>Save Settings
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Place Order Modal -->
-<div class="modal fade" id="placeOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-plus me-2"></i>Place Order
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="placeOrderForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Trading Symbol</label>
-                            <input type="text" class="form-control bg-secondary text-light" name="trading_symbol" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Transaction Type</label>
-                            <select class="form-select bg-secondary text-light" name="transaction_type" required>
-                                <option value="BUY">BUY</option>
-                                <option value="SELL">SELL</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light" name="quantity" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Order Type</label>
-                            <select class="form-select bg-secondary text-light" name="order_type" required>
-                                <option value="MARKET">MARKET</option>
-                                <option value="LIMIT">LIMIT</option>
-                                <option value="SL">STOP LOSS</option>
-                                <option value="SL-M">SL-MARKET</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Product</label>
-                            <select class="form-select bg-secondary text-light" name="product" required>
-                                <option value="CNC">CNC</option>
-                                <option value="MIS">MIS</option>
-                                <option value="NRML">NRML</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitOrder()">
-                    <i class="fas fa-check me-1"></i>Place Order
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
 <script>
-// Dashboard-specific JavaScript functions
-function openPlaceOrderModal(type, symbol = '', quantity = '') {
-    const modal = document.getElementById('placeOrderModal');
-    if (modal) {
-        const transactionSelect = modal.querySelector('select[name="transaction_type"]');
-        const symbolInput = modal.querySelector('input[name="trading_symbol"]');
-        const quantityInput = modal.querySelector('input[name="quantity"]');
+    // Dashboard functionality
+    function refreshDashboard() {
+        const refreshButtons = document.querySelectorAll('button[onclick="refreshDashboard()"]');
+        refreshButtons.forEach(button => {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Refreshing...';
+        });
 
-        if (transactionSelect) transactionSelect.value = type;
-        if (symbolInput && symbol) symbolInput.value = symbol;
-        if (quantityInput && quantity) quantityInput.value = quantity;
-
-        new bootstrap.Modal(modal).show();
-    }
-}
-
-function submitOrder() {
-    const form = document.getElementById('placeOrderForm');
-    const formData = new FormData(form);
-    const orderData = Object.fromEntries(formData.entries());
-
-    fetch('/api/place_order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Order placed successfully!');
-            bootstrap.Modal.getInstance(document.getElementById('placeOrderModal')).hide();
-            refreshDashboard();
-        } else {
-            alert('Failed to place order: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error placing order');
-    });
-}
-
-function refreshDashboard() {
-    const button = document.querySelector('[onclick="refreshDashboard()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-        button.disabled = true;
-    }
-
-    // Refresh specific sections instead of full page
-    Promise.all([
-        refreshQuotes(),
-        refreshPositions(),
-        refreshPortfolioSummary()
-    ]).then(() => {
-        if (button) {
-            button.innerHTML = '<i class="fas fa-sync-alt fa-2x mb-2"></i><br><span class="fw-bold">Refresh</span>';
-            button.disabled = false;
-        }
-    }).catch(error => {
-        console.error('Error refreshing dashboard:', error);
-        if (button) {
-            button.innerHTML = '<i class="fas fa-sync-alt fa-2x mb-2"></i><br><span class="fw-bold">Refresh</span>';
-            button.disabled = false;
-        }
-    });
-}
-
-async function refreshQuotes() {
-    const button = document.querySelector('[onclick="refreshQuotes()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-        button.disabled = true;
-    }
-
-    try {
-        // Fetch fresh quote data from server
-        const response = await fetch('/api/live_quotes');
-        const data = await response.json();
-
-        if (data.success) {
-            // Update quotes table with real data
-            const quotesTableBody = document.getElementById('quotesTableBody');
-            if (quotesTableBody && data.quotes) {
-                data.quotes.forEach(quote => {
-                    const row = document.querySelector(`tr[data-symbol="${quote.symbol}"]`);
-                    if (row) {
-                        const ltpCell = row.querySelector('.price-ltp');
-                        const changeCell = row.querySelector('.price-change');
-                        const changePctCell = row.cells[3];
-                        const timeCell = row.querySelector('small');
-
-                        if (ltpCell) {
-                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            const newPrice = parseFloat(quote.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toFixed(2)}`;
-
-                            // Add animation based on price change
-                            if (newPrice > oldPrice) {
-                                ltpCell.classList.add('price-up');
-                            } else if (newPrice < oldPrice) {
-                                ltpCell.classList.add('price-down');
-                            }
-
-                            setTimeout(() => {
-                                ltpCell.classList.remove('price-up', 'price-down');
-                            }, 1000);
-                        }
-
-                        if (changeCell && quote.change !== undefined) {
-                            changeCell.textContent = `${quote.change >= 0 ? '+' : ''}${parseFloat(quote.change).toFixed(2)}`;
-                            changeCell.className = `price-change ${quote.change >= 0 ? 'text-success' : 'text-danger'}`;
-                        }
-
-                        if (changePctCell && quote.changePct !== undefined) {
-                            changePctCell.textContent = `${quote.changePct >= 0 ? '+' : ''}${parseFloat(quote.changePct).toFixed(2)}%`;
-                            changePctCell.className = quote.changePct >= 0 ? 'text-success' : 'text-danger';
-                        }
-
-                        if (timeCell) {
-                            timeCell.textContent = new Date().toLocaleTimeString();
-                        }
-                    }
-                });
-            }
-        } else {
-            // Fallback to simulated updates if API fails
-            simulateQuoteUpdates();
-        }
-    } catch (error) {
-        console.error('Error refreshing quotes:', error);
-        // Fallback to simulated updates
-        simulateQuoteUpdates();
-    }
-
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
-}
-
-function simulateQuoteUpdates() {
-    const quotes = document.querySelectorAll('#quotesTable .price-ltp');
-    quotes.forEach(quote => {
-        const currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
-        const change = (Math.random() - 0.5) * 20;
-        const newPrice = currentPrice + change;
-
-        quote.textContent = `₹${newPrice.toFixed(2)}`;
-
-        const row = quote.closest('tr');
-        const changeCell = row.querySelector('.price-change');
-        const changePctCell = row.cells[3];
-
-        if (changeCell && changePctCell) {
-            const changePercent = (change / currentPrice * 100);
-            changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
-            changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
-
-            changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-            changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
-        }
-
-        quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        // Simulate refresh
         setTimeout(() => {
-            quote.classList.remove('price-up', 'price-down');
-        }, 1000);
+            refreshButtons.forEach(button => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Refresh';
+            });
+
+            // Update last updated time
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        }, 2000);
+
+        // In a real application, you would fetch new data here
+        // fetchPortfolioData();
+    }
+
+    // Auto refresh every 30 seconds
+    setInterval(() => {
+        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+    }, 30000);
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Trading Dashboard initialized');
     });
-}
-
-async function refreshPositions() {
-    const button = document.querySelector('[onclick="refreshPositions()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-        button.disabled = true;
-    }
-
-    try {
-        const response = await fetch('/api/positions');
-        const data = await response.json();
-
-        if (data.success && data.positions) {
-            const positionsTableBody = document.getElementById('positionsTableBody');
-            if (positionsTableBody) {
-                // Update positions with fresh data
-                data.positions.forEach(position => {
-                    const row = document.querySelector(`tr[data-position-symbol="${position.trdSym || position.sym}"]`);
-                    if (row) {
-                        const ltpCell = row.querySelector('.price-ltp');
-                        const pnlCell = row.querySelector('.position-pnl');
-
-                        if (ltpCell && position.ltp) {
-                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            const newPrice = parseFloat(position.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-                            if (newPrice !== oldPrice) {
-                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
-                                setTimeout(() => {
-                                    ltpCell.classList.remove('price-up', 'price-down');
-                                }, 1000);
-                            }
-                        }
-
-                        if (pnlCell && position.pnl !== undefined) {
-                            const pnl = parseFloat(position.pnl);
-                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
-                        }
-                    }
-                });
-
-                console.log('Positions refreshed successfully');
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing positions:', error);
-        // Fallback to simulated updates
-        simulatePositionUpdates();
-    }
-
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
-}
-
-function simulatePositionUpdates() {
-    const positions = document.querySelectorAll('#positionsTable .price-ltp');
-    positions.forEach(position => {
-        const currentPrice = parseFloat(position.textContent.replace(/[₹,]/g, ''));
-        const change = (Math.random() - 0.5) * 10;
-        const newPrice = currentPrice + change;
-
-        position.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        position.classList.add(change >= 0 ? 'price-up' : 'price-down');
-        setTimeout(() => {
-            position.classList.remove('price-up', 'price-down');
-        }, 1000);
-    });
-}
-
-// User Profile Functions
-function showUserProfile() {
-    // Set login time if not already set
-    const loginTimeElement = document.getElementById('loginTime');
-    if (loginTimeElement && loginTimeElement.textContent === 'N/A') {
-        const now = new Date();
-        loginTimeElement.textContent = now.toLocaleString();
-    }
-
-    new bootstrap.Modal(document.getElementById('userProfileModal')).show();
-}
-
-function showAccountSummary() {
-    // Close user profile modal if open
-    const userProfileModal = bootstrap.Modal.getInstance(document.getElementById('userProfileModal'));
-    if (userProfileModal) {
-        userProfileModal.hide();
-    }
-
-    // Show account summary modal
-    new bootstrap.Modal(document.getElementById('accountSummaryModal')).show();
-}
-
-async function refreshPortfolioSummary() {
-    try {
-        const response = await fetch('/api/portfolio_summary');
-        const data = await response.json();
-
-        if (data.success) {
-            // Update portfolio summary cards
-            const totalPositionsEl = document.getElementById('totalPositions');
-            const totalHoldingsEl = document.getElementById('totalHoldings');
-            const totalOrdersEl = document.getElementById('totalOrders');
-            const availableMarginEl = document.getElementById('availableMargin');
-
-            if (totalPositionsEl && data.total_positions !== undefined) {
-                totalPositionsEl.textContent = data.total_positions;
-            }
-            if (totalHoldingsEl && data.total_holdings !== undefined) {
-                totalHoldingsEl.textContent = data.total_holdings;
-            }
-            if (totalOrdersEl && data.total_orders !== undefined) {
-                totalOrdersEl.textContent = data.total_orders;
-            }
-            if (availableMarginEl && data.available_margin !== undefined) {
-                availableMarginEl.textContent = `₹${parseFloat(data.available_margin).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing portfolio summary:', error);
-    }
-}
-
-// Add function to refresh portfolio data
-function refreshPortfolioData() {
-    if (window.tradingDashboard) {
-        window.tradingDashboard.refreshPortfolioDetails();
-    }
-}
-
-// Set last login time on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const lastLoginElement = document.getElementById('lastLoginTime');
-    if (lastLoginElement) {
-        const now = new Date();
-        lastLoginElement.textContent = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
-    }
-
-    // Set portfolio last update time
-    const portfolioUpdateElement = document.getElementById('portfolioLastUpdate');
-    if (portfolioUpdateElement) {
-        const now = new Date();
-        portfolioUpdateElement.textContent = now.toLocaleTimeString();
-    }
-});
-
-// Auto-refresh specific sections every 15 seconds instead of full page
-setInterval(() => {
-    refreshQuotes();
-    refreshPositions();
-    refreshPortfolioSummary();
-}, 15000);
-
-async function refreshHoldings() {
-    const button = document.querySelector('[onclick="refreshHoldings()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-        button.disabled = true;
-    }
-
-    try {
-        const response = await fetch('/api/holdings');
-        const data = await response.json();
-
-        if (data.success && data.holdings) {
-            const holdingsTableBody = document.getElementById('holdingsTableBody');
-            if (holdingsTableBody) {
-                // Update holdings with fresh data
-                data.holdings.forEach(holding => {
-                    const row = document.querySelector(`tr[data-holding-symbol="${holding.tradingsymbol || holding.symbol}"]`);
-                    if (row) {
-                        const ltpCell = row.querySelector('.price-ltp');
-                        const pnlCell = row.querySelector('.holding-pnl');
-
-                        if (ltpCell && holding.ltp) {
-                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            const newPrice = parseFloat(holding.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-                            if (newPrice !== oldPrice) {
-                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
-                                setTimeout(() => {
-                                    ltpCell.classList.remove('price-up', 'price-down');
-                                }, 1000);
-                            }
-                        }
-
-                        if (pnlCell && holding.pnl !== undefined) {
-                            const pnl = parseFloat(holding.pnl);
-                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
-                        }
-                    }
-                });
-
-                console.log('Holdings refreshed successfully');
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing holdings:', error);
-        // Fallback to simulated updates
-        simulateHoldingUpdates();
-    }
-
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
-}
-
-function simulateHoldingUpdates() {
-    const holdings = document.querySelectorAll('#holdingsTable .price-ltp');
-    holdings.forEach(holding => {
-        const currentPrice = parseFloat(holding.textContent.replace(/[₹,]/g, ''));
-        const change = (Math.random() - 0.5) * 10;
-        const newPrice = currentPrice + change;
-
-        holding.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        holding.classList.add(change >= 0 ? 'price-up' : 'price-down');
-        setTimeout(() => {
-            holding.classList.remove('price-up', 'price-down');
-        }, 1000);
-    });
-}
 </script>
 {% endblock %}
