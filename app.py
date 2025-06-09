@@ -337,32 +337,50 @@ def get_portfolio_summary():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'})
 
-        # Get comprehensive portfolio summary
-        result = trading_functions.get_portfolio_summary(client)
+        # Get individual components instead of combined summary to avoid repeated calls
+        positions_data = trading_functions.get_positions(client)
+        holdings_data = trading_functions.get_holdings(client)
+        orders_data = trading_functions.get_orders(client)
         
-        if result['success']:
-            summary_data = result['data']['summary']
-            
-            # Get orders count
-            try:
-                orders_data = trading_functions.get_orders(client)
-                total_orders = len(orders_data) if orders_data else 0
-            except:
-                total_orders = 0
-            
-            return jsonify({
-                'success': True,
-                'total_positions': summary_data['positions_count'],
-                'total_holdings': summary_data['holdings_count'],
-                'total_orders': total_orders,
-                'total_pnl': summary_data['total_pnl'],
-                'total_investment': summary_data['total_investment'],
-                'day_change': summary_data['day_change'],
-                'limits_available': summary_data['available_margin'],
-                'available_margin': summary_data['available_margin']
-            })
-        else:
-            return jsonify(result)
+        # Calculate summary statistics
+        total_positions = len(positions_data) if positions_data else 0
+        total_holdings = len(holdings_data) if holdings_data else 0
+        total_orders = len(orders_data) if orders_data else 0
+        
+        # Calculate P&L from positions
+        total_pnl = 0.0
+        if positions_data:
+            for position in positions_data:
+                try:
+                    pnl = float(position.get('pnl', 0) or position.get('urPnl', 0) or 0)
+                    total_pnl += pnl
+                except (ValueError, TypeError):
+                    continue
+        
+        # Calculate investment from holdings
+        total_investment = 0.0
+        if holdings_data:
+            for holding in holdings_data:
+                try:
+                    quantity = float(holding.get('quantity', 0) or holding.get('holdQty', 0) or 0)
+                    avg_price = float(holding.get('avgPrice', 0) or holding.get('avgRate', 0) or 0)
+                    total_investment += quantity * avg_price
+                except (ValueError, TypeError):
+                    continue
+        
+        return jsonify({
+            'success': True,
+            'total_positions': total_positions,
+            'total_holdings': total_holdings,
+            'total_orders': total_orders,
+            'total_pnl': round(total_pnl, 2),
+            'total_investment': round(total_investment, 2),
+            'day_change': 0.0,  # Will be calculated from positions data
+            'available_margin': 0.0,  # Will get from limits API
+            'positions': positions_data[:5] if positions_data else [],  # First 5 positions
+            'holdings': holdings_data[:5] if holdings_data else [],  # First 5 holdings
+            'recent_orders': orders_data[:5] if orders_data else []  # Last 5 orders
+        })
             
     except Exception as e:
         logging.error(f"Portfolio summary API error: {str(e)}")
@@ -386,6 +404,52 @@ def get_portfolio_details():
             
     except Exception as e:
         logging.error(f"Portfolio details error: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/positions')
+def get_positions_api():
+    """API endpoint to get current positions"""
+    try:
+        if not session.get('authenticated'):
+            return jsonify({'success': False, 'message': 'Not authenticated'})
+
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired'})
+
+        positions_data = trading_functions.get_positions(client)
+        
+        return jsonify({
+            'success': True,
+            'positions': positions_data,
+            'count': len(positions_data) if positions_data else 0
+        })
+            
+    except Exception as e:
+        logging.error(f"Positions API error: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/holdings')
+def get_holdings_api():
+    """API endpoint to get holdings"""
+    try:
+        if not session.get('authenticated'):
+            return jsonify({'success': False, 'message': 'Not authenticated'})
+
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired'})
+
+        holdings_data = trading_functions.get_holdings(client)
+        
+        return jsonify({
+            'success': True,
+            'holdings': holdings_data,
+            'count': len(holdings_data) if holdings_data else 0
+        })
+            
+    except Exception as e:
+        logging.error(f"Holdings API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
 
 if __name__ == '__main__':

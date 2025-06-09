@@ -90,5 +90,41 @@
     </div>
 </div>
 
+<script>
+// Load tokens from localStorage on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTokensFromLocalStorage();
+});
+
+function loadTokensFromLocalStorage() {
+    const accessToken = localStorage.getItem('kotak_access_token');
+    const sessionToken = localStorage.getItem('kotak_session_token');
+    const ucc = localStorage.getItem('kotak_ucc');
+    const sid = localStorage.getItem('kotak_sid');
+    
+    if (accessToken) document.getElementById('access_token').value = accessToken;
+    if (sessionToken) document.getElementById('session_token').value = sessionToken;
+    if (ucc) document.getElementById('ucc').value = ucc;
+    if (sid) document.getElementById('sid').value = sid;
+}
+
+function saveTokensToLocalStorage() {
+    const accessToken = document.getElementById('access_token').value;
+    const sessionToken = document.getElementById('session_token').value;
+    const ucc = document.getElementById('ucc').value;
+    const sid = document.getElementById('sid').value;
+    
+    if (accessToken) localStorage.setItem('kotak_access_token', accessToken);
+    if (sessionToken) localStorage.setItem('kotak_session_token', sessionToken);
+    if (ucc) localStorage.setItem('kotak_ucc', ucc);
+    if (sid) localStorage.setItem('kotak_sid', sid);
+}
+
+// Auto-save tokens when typing
+document.getElementById('access_token').addEventListener('blur', saveTokensToLocalStorage);
+document.getElementById('session_token').addEventListener('blur', saveTokensToLocalStorage);
+document.getElementById('ucc').addEventListener('blur', saveTokensToLocalStorage);
+document.getElementById('sid').addEventListener('blur', saveTokensToLocalStorage);
+</script>
 
 {% endblock %}
