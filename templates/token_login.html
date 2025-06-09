@@ -24,7 +24,18 @@
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Important:</strong> Ensure you have completed the 2FA process before using these tokens. 
-                        If you get "Complete the 2fa process" error, please re-authenticate through Kotak Neo and get fresh tokens.
+                        If you get "Complete the 2fa process" error:
+                        <ol class="mb-0 mt-2">
+                            <li>Login to Kotak Neo mobile app or web platform</li>
+                            <li>Complete the 2FA authentication process</li>
+                            <li>Generate fresh access and session tokens</li>
+                            <li>Enter the new tokens below</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> You can run <code>python token_refresh.py</code> in the console for an interactive token refresh process.
                     </div>
                     
                     <div class="mb-3">

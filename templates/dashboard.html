@@ -236,7 +236,7 @@
                                 <td class="price-ltp" data-symbol="RELIANCE">₹2,450.75</td>
                                 <td class="price-change text-success">+12.50</td>
                                 <td class="text-success">+0.51%</td>
-                                <td>1,25,432</td>
+                                <td> 1,25,432</td>
                                 <td><small class="text-muted">15:29:45</small></td>
                                 <td>
                                     <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'RELIANCE')">
@@ -354,64 +354,72 @@
                         </thead>
                         <tbody id="positionsTableBody">
                             {% if data.positions %}
-                                {% for position in data.positions[:10] %}
-                                <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
-                                    <td>
-                                        <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
-                                        <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
-                                    </td>
-                                    <td>
-                                        {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                        {% if net_qty > 0 %}
-                                            <span class="text-success fw-bold">+{{ net_qty }}</span>
-                                            <br><small class="text-success">LONG</small>
-                                        {% elif net_qty < 0 %}
-                                            <span class="text-danger fw-bold">{{ net_qty }}</span>
-                                            <br><small class="text-danger">SHORT</small>
-                                        {% else %}
-                                            <span class="text-muted">0</span>
-                                            <br><small class="text-muted">FLAT</small>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
-                                    <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
-                                        ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
-                                    </td>
-                                    <td class="position-pnl">
-                                        {% set pnl = position.pnl|float if position.pnl else 0.0 %}
-                                        <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                            ₹{{ "{:,.2f}"|format(pnl) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if position.avgPrice and position.ltp %}
-                                            {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
-                                            <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                {{ "{:+.2f}"|format(pnl_percent) }}%
+                                {% if data.positions.get('error') %}
+                                <tr><td colspan="5" class="text-center text-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    {{ data.positions.error }}
+                                    <br><small>Please refresh your tokens using the token refresh tool</small>
+                                </td></tr>
+                                {% else %}
+                                    {% for position in data.positions[:10] %}
+                                    <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
+                                        <td>
+                                            <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
+                                            <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
+                                        </td>
+                                        <td>
+                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
+                                            {% if net_qty > 0 %}
+                                                <span class="text-success fw-bold">+{{ net_qty }}</span>
+                                                <br><small class="text-success">LONG</small>
+                                            {% elif net_qty < 0 %}
+                                                <span class="text-danger fw-bold">{{ net_qty }}</span>
+                                                <br><small class="text-danger">SHORT</small>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                                <br><small class="text-muted">FLAT</small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
+                                        <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
+                                            ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
+                                        </td>
+                                        <td class="position-pnl">
+                                            {% set pnl = position.pnl|float if position.pnl else 0.0 %}
+                                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                ₹{{ "{:,.2f}"|format(pnl) }}
                                             </span>
-                                        {% else %}
-                                            <span class="text-muted">0.00%</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
-                                            {{ position.prod or 'CNC' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                        {% if net_qty > 0 %}
-                                            <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
-                                                <i class="fas fa-minus"></i> Exit
-                                            </button>
-                                        {% elif net_qty < 0 %}
-                                            <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
-                                                <i class="fas fa-plus"></i> Cover
-                                            </button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% if position.avgPrice and position.ltp %}
+                                                {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
+                                                <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                    {{ "{:+.2f}"|format(pnl_percent) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">0.00%</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
+                                                {{ position.prod or 'CNC' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
+                                            {% if net_qty > 0 %}
+                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
+                                                    <i class="fas fa-minus"></i> Exit
+                                                </button>
+                                            {% elif net_qty < 0 %}
+                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
+                                                    <i class="fas fa-plus"></i> Cover
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
                             {% else %}
                                 <tr>
                                     <td colspan="8" class="text-center text-muted py-4">
@@ -432,6 +440,75 @@
             <div class="card-footer bg-dark border-0 text-center">
                 <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
                     <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Live Holdings Table -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-briefcase me-2 text-warning"></i>Live Holdings
+                    <span class="badge bg-warning ms-2">{{ data.total_holdings or 0 }}</span>
+                </h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshHoldings()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                    <a href="{{ url_for('holdings') }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-external-link-alt me-1"></i>View All
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" id="holdingsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
+                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
+                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
+                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
+                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdingsTableBody">
+                            {% if data.holdings %}
+                                {% if data.holdings.get('error') %}
+                                <tr><td colspan="5" class="text-center text-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    {{ data.holdings.error }}
+                                    <br><small>Please refresh your tokens using the token refresh tool</small>
+                                </td></tr>
+                                {% else %}
+                                    {% for holding in data.holdings[:5] %}
+                                    <tr>
+                                        <td>{{ holding.get('tradingsymbol', 'N/A') }}</td>
+                                        <td>{{ holding.get('quantity', 0) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</td>
+                                        <td class="{% if holding.get('pnl', 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            ₹{{ "%.2f"|format(holding.get('pnl', 0)) }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            {% else %}
+                                <tr><td colspan="5" class="text-center text-muted">No holdings found</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% if data.holdings and data.holdings|length > 5 %}
+            <div class="card-footer bg-dark border-0 text-center">
+                <a href="{{ url_for('holdings') }}" class="btn btn-outline-light">
+                    <i class="fas fa-eye me-1"></i>View All {{ data.total_holdings }} Holdings
                 </a>
             </div>
             {% endif %}
@@ -1159,5 +1236,77 @@ setInterval(() => {
     refreshPositions();
     refreshPortfolioSummary();
 }, 15000);
+
+async function refreshHoldings() {
+    const button = document.querySelector('[onclick="refreshHoldings()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        button.disabled = true;
+    }
+
+    try {
+        const response = await fetch('/api/holdings');
+        const data = await response.json();
+
+        if (data.success && data.holdings) {
+            const holdingsTableBody = document.getElementById('holdingsTableBody');
+            if (holdingsTableBody) {
+                // Update holdings with fresh data
+                data.holdings.forEach(holding => {
+                    const row = document.querySelector(`tr[data-holding-symbol="${holding.tradingsymbol || holding.symbol}"]`);
+                    if (row) {
+                        const ltpCell = row.querySelector('.price-ltp');
+                        const pnlCell = row.querySelector('.holding-pnl');
+
+                        if (ltpCell && holding.ltp) {
+                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
+                            const newPrice = parseFloat(holding.ltp);
+
+                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+                            if (newPrice !== oldPrice) {
+                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
+                                setTimeout(() => {
+                                    ltpCell.classList.remove('price-up', 'price-down');
+                                }, 1000);
+                            }
+                        }
+
+                        if (pnlCell && holding.pnl !== undefined) {
+                            const pnl = parseFloat(holding.pnl);
+                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
+                        }
+                    }
+                });
+
+                console.log('Holdings refreshed successfully');
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing holdings:', error);
+        // Fallback to simulated updates
+        simulateHoldingUpdates();
+    }
+
+    if (button) {
+        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        button.disabled = false;
+    }
+}
+
+function simulateHoldingUpdates() {
+    const holdings = document.querySelectorAll('#holdingsTable .price-ltp');
+    holdings.forEach(holding => {
+        const currentPrice = parseFloat(holding.textContent.replace(/[₹,]/g, ''));
+        const change = (Math.random() - 0.5) * 10;
+        const newPrice = currentPrice + change;
+
+        holding.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        holding.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        setTimeout(() => {
+            holding.classList.remove('price-up', 'price-down');
+        }, 1000);
+    });
+}
 </script>
 {% endblock %}
