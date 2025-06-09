@@ -28,49 +28,80 @@ def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
     if 'authenticated' in session and session['authenticated']:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return redirect(url_for('token_login'))
+
+@app.route('/token-login')
+def token_login():
+    """Quick token login page"""
+    return render_template('token_login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page with TOTP authentication"""
+    """Login page with token-based authentication"""
     if request.method == 'POST':
         try:
-            # Get form data
-            mobile_number = request.form.get('mobile_number')
-            ucc = request.form.get('ucc')
-            mpin = request.form.get('mpin')
-            totp = request.form.get('totp')
+            # Check if tokens are provided directly
+            access_token = request.form.get('access_token')
+            session_token = request.form.get('session_token')
             
-            # Validate required fields
-            if not all([mobile_number, ucc, mpin, totp]):
-                flash('All fields are required', 'error')
-                return render_template('login.html')
-            
-            # Store credentials in session for API initialization
-            session['credentials'] = {
-                'mobile_number': mobile_number,
-                'ucc': ucc,
-                'mpin': mpin,
-                'consumer_key': os.environ.get('KOTAK_CONSUMER_KEY', ''),
-                'consumer_secret': os.environ.get('KOTAK_CONSUMER_SECRET', ''),
-                'neo_fin_key': os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
-            }
-            
-            # Initialize Neo API client
-            client = neo_client.initialize_client(session['credentials'])
-            if not client:
-                flash('Failed to initialize API client', 'error')
-                return render_template('login.html')
-            
-            # Perform TOTP login
-            success = neo_client.login_with_totp(client, mobile_number, ucc, totp, mpin)
-            if success:
-                session['authenticated'] = True
-                session['client'] = client  # Store client in session
-                flash('Login successful!', 'success')
-                return redirect(url_for('dashboard'))
+            if access_token and session_token:
+                # Direct token login
+                client = neo_client.initialize_client_with_tokens(
+                    access_token=access_token,
+                    session_token=session_token,
+                    sid=request.form.get('sid')
+                )
+                
+                if client:
+                    session['authenticated'] = True
+                    session['client'] = client
+                    session['credentials'] = {
+                        'access_token': access_token,
+                        'session_token': session_token,
+                        'sid': request.form.get('sid', ''),
+                        'ucc': request.form.get('ucc', 'ZHZ3J')
+                    }
+                    flash('Login successful with tokens!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('Failed to initialize client with tokens', 'error')
             else:
-                flash('Login failed. Please check your credentials and TOTP code.', 'error')
+                # Traditional TOTP login
+                mobile_number = request.form.get('mobile_number')
+                ucc = request.form.get('ucc')
+                mpin = request.form.get('mpin')
+                totp = request.form.get('totp')
+                
+                # Validate required fields
+                if not all([mobile_number, ucc, mpin, totp]):
+                    flash('All fields are required for TOTP login', 'error')
+                    return render_template('login.html')
+                
+                # Store credentials in session for API initialization
+                session['credentials'] = {
+                    'mobile_number': mobile_number,
+                    'ucc': ucc,
+                    'mpin': mpin,
+                    'consumer_key': os.environ.get('KOTAK_CONSUMER_KEY', ''),
+                    'consumer_secret': os.environ.get('KOTAK_CONSUMER_SECRET', ''),
+                    'neo_fin_key': os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
+                }
+                
+                # Initialize Neo API client
+                client = neo_client.initialize_client(session['credentials'])
+                if not client:
+                    flash('Failed to initialize API client', 'error')
+                    return render_template('login.html')
+                
+                # Perform TOTP login
+                success = neo_client.login_with_totp(client, mobile_number, ucc, totp, mpin)
+                if success:
+                    session['authenticated'] = True
+                    session['client'] = client
+                    flash('Login successful!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('Login failed. Please check your credentials and TOTP code.', 'error')
                 
         except Exception as e:
             logging.error(f"Login error: {str(e)}")

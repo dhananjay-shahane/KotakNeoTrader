@@ -15,64 +15,137 @@
             </div>
             
             <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('login') }}">
-                    <div class="mb-3">
-                        <label for="mobile_number" class="form-label">
-                            <i class="fas fa-mobile-alt me-1"></i>Mobile Number
-                        </label>
-                        <input type="text" 
-                               class="form-control bg-dark text-light border-secondary" 
-                               id="mobile_number" 
-                               name="mobile_number" 
-                               placeholder="+919999999999" 
-                               required>
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs mb-3" id="loginTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="token-tab" data-bs-toggle="tab" data-bs-target="#token-login" type="button" role="tab">
+                            <i class="fas fa-key me-1"></i>Token Login
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="totp-tab" data-bs-toggle="tab" data-bs-target="#totp-login" type="button" role="tab">
+                            <i class="fas fa-mobile-alt me-1"></i>TOTP Login
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="loginTabsContent">
+                    <!-- Token Login Tab -->
+                    <div class="tab-pane fade show active" id="token-login" role="tabpanel">
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-3">
+                                <label for="access_token" class="form-label">
+                                    <i class="fas fa-key me-1"></i>Access Token
+                                </label>
+                                <textarea class="form-control bg-dark text-light border-secondary" 
+                                         id="access_token" 
+                                         name="access_token" 
+                                         rows="4"
+                                         placeholder="Paste your access token here..."
+                                         required></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="session_token" class="form-label">
+                                    <i class="fas fa-ticket-alt me-1"></i>Session Token
+                                </label>
+                                <textarea class="form-control bg-dark text-light border-secondary" 
+                                         id="session_token" 
+                                         name="session_token" 
+                                         rows="4"
+                                         placeholder="Paste your session token here..."
+                                         required></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="token_ucc" class="form-label">
+                                        <i class="fas fa-id-card me-1"></i>UCC
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control bg-dark text-light border-secondary" 
+                                           id="token_ucc" 
+                                           name="ucc" 
+                                           value="ZHZ3J"
+                                           placeholder="Your UCC">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="sid" class="form-label">
+                                        <i class="fas fa-fingerprint me-1"></i>SID (Optional)
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control bg-dark text-light border-secondary" 
+                                           id="sid" 
+                                           name="sid" 
+                                           placeholder="Session ID">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success w-100 py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login with Tokens
+                            </button>
+                        </form>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="ucc" class="form-label">
-                            <i class="fas fa-id-card me-1"></i>UCC (Unique Client Code)
-                        </label>
-                        <input type="text" 
-                               class="form-control bg-dark text-light border-secondary" 
-                               id="ucc" 
-                               name="ucc" 
-                               placeholder="Your UCC" 
-                               required>
+
+                    <!-- TOTP Login Tab -->
+                    <div class="tab-pane fade" id="totp-login" role="tabpanel">
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-3">
+                                <label for="mobile_number" class="form-label">
+                                    <i class="fas fa-mobile-alt me-1"></i>Mobile Number
+                                </label>
+                                <input type="text" 
+                                       class="form-control bg-dark text-light border-secondary" 
+                                       id="mobile_number" 
+                                       name="mobile_number" 
+                                       placeholder="+919999999999">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="totp_ucc" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>UCC (Unique Client Code)
+                                </label>
+                                <input type="text" 
+                                       class="form-control bg-dark text-light border-secondary" 
+                                       id="totp_ucc" 
+                                       name="ucc" 
+                                       placeholder="Your UCC">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="mpin" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>MPIN
+                                </label>
+                                <input type="password" 
+                                       class="form-control bg-dark text-light border-secondary" 
+                                       id="mpin" 
+                                       name="mpin" 
+                                       placeholder="Your MPIN">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="totp" class="form-label">
+                                    <i class="fas fa-key me-1"></i>TOTP Code
+                                </label>
+                                <input type="text" 
+                                       class="form-control bg-dark text-light border-secondary" 
+                                       id="totp" 
+                                       name="totp" 
+                                       placeholder="6-digit TOTP from authenticator app" 
+                                       maxlength="6">
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Enter the 6-digit code from your authenticator app
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login with TOTP
+                            </button>
+                        </form>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="mpin" class="form-label">
-                            <i class="fas fa-lock me-1"></i>MPIN
-                        </label>
-                        <input type="password" 
-                               class="form-control bg-dark text-light border-secondary" 
-                               id="mpin" 
-                               name="mpin" 
-                               placeholder="Your MPIN" 
-                               required>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="totp" class="form-label">
-                            <i class="fas fa-key me-1"></i>TOTP Code
-                        </label>
-                        <input type="text" 
-                               class="form-control bg-dark text-light border-secondary" 
-                               id="totp" 
-                               name="totp" 
-                               placeholder="6-digit TOTP from authenticator app" 
-                               maxlength="6" 
-                               required>
-                        <div class="form-text text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Enter the 6-digit code from your authenticator app
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 py-2">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login to Trading Platform
-                    </button>
-                </form>
+                </div>
             </div>
             
             <div class="card-footer text-center py-3 bg-dark">

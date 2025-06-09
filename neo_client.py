@@ -7,19 +7,53 @@ class NeoClient:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
     
+    def initialize_client_with_tokens(self, access_token, session_token, sid=None):
+        """Initialize the Kotak Neo API client with existing tokens"""
+        try:
+            # Initialize client with tokens directly
+            client = NeoAPI(
+                consumer_key="dummy_key",  # Required but not used when access_token provided
+                consumer_secret="dummy_secret",  # Required but not used when access_token provided
+                environment='prod',
+                access_token=access_token,
+                neo_fin_key="neotradeapi"
+            )
+            
+            # Set additional session data if available
+            if session_token:
+                client.session_token = session_token
+            if sid:
+                client.sid = sid
+            
+            self.logger.info("Neo API client initialized successfully with tokens!")
+            return client
+            
+        except Exception as e:
+            self.logger.error(f"Error initializing Neo API client with tokens: {str(e)}")
+            return None
+    
     def initialize_client(self, credentials):
         """Initialize the Kotak Neo API client"""
         try:
-            # Initialize client with environment-based configuration
-            environment = 'prod'  # Use 'prod' for live trading, 'uat' for testing
+            # Check if tokens are provided in credentials
+            if 'access_token' in credentials and credentials['access_token']:
+                return self.initialize_client_with_tokens(
+                    credentials['access_token'],
+                    credentials.get('session_token'),
+                    credentials.get('sid')
+                )
             
-            # Initialize client
+            # Fallback to traditional initialization
+            if not credentials.get('consumer_key') or not credentials.get('consumer_secret'):
+                self.logger.error("Consumer key and secret are required for traditional initialization")
+                return None
+                
             client = NeoAPI(
                 consumer_key=credentials['consumer_key'],
                 consumer_secret=credentials['consumer_secret'],
-                environment=environment,
+                environment='prod',
                 access_token=None,
-                neo_fin_key=credentials['neo_fin_key']
+                neo_fin_key=credentials.get('neo_fin_key', 'neotradeapi')
             )
             
             self.logger.info("Neo API client initialized successfully!")
