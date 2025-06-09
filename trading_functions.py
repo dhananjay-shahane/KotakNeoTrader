@@ -202,3 +202,59 @@ class TradingFunctions:
         except Exception as e:
             self.logger.error(f"Error getting quotes: {str(e)}")
             return {'success': False, 'message': str(e)}
+
+    def get_portfolio_summary(self, client):
+        """Get comprehensive portfolio information"""
+        try:
+            self.logger.info("📊 Fetching portfolio summary...")
+            
+            # Get positions
+            positions = client.positions()
+            
+            # Get holdings
+            holdings = client.holdings()
+            
+            # Get limits
+            limits = client.limits()
+            
+            self.logger.info("✅ Portfolio data fetched successfully!")
+            
+            # Calculate summary statistics
+            portfolio_summary = {
+                'positions_count': len(positions['data']) if positions and 'data' in positions else 0,
+                'holdings_count': len(holdings['data']) if holdings and 'data' in holdings else 0,
+                'limits_available': limits is not None,
+                'total_pnl': 0.0,
+                'total_investment': 0.0,
+                'day_change': 0.0
+            }
+            
+            # Calculate P&L from positions
+            if positions and 'data' in positions:
+                for position in positions['data']:
+                    pnl = float(position.get('pnl', 0) or 0)
+                    portfolio_summary['total_pnl'] += pnl
+            
+            # Calculate investment value from holdings
+            if holdings and 'data' in holdings:
+                for holding in holdings['data']:
+                    try:
+                        quantity = float(holding.get('quantity', 0) or 0)
+                        avg_price = float(holding.get('avgPrice', 0) or 0)
+                        portfolio_summary['total_investment'] += quantity * avg_price
+                    except (ValueError, TypeError):
+                        continue
+            
+            return {
+                'success': True,
+                'data': {
+                    'positions': positions,
+                    'holdings': holdings,
+                    'limits': limits,
+                    'summary': portfolio_summary
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to fetch portfolio summary: {str(e)}")
+            return {'success': False, 'message': str(e)}

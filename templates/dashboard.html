@@ -615,7 +615,7 @@
                             <div class="card-body text-center">
                                 <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
                                 <h6 class="text-success">Total P&L</h6>
-                                <h4 class="text-light">₹0.00</h4>
+                                <h4 class="text-light portfolio-pnl">₹{{ "%.2f"|format(data.positions|sum(attribute='pnl')|float if data.positions else 0.0) }}</h4>
                             </div>
                         </div>
                     </div>
@@ -624,7 +624,7 @@
                             <div class="card-body text-center">
                                 <i class="fas fa-chart-pie fa-2x text-warning mb-2"></i>
                                 <h6 class="text-warning">Portfolio Value</h6>
-                                <h4 class="text-light">₹0.00</h4>
+                                <h4 class="text-light portfolio-investment">₹{{ "%.2f"|format((data.holdings|sum(attribute='quantity')|float * data.holdings|sum(attribute='avgPrice')|float) if data.holdings else 0.0) }}</h4>
                             </div>
                         </div>
                     </div>
@@ -633,62 +633,64 @@
                             <div class="card-body text-center">
                                 <i class="fas fa-percentage fa-2x text-info mb-2"></i>
                                 <h6 class="text-info">Day's Change</h6>
-                                <h4 class="text-light">0.00%</h4>
+                                <h4 class="text-light portfolio-change">0.00%</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary bg-opacity-10 border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-refresh fa-2x text-primary mb-2"></i>
+                                <h6 class="text-primary">Last Updated</h6>
+                                <small class="text-light" id="portfolioLastUpdate">{{ moment().format('HH:mm:ss') }}</small>
+                                <br<button class="btn btn-sm btn-primary mt-2" onclick="window.tradingDashboard.refreshPortfolioDetails()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-3">
-                            <i class="fas fa-history me-2"></i>Recent Activity
-                        </h6>
-                        <div class="card bg-secondary">
-                            <div class="card-body">
-                                <div class="list-group list-group-flush">
-                                    <div class="list-group-item bg-transparent text-light">
-                                        <i class="fas fa-sign-in-alt me-2 text-success"></i>
-                                        Login successful - Today
-                                    </div>
-                                    <div class="list-group-item bg-transparent text-light">
-                                        <i class="fas fa-sync me-2 text-info"></i>
-                                        Portfolio synced - Today
-                                    </div><div class="list-group-item bg-transparent text-light">
-                                        <i class="fas fa-chart-line me-2 text-primary"></i>
-                                        Dashboard accessed - Today
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-3">
-                            <i class="fas fa-cog me-2"></i>Account Settings
-                        </h6>
-                        <div class="card bg-secondary">
-                            <div class="card-body">
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" checked id="realTimeData">
-                                    <label class="form-check-label text-light" for="realTimeData">
-                                        Enable real-time data updates
-                                    </label>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" checked id="priceAlerts">
-                                    <label class="form-check-label text-light" for="priceAlerts">
-                                        Enable price alerts
-                                    </label>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="emailNotifications">
-                                    <label class="form-check-label text-light" for="emailNotifications">
-                                        Email notifications
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Positions Table -->
+                <div class="table-responsive mt-4">
+                    <table class="table table-dark table-hover" id="portfolioPositions">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Avg Price</th>
+                                <th class="text-end">LTP</th>
+                                <th class="text-end">P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data.positions %}
+                                {% for position in data.positions[:10] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ position.tradingsymbol or position.sym or 'N/A' }}</strong>
+                                        <br><small class="text-muted">{{ position.exchange or 'N/A' }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% set net_qty = position.netQty|float if position.netQty else 0 %}
+                                        <span class="badge {% if net_qty > 0 %}bg-success{% elif net_qty < 0 %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ net_qty|abs|int }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">₹{{ "%.2f"|format(position.averageprice|float if position.averageprice else 0) }}</td>
+                                    <td class="text-end">₹{{ "%.2f"|format(position.ltp|float if position.ltp else 0) }}</td>
+                                    <td class="text-end {% if position.pnl|float > 0 %}text-success{% elif position.pnl|float < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        ₹{{ "%.2f"|format(position.pnl|float if position.pnl else 0) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No positions found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="modal-footer border-top border-secondary">
@@ -869,16 +871,16 @@ async function refreshQuotes() {
                         if (ltpCell) {
                             const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
                             const newPrice = parseFloat(quote.ltp);
-                            
+
                             ltpCell.textContent = `₹${newPrice.toFixed(2)}`;
-                            
+
                             // Add animation based on price change
                             if (newPrice > oldPrice) {
                                 ltpCell.classList.add('price-up');
                             } else if (newPrice < oldPrice) {
                                 ltpCell.classList.add('price-down');
                             }
-                            
+
                             setTimeout(() => {
                                 ltpCell.classList.remove('price-up', 'price-down');
                             }, 1000);
@@ -969,9 +971,9 @@ async function refreshPositions() {
                         if (ltpCell && position.ltp) {
                             const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
                             const newPrice = parseFloat(position.ltp);
-                            
+
                             ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-                            
+
                             if (newPrice !== oldPrice) {
                                 ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
                                 setTimeout(() => {
@@ -986,7 +988,7 @@ async function refreshPositions() {
                         }
                     }
                 });
-                
+
                 console.log('Positions refreshed successfully');
             }
         }

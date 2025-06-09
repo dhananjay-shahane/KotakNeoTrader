@@ -175,11 +175,95 @@ class TradingDashboard {
         });
     }
 
-    async updatePortfolioSummary() {
-        // Update summary statistics
-        const summaryElements = document.querySelectorAll('[data-portfolio-summary]');
-        summaryElements.forEach(element => {
-            element.classList.add('live-data');
+    async refreshPortfolioSummary() {
+        try {
+            console.log('Refreshing portfolio summary...');
+            const response = await fetch('/api/portfolio_summary');
+            const data = await response.json();
+
+            if (data.success) {
+                this.updatePortfolioCards(data);
+                this.showNotification('Portfolio updated successfully', 'success');
+            } else {
+                console.error('Failed to refresh portfolio:', data.message);
+                this.showNotification('Failed to update portfolio', 'error');
+            }
+        } catch (error) {
+            console.error('Error refreshing portfolio:', error);
+            this.showNotification('Error updating portfolio', 'error');
+        }
+    }
+
+    async refreshPortfolioDetails() {
+        try {
+            console.log('Refreshing detailed portfolio data...');
+            const response = await fetch('/api/portfolio_details');
+            const data = await response.json();
+
+            if (data.success) {
+                // Update portfolio section with detailed data
+                this.updatePortfolioSection(data.data);
+                this.showNotification('Portfolio details updated', 'success');
+            } else {
+                console.error('Failed to refresh portfolio details:', data.message);
+                this.showNotification('Failed to update portfolio details', 'error');
+            }
+        } catch (error) {
+            console.error('Error refreshing portfolio details:', error);
+            this.showNotification('Error updating portfolio details', 'error');
+        }
+    }
+
+    updatePortfolioSection(portfolioData) {
+        // Update P&L display
+        const totalPnlElement = document.querySelector('.portfolio-pnl');
+        if (totalPnlElement && portfolioData.summary) {
+            const pnl = portfolioData.summary.total_pnl;
+            totalPnlElement.textContent = `₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            totalPnlElement.className = `portfolio-pnl ${pnl >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+
+        // Update investment value
+        const investmentElement = document.querySelector('.portfolio-investment');
+        if (investmentElement && portfolioData.summary) {
+            const investment = portfolioData.summary.total_investment;
+            investmentElement.textContent = `₹${investment.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+
+        // Update positions table if visible
+        if (portfolioData.positions && portfolioData.positions.data) {
+            this.updatePositionsTable(portfolioData.positions.data);
+        }
+    }
+
+    updatePositionsTable(positions) {
+        const tableBody = document.querySelector('#portfolioPositions tbody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        positions.forEach(position => {
+            const row = document.createElement('tr');
+            const netQty = parseFloat(position.netQty || 0);
+            const pnl = parseFloat(position.pnl || 0);
+
+            row.innerHTML = `
+                <td>
+                    <strong>${position.tradingsymbol || position.sym || 'N/A'}</strong>
+                    <br><small class="text-muted">${position.exchange || 'N/A'}</small>
+                </td>
+                <td class="text-center">
+                    <span class="badge ${netQty > 0 ? 'bg-success' : netQty < 0 ? 'bg-danger' : 'bg-secondary'}">
+                        ${Math.abs(netQty)}
+                    </span>
+                </td>
+                <td class="text-end">₹${parseFloat(position.averageprice || 0).toFixed(2)}</td>
+                <td class="text-end">₹${parseFloat(position.ltp || 0).toFixed(2)}</td>
+                <td class="text-end ${pnl >= 0 ? 'text-success' : 'text-danger'}">
+                    ₹${pnl.toFixed(2)}
+                </td>
+            `;
+            tableBody.appendChild(row);
         });
     }
 

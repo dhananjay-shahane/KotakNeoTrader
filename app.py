@@ -374,19 +374,45 @@ def get_portfolio_summary():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'})
 
-        # Get fresh portfolio data
-        positions_data = trading_functions.get_positions(client)
-        holdings_data = trading_functions.get_holdings(client)
-        orders_data = trading_functions.get_orders(client)
-
-        summary = {
-            'total_positions': len(positions_data) ,
-            'total_holdings': len(holdings_data),
-            'total_orders': len(orders_data),
-        }
-
-        return jsonify({'success': True, **summary})
+        # Get comprehensive portfolio summary
+        result = trading_functions.get_portfolio_summary(client)
+        
+        if result['success']:
+            summary_data = result['data']['summary']
+            return jsonify({
+                'success': True,
+                'total_positions': summary_data['positions_count'],
+                'total_holdings': summary_data['holdings_count'],
+                'total_orders': len(trading_functions.get_orders(client)),
+                'total_pnl': summary_data['total_pnl'],
+                'total_investment': summary_data['total_investment'],
+                'day_change': summary_data['day_change'],
+                'limits_available': summary_data['limits_available']
+            })
+        else:
+            return jsonify(result)
+            
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/portfolio_details')
+def get_portfolio_details():
+    """Get detailed portfolio information"""
+    try:
+        if not session.get('authenticated'):
+            return jsonify({'success': False, 'message': 'Not authenticated'})
+
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired'})
+
+        # Get comprehensive portfolio data
+        result = trading_functions.get_portfolio_summary(client)
+        
+        return jsonify(result)
+            
+    except Exception as e:
+        logging.error(f"Portfolio details error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
 
 if __name__ == '__main__':
