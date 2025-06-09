@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Positions - Kotak Neo Trading{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-chart-pie me-2"></i>Current Positions
+        </h2>
+        <p class="text-muted">Real-time position tracking and P&L analysis</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="refreshPositions()">
+            <i class="fas fa-sync me-1"></i>Refresh
+        </button>
+    </div>
+</div>
+
+{% if positions %}
+<div class="card bg-secondary">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Exchange</th>
+                        <th>Product</th>
+                        <th>Buy Qty</th>
+                        <th>Sell Qty</th>
+                        <th>Net Qty</th>
+                        <th>Buy Avg</th>
+                        <th>Sell Avg</th>
+                        <th>LTP</th>
+                        <th>P&L</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for position in positions %}
+                    <tr>
+                        <td>
+                            <strong>{{ position.trdSym or position.sym or 'N/A' }}</strong>
+                            {% if position.series %}
+                                <br><small class="text-muted">{{ position.series }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ position.exSeg or 'N/A' }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ position.prod or 'N/A' }}</span>
+                        </td>
+                        <td class="text-success">
+                            {{ position.flBuyQty or position.cfBuyQty or '0' }}
+                        </td>
+                        <td class="text-danger">
+                            {{ position.flSellQty or position.cfSellQty or '0' }}
+                        </td>
+                        <td>
+                            {% set net_qty = (position.flBuyQty|int - position.flSellQty|int) if position.flBuyQty and position.flSellQty else 0 %}
+                            <span class="{% if net_qty > 0 %}text-success{% elif net_qty < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ net_qty }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if position.buyAmt and position.flBuyQty and position.flBuyQty|int > 0 %}
+                                ₹{{ "%.2f"|format((position.buyAmt|float / position.flBuyQty|int)) }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if position.sellAmt and position.flSellQty and position.flSellQty|int > 0 %}
+                                ₹{{ "%.2f"|format((position.sellAmt|float / position.flSellQty|int)) }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>₹{{ "%.2f"|format(position.ltp|float) if position.ltp else '0.00' }}</td>
+                        <td>
+                            {% set pnl = position.pnl|float if position.pnl else 0.0 %}
+                            <span class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                ₹{{ "%.2f"|format(pnl) }}
+                                {% if pnl != 0 %}
+                                    <br><small>({{ "%.2f"|format((pnl/position.buyAmt|float)*100) if position.buyAmt and position.buyAmt|float > 0 else '0.00' }}%)</small>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {% if net_qty > 0 %}
+                                    <button class="btn btn-danger btn-sm" onclick="sellPosition('{{ position.trdSym or position.sym }}', {{ net_qty }})">
+                                        <i class="fas fa-minus"></i> Sell
+                                    </button>
+                                {% elif net_qty < 0 %}
+                                    <button class="btn btn-success btn-sm" onclick="buyPosition('{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
+                                        <i class="fas fa-plus"></i> Buy
+                                    </button>
+                                {% endif %}
+                                <button class="btn btn-info btn-sm" onclick="getQuote('{{ position.tok }}', '{{ position.exSeg }}')">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Summary Footer -->
+    <div class="card-footer bg-dark">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h6 class="text-muted mb-1">Total Positions</h6>
+                <h5 class="mb-0">{{ positions|length }}</h5>
+            </div>
+            <div class="col-md-3">
+                <h6 class="text-muted mb-1">Total P&L</h6>
+                {% set total_pnl = positions|sum(attribute='pnl')|float if positions else 0.0 %}
+                <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                    ₹{{ "%.2f"|format(total_pnl) }}
+                </h5>
+            </div>
+            <div class="col-md-3">
+                <h6 class="text-muted mb-1">Long Positions</h6>
+                {% set long_positions = positions|selectattr('flBuyQty', 'greaterthan', positions|map(attribute='flSellQty')|list)|list|length %}
+                <h5 class="mb-0 text-success">{{ long_positions }}</h5>
+            </div>
+            <div class="col-md-3">
+                <h6 class="text-muted mb-1">Short Positions</h6>
+                {% set short_positions = positions|selectattr('flSellQty', 'greaterthan', positions|map(attribute='flBuyQty')|list)|list|length %}
+                <h5 class="mb-0 text-danger">{{ short_positions }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="card bg-secondary">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No Positions Found</h4>
+        <p class="text-muted">You don't have any open positions at the moment.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Place Order
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Position Action Modal -->
+<div class="modal fade" id="positionActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="positionActionTitle">Position Action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="positionActionForm">
+                    <input type="hidden" name="trading_symbol" id="actionSymbol">
+                    <input type="hidden" name="transaction_type" id="actionType">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control bg-secondary text-light" name="quantity" id="actionQuantity" min="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Order Type</label>
+                        <select class="form-select bg-secondary text-light" name="order_type" required>
+                            <option value="MARKET">MARKET</option>
+                            <option value="LIMIT">LIMIT</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Price (for LIMIT orders)</label>
+                        <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select class="form-select bg-secondary text-light" name="product" required>
+                            <option value="CNC">CNC</option>
+                            <option value="MIS">MIS</option>
+                            <option value="NRML">NRML</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPositionAction()">
+                    <i class="fas fa-check me-1"></i>Execute
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshPositions() {
+    window.location.reload();
+}
+
+function sellPosition(symbol, quantity) {
+    document.getElementById('actionSymbol').value = symbol;
+    document.getElementById('actionType').value = 'SELL';
+    document.getElementById('actionQuantity').value = quantity;
+    document.getElementById('positionActionTitle').textContent = 'Sell Position: ' + symbol;
+    new bootstrap.Modal(document.getElementById('positionActionModal')).show();
+}
+
+function buyPosition(symbol, quantity) {
+    document.getElementById('actionSymbol').value = symbol;
+    document.getElementById('actionType').value = 'BUY';
+    document.getElementById('actionQuantity').value = quantity;
+    document.getElementById('positionActionTitle').textContent = 'Buy Position: ' + symbol;
+    new bootstrap.Modal(document.getElementById('positionActionModal')).show();
+}
+
+function submitPositionAction() {
+    const form = document.getElementById('positionActionForm');
+    const formData = new FormData(form);
+    const orderData = Object.fromEntries(formData.entries());
+    
+    fetch('/api/place_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Order placed successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('positionActionModal')).hide();
+            refreshPositions();
+        } else {
+            alert('Failed to place order: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error placing order');
+    });
+}
+
+function getQuote(token, exchange) {
+    const quoteData = {
+        instrument_tokens: [{
+            instrument_token: token,
+            exchange_segment: exchange
+        }],
+        quote_type: "ltp"
+    };
+    
+    fetch('/api/quotes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(quoteData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Quote data:', data.data);
+            // Display quote data in a modal or update UI
+            alert('Current LTP: ₹' + (data.data[0]?.ltp || 'N/A'));
+        } else {
+            alert('Failed to get quote: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error getting quote');
+    });
+}
+
+// Auto-refresh positions every 10 seconds
+setInterval(refreshPositions, 10000);
+</script>
+{% endblock %}
