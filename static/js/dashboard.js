@@ -90,10 +90,10 @@ class TradingDashboard {
     }
 
     startAutoRefresh() {
-        // Auto-refresh critical data every 10 seconds
+        // Auto-refresh critical data every 5 minutes to reduce API calls
         this.refreshInterval = setInterval(() => {
             this.refreshCriticalData();
-        }, 10000);
+        }, 300000); // 5 minutes instead of 10 seconds
     }
 
     stopAutoRefresh() {
