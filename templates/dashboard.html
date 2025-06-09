@@ -75,7 +75,7 @@
                     <div>
                         <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
                         <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
-                        <small class="text-white-50">
+                        <small class="text-white-50" id="holdingsValue">
                             <i class="fas fa-wallet me-1"></i>
                             {% if data.holdings %}
                                 {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
@@ -131,7 +131,7 @@
                                 ₹0.00
                             {% endif %}
                         </h2>
-                        <small class="text-dark">
+                        <small class="text-dark" id="marginUsed">
                             <i class="fas fa-rupee-sign me-1"></i>
                             {% if data.limits and data.limits.payin %}
                                 Used: ₹{{ "{:,.2f}"|format(data.limits.payin|float) }}

@@ -183,7 +183,10 @@ class TradingDashboard {
 
             if (data.success) {
                 this.updatePortfolioCards(data);
-                this.showNotification('Portfolio updated successfully', 'success');
+                // Only show notification in debug mode
+                if (window.location.search.includes('debug=true')) {
+                    this.showNotification('Portfolio updated successfully', 'success');
+                }
             } else {
                 console.error('Failed to refresh portfolio:', data.message);
                 this.showNotification('Failed to update portfolio', 'error');
@@ -191,6 +194,55 @@ class TradingDashboard {
         } catch (error) {
             console.error('Error refreshing portfolio:', error);
             this.showNotification('Error updating portfolio', 'error');
+        }
+    }
+
+    updatePortfolioCards(data) {
+        // Update total positions
+        const totalPositionsEl = document.getElementById('totalPositions');
+        if (totalPositionsEl && data.total_positions !== undefined) {
+            totalPositionsEl.textContent = data.total_positions;
+        }
+
+        // Update total holdings
+        const totalHoldingsEl = document.getElementById('totalHoldings');
+        if (totalHoldingsEl && data.total_holdings !== undefined) {
+            totalHoldingsEl.textContent = data.total_holdings;
+        }
+
+        // Update total orders (if available)
+        const totalOrdersEl = document.getElementById('totalOrders');
+        if (totalOrdersEl && data.total_orders !== undefined) {
+            totalOrdersEl.textContent = data.total_orders;
+        }
+
+        // Update available margin
+        const availableMarginEl = document.getElementById('availableMargin');
+        if (availableMarginEl && data.limits_available !== undefined) {
+            const margin = parseFloat(data.limits_available) || 0;
+            availableMarginEl.textContent = `₹${margin.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+
+        // Update P&L in account summary modal if visible
+        const portfolioPnlEl = document.querySelector('.portfolio-pnl');
+        if (portfolioPnlEl && data.total_pnl !== undefined) {
+            const pnl = parseFloat(data.total_pnl) || 0;
+            portfolioPnlEl.textContent = `₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            portfolioPnlEl.className = `portfolio-pnl ${pnl >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+
+        // Update investment value in account summary modal if visible
+        const portfolioInvestmentEl = document.querySelector('.portfolio-investment');
+        if (portfolioInvestmentEl && data.total_investment !== undefined) {
+            const investment = parseFloat(data.total_investment) || 0;
+            portfolioInvestmentEl.textContent = `₹${investment.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+
+        // Update portfolio last update timestamp
+        const portfolioLastUpdateEl = document.getElementById('portfolioLastUpdate');
+        if (portfolioLastUpdateEl) {
+            const now = new Date();
+            portfolioLastUpdateEl.textContent = now.toLocaleTimeString();
         }
     }
 

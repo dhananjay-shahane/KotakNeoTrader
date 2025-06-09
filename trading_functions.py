@@ -219,21 +219,44 @@ class TradingFunctions:
             
             self.logger.info("✅ Portfolio data fetched successfully!")
             
+            # Display summary in console
+            print("\n" + "="*60)
+            print("📊 PORTFOLIO OVERVIEW")
+            print("="*60)
+            
+            positions_count = 0
+            holdings_count = 0
+            
+            if positions and 'data' in positions:
+                positions_count = len(positions['data'])
+                print(f"📈 Open Positions: {positions_count}")
+            
+            if holdings and 'data' in holdings:
+                holdings_count = len(holdings['data'])
+                print(f"🏦 Holdings: {holdings_count}")
+                
+            if limits:
+                print(f"💰 Account Limits: Available")
+            
             # Calculate summary statistics
             portfolio_summary = {
-                'positions_count': len(positions['data']) if positions and 'data' in positions else 0,
-                'holdings_count': len(holdings['data']) if holdings and 'data' in holdings else 0,
+                'positions_count': positions_count,
+                'holdings_count': holdings_count,
                 'limits_available': limits is not None,
                 'total_pnl': 0.0,
                 'total_investment': 0.0,
-                'day_change': 0.0
+                'day_change': 0.0,
+                'available_margin': 0.0
             }
             
             # Calculate P&L from positions
             if positions and 'data' in positions:
                 for position in positions['data']:
-                    pnl = float(position.get('pnl', 0) or 0)
-                    portfolio_summary['total_pnl'] += pnl
+                    try:
+                        pnl = float(position.get('pnl', 0) or 0)
+                        portfolio_summary['total_pnl'] += pnl
+                    except (ValueError, TypeError):
+                        continue
             
             # Calculate investment value from holdings
             if holdings and 'data' in holdings:
@@ -244,6 +267,18 @@ class TradingFunctions:
                         portfolio_summary['total_investment'] += quantity * avg_price
                     except (ValueError, TypeError):
                         continue
+            
+            # Get available margin from limits
+            if limits and 'data' in limits:
+                try:
+                    portfolio_summary['available_margin'] = float(limits['data'].get('cash', 0) or 0)
+                except (ValueError, TypeError):
+                    portfolio_summary['available_margin'] = 0.0
+            elif limits:
+                try:
+                    portfolio_summary['available_margin'] = float(limits.get('cash', 0) or 0)
+                except (ValueError, TypeError):
+                    portfolio_summary['available_margin'] = 0.0
             
             return {
                 'success': True,

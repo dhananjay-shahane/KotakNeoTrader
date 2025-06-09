@@ -367,7 +367,7 @@ def get_live_quotes():
 @app.route('/api/portfolio_summary')
 def get_portfolio_summary():
     try:
-        if 'credentials' not in session:
+        if not session.get('authenticated'):
             return jsonify({'success': False, 'message': 'Not authenticated'})
 
         client = session.get('client')
@@ -379,20 +379,30 @@ def get_portfolio_summary():
         
         if result['success']:
             summary_data = result['data']['summary']
+            
+            # Get orders count
+            try:
+                orders_data = trading_functions.get_orders(client)
+                total_orders = len(orders_data) if orders_data else 0
+            except:
+                total_orders = 0
+            
             return jsonify({
                 'success': True,
                 'total_positions': summary_data['positions_count'],
                 'total_holdings': summary_data['holdings_count'],
-                'total_orders': len(trading_functions.get_orders(client)),
+                'total_orders': total_orders,
                 'total_pnl': summary_data['total_pnl'],
                 'total_investment': summary_data['total_investment'],
                 'day_change': summary_data['day_change'],
-                'limits_available': summary_data['limits_available']
+                'limits_available': summary_data['available_margin'],
+                'available_margin': summary_data['available_margin']
             })
         else:
             return jsonify(result)
             
     except Exception as e:
+        logging.error(f"Portfolio summary API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/portfolio_details')
