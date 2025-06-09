@@ -373,14 +373,96 @@ body.bg-dark {
     opacity: 0.3;
 }
 
-/* Login page */
+/* Login page enhancements */
 .min-vh-100 {
     min-height: 100vh;
 }
 
 .login-card {
-    max-width: 400px;
+    max-width: 500px;
     margin: 0 auto;
+}
+
+/* Enhanced login form styles */
+.nav-pills .nav-link {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #adb5bd;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #007bff;
+    color: #ffffff;
+    border-color: #007bff;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+/* Form control enhancements */
+.form-control-lg {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    border-color: #007bff;
+    transform: translateY(-1px);
+}
+
+.form-control.border-success {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
+}
+
+/* Button hover effects */
+.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Alert enhancements */
+.alert {
+    border-radius: 12px;
+    border: none;
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%) !important;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%) !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%) !important;
+}
+
+/* Card shadow enhancements */
+.shadow-lg {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Input field special styling for TOTP and MPIN */
+input[name="totp"], input[name="mpin"] {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* Loading spinner animation */
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Loading states */
