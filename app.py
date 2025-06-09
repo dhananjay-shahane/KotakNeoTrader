@@ -35,7 +35,13 @@ def auto_authenticate():
     try:
         # Check if user is already authenticated
         if session.get('authenticated'):
-            return True
+            # Validate existing session
+            client = session.get('client')
+            if client and neo_client.validate_session(client):
+                return True
+            else:
+                # Clear invalid session
+                session.clear()
         
         # Try to load from stored sessions
         stored_session = session_manager.get_valid_session()
@@ -59,10 +65,16 @@ def auto_authenticate():
                 
                 logging.info("✅ Auto-authentication successful")
                 return True
+            else:
+                # Remove invalid stored session
+                session_manager.remove_session('default_user')
+                logging.warning("⚠️ Removed invalid stored session")
         
         return False
     except Exception as e:
         logging.error(f"Auto-authentication failed: {e}")
+        # Clear any corrupted session data
+        session.clear()
         return False
 
 @app.route('/')
@@ -127,7 +139,7 @@ def login():
                 flash('Successfully authenticated with stored tokens!', 'success')
                 return redirect(url_for('dashboard'))
             else:
-                flash('Failed to authenticate with provided tokens', 'error')
+                flash('Failed to authenticate with provided tokens. Please ensure 2FA is completed and tokens are valid.', 'error')
                 return render_template('token_login.html')
                 
         except Exception as e:

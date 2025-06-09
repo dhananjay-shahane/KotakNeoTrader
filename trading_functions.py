@@ -102,13 +102,26 @@ class TradingFunctions:
                     processed_positions.append(processed_position)
                 
                 return processed_positions
+            elif response and 'message' in response:
+                error_msg = response.get('message', '')
+                if 'Complete the 2fa process' in error_msg or '2fa' in error_msg.lower():
+                    self.logger.error(f"❌ 2FA required: {error_msg}")
+                    raise Exception("2FA_REQUIRED: Please complete 2FA process and refresh your tokens")
+                else:
+                    self.logger.error(f"❌ API Error: {error_msg}")
+                    return []
             else:
                 self.logger.info("📊 No positions found in account")
                 return []
                 
         except Exception as e:
-            self.logger.error(f"❌ Failed to fetch positions: {str(e)}")
-            return []
+            error_str = str(e)
+            if 'Complete the 2fa process' in error_str or '2FA_REQUIRED' in error_str:
+                self.logger.error(f"❌ 2FA authentication required: {error_str}")
+                raise Exception("2FA_REQUIRED: Please complete 2FA process and refresh your tokens")
+            else:
+                self.logger.error(f"❌ Failed to fetch positions: {error_str}")
+                return []
     
     def get_holdings(self, client):
         """Get portfolio holdings"""

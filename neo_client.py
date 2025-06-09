@@ -25,12 +25,43 @@ class NeoClient:
             if sid:
                 client.sid = sid
             
+            # Validate tokens by making a test API call
+            if not self.validate_session(client):
+                self.logger.error("Session validation failed - tokens may be expired or 2FA incomplete")
+                return None
+            
             self.logger.info("Neo API client initialized successfully with tokens!")
             return client
             
         except Exception as e:
             self.logger.error(f"Error initializing Neo API client with tokens: {str(e)}")
             return None
+    
+    def validate_session(self, client):
+        """Validate if the session is properly authenticated"""
+        try:
+            # Try a simple API call to validate session
+            response = client.limits()
+            
+            if response and 'data' in response:
+                self.logger.info("✅ Session validation successful")
+                return True
+            elif response and 'message' in response:
+                error_msg = response.get('message', '').lower()
+                if '2fa' in error_msg or 'authentication' in error_msg or 'unauthorized' in error_msg:
+                    self.logger.error(f"❌ 2FA required or session expired: {response.get('message')}")
+                    return False
+            
+            self.logger.warning("⚠️ Unexpected response format during validation")
+            return False
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            if '2fa' in error_msg or 'unauthorized' in error_msg or 'authentication' in error_msg:
+                self.logger.error(f"❌ 2FA required or authentication failed: {str(e)}")
+            else:
+                self.logger.error(f"❌ Session validation error: {str(e)}")
+            return False
     
     def initialize_client(self, credentials):
         """Initialize the Kotak Neo API client"""
