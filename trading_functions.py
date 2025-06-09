@@ -63,12 +63,51 @@ class TradingFunctions:
     def get_positions(self, client):
         """Get current positions"""
         try:
+            self.logger.info("📊 Fetching positions data...")
+            
             response = client.positions()
+            
             if response and 'data' in response:
-                return response['data']
-            return []
+                positions_data = response['data']
+                self.logger.info(f"✅ Successfully retrieved {len(positions_data)} positions")
+                
+                # Process and format positions data
+                processed_positions = []
+                for position in positions_data:
+                    processed_position = {
+                        'tradingsymbol': position.get('trdSym', position.get('tradingsymbol', '')),
+                        'exchange': position.get('exSeg', position.get('exchange', '')),
+                        'product': position.get('prod', position.get('product', '')),
+                        'quantity': int(position.get('flBuyQty', 0)) - int(position.get('flSellQty', 0)),
+                        'buy_quantity': int(position.get('flBuyQty', 0)),
+                        'sell_quantity': int(position.get('flSellQty', 0)),
+                        'averageprice': float(position.get('buyAvg', 0)) if int(position.get('flBuyQty', 0)) > 0 else float(position.get('sellAvg', 0)),
+                        'ltp': float(position.get('ltp', 0)),
+                        'pnl': float(position.get('urPnl', 0)),
+                        'unrealised': float(position.get('urPnl', 0)),
+                        'realised_pnl': float(position.get('rlPnl', 0)),
+                        'day_change': float(position.get('dayChg', 0)),
+                        'day_change_percent': float(position.get('dayChgPer', 0)),
+                        'buy_amount': float(position.get('buyAmt', 0)),
+                        'sell_amount': float(position.get('sellAmt', 0)),
+                        'multiplier': position.get('multiplier', 1),
+                        'token': position.get('tok', ''),
+                        'series': position.get('series', ''),
+                        'symbol': position.get('sym', ''),
+                        'expiry_date': position.get('expDt', ''),
+                        'strike_price': position.get('stkPrc', ''),
+                        'option_type': position.get('optTp', ''),
+                        'lot_size': position.get('lotSz', 1)
+                    }
+                    processed_positions.append(processed_position)
+                
+                return processed_positions
+            else:
+                self.logger.info("📊 No positions found in account")
+                return []
+                
         except Exception as e:
-            self.logger.error(f"Error getting positions: {str(e)}")
+            self.logger.error(f"❌ Failed to fetch positions: {str(e)}")
             return []
     
     def get_holdings(self, client):

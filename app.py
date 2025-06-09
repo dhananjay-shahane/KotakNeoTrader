@@ -452,5 +452,67 @@ def get_holdings_api():
         logging.error(f"Holdings API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/api/test_positions')
+def get_test_positions():
+    """Test endpoint showing position data structure based on Kotak Neo API"""
+    if not session.get('authenticated'):
+        return jsonify({'success': False, 'message': 'Not authenticated'})
+    
+    # Sample position data structure from real Kotak Neo API response
+    test_positions = [
+        {
+            'tradingsymbol': 'KPITTECH25JUNFUT',
+            'exchange': 'nse_fo',
+            'product': 'NRML',
+            'quantity': 400,
+            'buy_quantity': 400,
+            'sell_quantity': 0,
+            'averageprice': 1353.6,
+            'ltp': 1320.0,
+            'pnl': -13440.0,
+            'unrealised': -13440.0,
+            'realised_pnl': 0.0,
+            'day_change': -33.6,
+            'day_change_percent': -2.49,
+            'buy_amount': 541440.0,
+            'sell_amount': 0.0,
+            'series': 'XX',
+            'symbol': 'KPITTECH',
+            'expiry_date': '26 Jun, 2025',
+            'strike_price': '0.00',
+            'option_type': 'XX',
+            'lot_size': 400
+        },
+        {
+            'tradingsymbol': 'NIFTY25JUNPE25000',
+            'exchange': 'nse_fo',
+            'product': 'NRML',
+            'quantity': -75,
+            'buy_quantity': 0,
+            'sell_quantity': 75,
+            'averageprice': 414.77,
+            'ltp': 282.15,
+            'pnl': 9946.38,
+            'unrealised': 9946.38,
+            'realised_pnl': 0.0,
+            'day_change': 132.62,
+            'day_change_percent': 47.01,
+            'buy_amount': 0.0,
+            'sell_amount': 31107.63,
+            'series': 'XX',
+            'symbol': 'NIFTY',
+            'expiry_date': '26 Jun, 2025',
+            'strike_price': '25000.00',
+            'option_type': 'PE',
+            'lot_size': 75
+        }
+    ]
+    
+    return jsonify({
+        'success': True,
+        'positions': test_positions,
+        'count': len(test_positions)
+    })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
