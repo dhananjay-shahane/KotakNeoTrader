@@ -13,9 +13,12 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "kotak-neo-trading-app-secret-key")
 
-# Configure session
+# Configure session for persistent storage
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_FILE_DIR'] = './flask_session'
+app.config['SESSION_FILE_THRESHOLD'] = 500
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 Session(app)
 
 # Initialize Neo Client and Trading Functions
@@ -23,10 +26,50 @@ neo_client = NeoClient()
 trading_functions = TradingFunctions()
 websocket_handler = WebSocketHandler()
 
+# Initialize Session Manager
+from session_manager import SessionManager
+session_manager = SessionManager()
+
+def auto_authenticate():
+    """Auto authenticate using stored session if available"""
+    try:
+        # Check if user is already authenticated
+        if session.get('authenticated'):
+            return True
+        
+        # Try to load from stored sessions
+        stored_session = session_manager.get_valid_session()
+        if stored_session:
+            # Initialize client with stored tokens
+            client = neo_client.initialize_client_with_tokens(
+                stored_session['access_token'],
+                stored_session['session_token'],
+                stored_session['sid']
+            )
+            
+            if client:
+                # Restore session
+                session['authenticated'] = True
+                session['access_token'] = stored_session['access_token']
+                session['session_token'] = stored_session['session_token']
+                session['sid'] = stored_session['sid']
+                session['ucc'] = stored_session['ucc']
+                session['client'] = client
+                session.permanent = True
+                
+                logging.info("✅ Auto-authentication successful")
+                return True
+        
+        return False
+    except Exception as e:
+        logging.error(f"Auto-authentication failed: {e}")
+        return False
+
 @app.route('/')
 def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
-    if 'authenticated' in session and session['authenticated']:
+    # Try auto-authentication first
+    if auto_authenticate() or (session.get('authenticated')):
         return redirect(url_for('dashboard'))
     return redirect(url_for('token_login'))
 
@@ -68,7 +111,18 @@ def login():
                 session['access_token'] = access_token
                 session['session_token'] = session_token
                 session['sid'] = sid
+                session['ucc'] = request.form.get('ucc', '').strip()
                 session['client'] = client
+                session.permanent = True
+                
+                # Store session persistently
+                session_data = {
+                    'access_token': access_token,
+                    'session_token': session_token,
+                    'sid': sid,
+                    'ucc': session['ucc']
+                }
+                session_manager.store_session('default_user', session_data)
                 
                 flash('Successfully authenticated with stored tokens!', 'success')
                 return redirect(url_for('dashboard'))
@@ -94,33 +148,48 @@ def logout():
             except:
                 pass  # Ignore logout errors
 
+        # Clear persistent session
+        session_manager.remove_session('default_user')
         session.clear()
         flash('Logged out successfully', 'success')
     except Exception as e:
         logging.error(f"Logout error: {str(e)}")
 
-    return redirect(url_for('login'))
+    return redirect(url_for('token_login'))
 
 @app.route('/dashboard')
 def dashboard():
     """Main dashboard with portfolio overview"""
-    if not session.get('authenticated'):
+    # Try auto-authentication first
+    if not auto_authenticate() and not session.get('authenticated'):
         flash('Please login to access the dashboard.', 'warning')
         return redirect(url_for('token_login'))
 
     try:
         # Get client from session or reinitialize if needed
         client = session.get('client')
-        if not client and session.get('credentials', {}).get('access_token'):
-            # Reinitialize client with stored tokens
-            credentials = session.get('credentials', {})
-            client = neo_client.initialize_client_with_tokens(
-                credentials.get('access_token'),
-                credentials.get('session_token'),
-                credentials.get('sid')
-            )
-            if client:
-                session['client'] = client
+        if not client:
+            # Try to reinitialize with session tokens
+            if session.get('access_token'):
+                client = neo_client.initialize_client_with_tokens(
+                    session.get('access_token'),
+                    session.get('session_token'),
+                    session.get('sid')
+                )
+                if client:
+                    session['client'] = client
+            
+            # If still no client, try stored session
+            if not client:
+                stored_session = session_manager.get_valid_session()
+                if stored_session:
+                    client = neo_client.initialize_client_with_tokens(
+                        stored_session['access_token'],
+                        stored_session['session_token'],
+                        stored_session['sid']
+                    )
+                    if client:
+                        session['client'] = client
 
         if not client:
             flash('Session expired. Please login again.', 'error')

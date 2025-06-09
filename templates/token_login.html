@@ -118,6 +118,12 @@ function saveTokensToLocalStorage() {
     if (sessionToken) localStorage.setItem('kotak_session_token', sessionToken);
     if (ucc) localStorage.setItem('kotak_ucc', ucc);
     if (sid) localStorage.setItem('kotak_sid', sid);
+    
+    // Also store in session for immediate use
+    sessionStorage.setItem('kotak_access_token', accessToken);
+    sessionStorage.setItem('kotak_session_token', sessionToken);
+    sessionStorage.setItem('kotak_ucc', ucc);
+    sessionStorage.setItem('kotak_sid', sid);
 }
 
 // Auto-save tokens when typing
