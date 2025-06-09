@@ -29,19 +29,19 @@ class TradingDashboard {
     initializeEventListeners() {
         // Refresh button click handlers
         const refreshButtons = document.querySelectorAll('[onclick*="refresh"]');
-        if (refreshButtons.length > 0) {
-            refreshButtons.forEach(btn => {
+        refreshButtons.forEach(btn => {
+            if (btn) {
                 btn.addEventListener('click', this.handleRefresh.bind(this));
-            });
-        }
+            }
+        });
 
         // Order form submissions
         const orderForms = document.querySelectorAll('form[id*="Order"]');
-        if (orderForms.length > 0) {
-            orderForms.forEach(form => {
+        orderForms.forEach(form => {
+            if (form) {
                 form.addEventListener('submit', this.handleOrderSubmit.bind(this));
-            });
-        }
+            }
+        });
 
         // Real-time price updates
         this.setupPriceUpdateHandlers();
@@ -109,8 +109,12 @@ class TradingDashboard {
             // Update portfolio summary
             await this.updatePortfolioSummary();
 
-            console.log('Critical data refreshed');
+            // Only log if debug mode is enabled
+            if (window.location.search.includes('debug=true')) {
+                console.log('Critical data refreshed');
+            }
         } catch (error) {
+            // Only log errors, not regular updates
             console.error('Error refreshing critical data:', error);
         }
     }

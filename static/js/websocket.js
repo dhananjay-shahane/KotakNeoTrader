@@ -33,15 +33,15 @@ class WebSocketHandler {
             // Note: The actual WebSocket URL would be provided by the Kotak Neo API
             // This is a placeholder for the WebSocket connection setup
             // In production, this would connect to Kotak Neo's WebSocket feed
-            
+
             console.log('Attempting to establish WebSocket connection...');
-            
+
             // Simulate WebSocket connection for now
             // In real implementation, this would be:
             // this.ws = new WebSocket('wss://kotak-neo-websocket-url');
-            
+
             this.simulateConnection();
-            
+
         } catch (error) {
             console.error('WebSocket connection failed:', error);
             this.handleConnectionError();
@@ -51,30 +51,32 @@ class WebSocketHandler {
     simulateConnection() {
         // This simulates the WebSocket connection behavior
         // Replace this with actual Kotak Neo WebSocket implementation
-        
+
         setTimeout(() => {
             this.isConnected = true;
             this.reconnectAttempts = 0;
             console.log('✅ WebSocket connected (simulated)');
-            
+
             this.onOpen();
             this.startHeartbeat();
-            
+
             // Simulate receiving market data
-            this.startSimulatedDataFeed();
-            
+            if (window.location.search.includes('debug=true') || window.location.hostname === 'localhost') {
+                this.startSimulatedDataFeed();
+            }
+
         }, 1000);
     }
 
     startSimulatedDataFeed() {
         // This simulates real-time market data updates
         // Remove this in production and use actual WebSocket messages
-        
+
         setInterval(() => {
             if (this.isConnected) {
                 // Simulate quote updates
                 this.simulateQuoteUpdate();
-                
+
                 // Simulate order updates occasionally
                 if (Math.random() > 0.9) {
                     this.simulateOrderUpdate();
@@ -87,7 +89,7 @@ class WebSocketHandler {
         // Simulate live price updates for demonstration
         const symbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'];
         const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-        
+
         const mockQuoteData = {
             type: 'quote',
             symbol: symbol,
@@ -97,32 +99,36 @@ class WebSocketHandler {
             volume: Math.floor(Math.random() * 1000000),
             timestamp: new Date().toISOString()
         };
-        
+
         this.handleMessage(mockQuoteData);
     }
 
     simulateOrderUpdate() {
-        // Simulate order status updates
+        // Simulate order status updates for demonstration
+        // Focus on completion to test the order complete functionality
+        const orderStatuses = ['COMPLETE', 'PENDING', 'REJECTED'];
+        const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
+
         const mockOrderData = {
             type: 'order',
-            orderId: 'ORD' + Math.floor(Math.random() * 100000),
-            status: 'COMPLETE',
+            orderId: 'ORD' + Math.floor(Math.random() * 1000000),
             symbol: 'RELIANCE',
-            quantity: 10,
-            price: 2450.75,
+            status: status,
+            quantity: Math.floor(Math.random() * 100) + 1,
+            price: (2000 + Math.random() * 1000).toFixed(2),
             timestamp: new Date().toISOString()
         };
-        
+
         this.handleMessage(mockOrderData);
     }
 
     onOpen() {
         console.log('WebSocket connection opened');
         this.showConnectionStatus(true);
-        
+
         // Subscribe to previously subscribed instruments
         this.resubscribeAll();
-        
+
         // Notify dashboard of connection
         if (window.tradingDashboard) {
             window.tradingDashboard.isConnected = true;
@@ -139,26 +145,48 @@ class WebSocketHandler {
     }
 
     handleMessage(data) {
-        const messageType = data.type || 'unknown';
-        const handler = this.messageHandlers.get(messageType);
-        
-        if (handler) {
-            handler(data);
-        } else {
-            console.warn('No handler for message type:', messageType);
+        try {
+            // Only log in debug mode
+            if (window.location.search.includes('debug=true')) {
+                console.log('📊 Market Data:', data);
+            }
+
+            switch(data.type) {
+                case 'quote':
+                    this.updateQuoteDisplays(data);
+                    break;
+                case 'order':
+                    this.updateOrderDisplays(data);
+                    // Show notification for order updates
+                    if (data.status === 'COMPLETE') {
+                        this.showOrderNotification(`Order ${data.orderId} completed successfully`, 'success');
+                    } else if (data.status === 'REJECTED') {
+                        this.showOrderNotification(`Order ${data.orderId} was rejected`, 'danger');
+                    }
+                    break;
+                case 'position':
+                    this.updatePositionDisplays(data);
+                    break;
+                default:
+                    if (window.location.search.includes('debug=true')) {
+                        console.log('Unknown message type:', data.type);
+                    }
+            }
+        } catch (error) {
+            console.error('Error handling WebSocket message:', error);
         }
     }
 
     handleQuoteUpdate(data) {
         // Update quote data in the UI
         console.log('Quote update:', data);
-        
+
         // Update LTP displays
         this.updatePriceElements(data.symbol, data.ltp, data.change);
-        
+
         // Update any charts or graphs
         this.updatePriceCharts(data);
-        
+
         // Trigger price change animation
         this.animatePriceChange(data.symbol, data.change);
     }
@@ -166,7 +194,7 @@ class WebSocketHandler {
     handleDepthUpdate(data) {
         // Handle market depth updates
         console.log('Depth update:', data);
-        
+
         // Update order book display if visible
         this.updateOrderBook(data);
     }
@@ -174,13 +202,13 @@ class WebSocketHandler {
     handleOrderUpdate(data) {
         // Handle order status updates
         console.log('Order update:', data);
-        
+
         // Show notification for order updates
         this.showOrderNotification(data);
-        
+
         // Update order displays
         this.updateOrderDisplays(data);
-        
+
         // Refresh positions if order is complete
         if (data.status === 'COMPLETE') {
             this.refreshPositions();
@@ -190,7 +218,7 @@ class WebSocketHandler {
     handlePositionUpdate(data) {
         // Handle position updates
         console.log('Position update:', data);
-        
+
         // Update position displays
         this.updatePositionDisplays(data);
     }
@@ -198,7 +226,7 @@ class WebSocketHandler {
     handleHoldingUpdate(data) {
         // Handle holding updates
         console.log('Holding update:', data);
-        
+
         // Update holding displays
         this.updateHoldingDisplays(data);
     }
@@ -211,14 +239,14 @@ class WebSocketHandler {
     updatePriceElements(symbol, ltp, change) {
         // Find and update all price elements for the symbol
         const priceElements = document.querySelectorAll(`[data-symbol="${symbol}"] .price-ltp, [data-symbol="${symbol}"][data-price="ltp"]`);
-        
+
         priceElements.forEach(element => {
             const oldValue = parseFloat(element.textContent.replace(/[^\d.-]/g, ''));
             const newValue = parseFloat(ltp);
-            
+
             // Update the value
             element.textContent = `₹${newValue.toFixed(2)}`;
-            
+
             // Add price change class
             element.classList.remove('price-up', 'price-down');
             if (change > 0) {
@@ -226,7 +254,7 @@ class WebSocketHandler {
             } else if (change < 0) {
                 element.classList.add('price-down');
             }
-            
+
             // Remove the class after animation
             setTimeout(() => {
                 element.classList.remove('price-up', 'price-down');
@@ -252,13 +280,13 @@ class WebSocketHandler {
                             // Add new data point
                             chart.data.labels.push(new Date().toLocaleTimeString());
                             dataset.data.push(parseFloat(data.ltp));
-                            
+
                             // Keep only last 50 data points
                             if (chart.data.labels.length > 50) {
                                 chart.data.labels.shift();
                                 dataset.data.shift();
                             }
-                            
+
                             chart.update('none');
                         }
                     });
@@ -270,7 +298,7 @@ class WebSocketHandler {
     animatePriceChange(symbol, change) {
         // Animate price changes for visual feedback
         const symbolElements = document.querySelectorAll(`[data-symbol="${symbol}"]`);
-        
+
         symbolElements.forEach(element => {
             if (window.tradingDashboard && window.tradingDashboard.animatePriceChange) {
                 window.tradingDashboard.animatePriceChange(element);
@@ -283,7 +311,7 @@ class WebSocketHandler {
         const message = `Order ${data.orderId}: ${data.status}`;
         const type = data.status === 'COMPLETE' ? 'success' : 
                     data.status === 'REJECTED' ? 'danger' : 'info';
-        
+
         if (window.tradingDashboard && window.tradingDashboard.showNotification) {
             window.tradingDashboard.showNotification(message, type);
         }
@@ -380,9 +408,9 @@ class WebSocketHandler {
         instruments.forEach(instrument => {
             this.subscriptions.set(instrument.token, instrument);
         });
-        
+
         console.log(`Subscribed to ${instruments.length} instruments`);
-        
+
         // In real implementation, send subscription message to WebSocket
         // this.send({ type: 'subscribe', instruments: instruments });
     }
@@ -392,9 +420,9 @@ class WebSocketHandler {
         tokens.forEach(token => {
             this.subscriptions.delete(token);
         });
-        
+
         console.log(`Unsubscribed from ${tokens.length} instruments`);
-        
+
         // In real implementation, send unsubscription message to WebSocket
         // this.send({ type: 'unsubscribe', tokens: tokens });
     }
@@ -436,11 +464,11 @@ class WebSocketHandler {
     handleConnectionError() {
         this.isConnected = false;
         this.showConnectionStatus(false);
-        
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-            
+
             setTimeout(() => {
                 this.connect();
             }, this.reconnectDelay * this.reconnectAttempts);
@@ -458,7 +486,7 @@ class WebSocketHandler {
                 ? '<i class="fas fa-circle text-success"></i> Connected'
                 : '<i class="fas fa-circle text-danger"></i> Disconnected';
         }
-        
+
         // Add connection status to navbar if it doesn't exist
         if (!statusIndicator) {
             const navbar = document.querySelector('.navbar .navbar-nav');
@@ -480,12 +508,12 @@ class WebSocketHandler {
         // Disconnect WebSocket
         this.isConnected = false;
         this.stopHeartbeat();
-        
+
         if (this.ws) {
             this.ws.close();
             this.ws = null;
         }
-        
+
         console.log('WebSocket disconnected');
         this.showConnectionStatus(false);
     }
@@ -513,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Only initialize on authenticated pages
     if (document.querySelector('.navbar')) {
         window.WebSocketHandler = WebSocketHandler;
-        
+
         // Initialize if trading dashboard exists
         if (window.tradingDashboard) {
             window.wsHandler = new WebSocketHandler();
