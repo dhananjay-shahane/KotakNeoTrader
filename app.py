@@ -53,7 +53,7 @@ def login():
             # Check if tokens are provided directly
             access_token = request.form.get('access_token')
             session_token = request.form.get('session_token')
-            
+
             if access_token and session_token:
                 # Direct token login
                 client = neo_client.initialize_client_with_tokens(
@@ -61,7 +61,7 @@ def login():
                     session_token=session_token,
                     sid=request.form.get('sid')
                 )
-                
+
                 if client:
                     session['authenticated'] = True
                     session['client'] = client
@@ -82,12 +82,12 @@ def login():
                 ucc = request.form.get('ucc')
                 mpin = request.form.get('mpin')
                 totp = request.form.get('totp')
-                
+
                 # Validate required fields
                 if not all([mobile_number, ucc, mpin, totp]):
                     flash('All fields are required for TOTP login', 'error')
                     return render_template('login.html')
-                
+
                 # Store credentials in session for API initialization
                 session['credentials'] = {
                     'mobile_number': mobile_number,
@@ -97,13 +97,13 @@ def login():
                     'consumer_secret': os.environ.get('KOTAK_CONSUMER_SECRET', ''),
                     'neo_fin_key': os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
                 }
-                
+
                 # Initialize Neo API client
                 client = neo_client.initialize_client(session['credentials'])
                 if not client:
                     flash('Failed to initialize API client', 'error')
                     return render_template('login.html')
-                
+
                 # Perform TOTP login
                 success = neo_client.login_with_totp(client, mobile_number, ucc, totp, mpin)
                 if success:
@@ -113,11 +113,11 @@ def login():
                     return redirect(url_for('dashboard'))
                 else:
                     flash('Login failed. Please check your credentials and TOTP code.', 'error')
-                
+
         except Exception as e:
             logging.error(f"Login error: {str(e)}")
             flash(f'Login error: {str(e)}', 'error')
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -130,12 +130,12 @@ def logout():
                 session['client'].logout()
             except:
                 pass  # Ignore logout errors
-        
+
         session.clear()
         flash('Logged out successfully', 'success')
     except Exception as e:
         logging.error(f"Logout error: {str(e)}")
-    
+
     return redirect(url_for('login'))
 
 @app.route('/dashboard')
@@ -144,7 +144,7 @@ def dashboard():
     if not session.get('authenticated'):
         flash('Please login to access the dashboard.', 'warning')
         return redirect(url_for('token_login'))
-    
+
     try:
         # Get client from session or reinitialize if needed
         client = session.get('client')
@@ -158,17 +158,17 @@ def dashboard():
             )
             if client:
                 session['client'] = client
-        
+
         if not client:
             flash('Session expired. Please login again.', 'error')
             session.clear()
             return redirect(url_for('token_login'))
-        
+
         # Fetch dashboard data
         dashboard_data = trading_functions.get_dashboard_data(client)
-        
+
         return render_template('dashboard.html', data=dashboard_data)
-        
+
     except Exception as e:
         logging.error(f"Dashboard error: {str(e)}")
         flash(f'Error loading dashboard: {str(e)}', 'error')
@@ -179,18 +179,18 @@ def positions():
     """Positions page"""
     if not session.get('authenticated'):
         return redirect(url_for('login'))
-    
+
     try:
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
             return redirect(url_for('login'))
-        
+
         # Fetch positions data
         positions_data = trading_functions.get_positions(client)
-        
+
         return render_template('positions.html', positions=positions_data)
-        
+
     except Exception as e:
         logging.error(f"Positions error: {str(e)}")
         flash(f'Error loading positions: {str(e)}', 'error')
@@ -201,18 +201,18 @@ def holdings():
     """Holdings page"""
     if not session.get('authenticated'):
         return redirect(url_for('login'))
-    
+
     try:
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
             return redirect(url_for('login'))
-        
+
         # Fetch holdings data
         holdings_data = trading_functions.get_holdings(client)
-        
+
         return render_template('holdings.html', holdings=holdings_data)
-        
+
     except Exception as e:
         logging.error(f"Holdings error: {str(e)}")
         flash(f'Error loading holdings: {str(e)}', 'error')
@@ -223,18 +223,18 @@ def orders():
     """Orders page"""
     if not session.get('authenticated'):
         return redirect(url_for('login'))
-    
+
     try:
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
             return redirect(url_for('login'))
-        
+
         # Fetch orders data
         orders_data = trading_functions.get_orders(client)
-        
+
         return render_template('orders.html', orders=orders_data)
-        
+
     except Exception as e:
         logging.error(f"Orders error: {str(e)}")
         flash(f'Error loading orders: {str(e)}', 'error')
@@ -245,22 +245,22 @@ def place_order():
     """API endpoint to place order"""
     if not session.get('authenticated'):
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'}), 401
-        
+
         order_data = request.get_json()
-        
+
         # 
         # INSERT YOUR JUPYTER NOTEBOOK ORDER PLACEMENT CODE HERE
         # Use the trading_functions.place_order method
         # 
         result = trading_functions.place_order(client, order_data)
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         logging.error(f"Place order error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -270,22 +270,22 @@ def modify_order():
     """API endpoint to modify order"""
     if not session.get('authenticated'):
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'}), 401
-        
+
         order_data = request.get_json()
-        
+
         # 
         # INSERT YOUR JUPYTER NOTEBOOK ORDER MODIFICATION CODE HERE
         # Use the trading_functions.modify_order method
         # 
         result = trading_functions.modify_order(client, order_data)
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         logging.error(f"Modify order error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -295,22 +295,22 @@ def cancel_order():
     """API endpoint to cancel order"""
     if not session.get('authenticated'):
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'}), 401
-        
+
         order_data = request.get_json()
-        
+
         # 
         # INSERT YOUR JUPYTER NOTEBOOK ORDER CANCELLATION CODE HERE
         # Use the trading_functions.cancel_order method
         # 
         result = trading_functions.cancel_order(client, order_data)
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         logging.error(f"Cancel order error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -320,25 +320,74 @@ def get_quotes():
     """API endpoint to get live quotes"""
     if not session.get('authenticated'):
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'}), 401
-        
+
         quote_data = request.get_json()
-        
+
         # 
         # INSERT YOUR JUPYTER NOTEBOOK QUOTES FETCHING CODE HERE
         # Use the trading_functions.get_quotes method
         # 
         result = trading_functions.get_quotes(client, quote_data)
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         logging.error(f"Get quotes error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/live_quotes')
+def get_live_quotes():
+    try:
+        # Get live quotes for dashboard symbols
+        symbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']
+        quotes = []
+
+        for symbol in symbols:
+            # Simulate live data - replace with actual API call
+            import random
+            quote = {
+                'symbol': symbol,
+                'ltp': round(1000 + random.random() * 2000, 2),
+                'change': round((random.random() - 0.5) * 50, 2),
+                'changePct': round((random.random() - 0.5) * 5, 2),
+                'volume': random.randint(50000, 500000),
+                'timestamp': 'now'
+            }
+            quotes.append(quote)
+
+        return jsonify({'success': True, 'quotes': quotes})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/portfolio_summary')
+def get_portfolio_summary():
+    try:
+        if 'credentials' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'})
+
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired'})
+
+        # Get fresh portfolio data
+        positions_data = trading_functions.get_positions(client)
+        holdings_data = trading_functions.get_holdings(client)
+        orders_data = trading_functions.get_orders(client)
+
+        summary = {
+            'total_positions': len(positions_data) ,
+            'total_holdings': len(holdings_data),
+            'total_orders': len(orders_data),
+        }
+
+        return jsonify({'success': True, **summary})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

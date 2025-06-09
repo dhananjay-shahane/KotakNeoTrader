@@ -479,28 +479,32 @@ class WebSocketHandler {
     }
 
     showConnectionStatus(connected) {
-        // Update connection status indicator
-        const statusIndicator = document.getElementById('connectionStatus');
-        if (statusIndicator) {
-            statusIndicator.innerHTML = connected 
-                ? '<i class="fas fa-circle text-success"></i> Connected'
-                : '<i class="fas fa-circle text-danger"></i> Disconnected';
-        }
-
-        // Add connection status to navbar if it doesn't exist
-        if (!statusIndicator) {
-            const navbar = document.querySelector('.navbar .navbar-nav');
-            if (navbar) {
-                const statusElement = document.createElement('li');
-                statusElement.className = 'nav-item';
-                statusElement.innerHTML = `
-                    <span class="navbar-text" id="connectionStatus">
-                        <i class="fas fa-circle ${connected ? 'text-success' : 'text-danger'}"></i>
-                        ${connected ? 'Connected' : 'Disconnected'}
-                    </span>
-                `;
-                navbar.appendChild(statusElement);
+        try {
+            // Update connection status indicator
+            const statusIndicator = document.getElementById('connectionStatus');
+            if (statusIndicator) {
+                statusIndicator.innerHTML = connected 
+                    ? '<i class="fas fa-circle text-success"></i> Connected'
+                    : '<i class="fas fa-circle text-danger"></i> Disconnected';
             }
+
+            // Add connection status to navbar if it doesn't exist
+            if (!statusIndicator) {
+                const navbar = document.querySelector('.navbar .navbar-nav');
+                if (navbar) {
+                    const statusElement = document.createElement('li');
+                    statusElement.className = 'nav-item';
+                    statusElement.innerHTML = `
+                        <span class="navbar-text" id="connectionStatus">
+                            <i class="fas fa-circle ${connected ? 'text-success' : 'text-danger'}"></i>
+                            ${connected ? 'Connected' : 'Disconnected'}
+                        </span>
+                    `;
+                    navbar.appendChild(statusElement);
+                }
+            }
+        } catch (error) {
+            console.warn('Error updating connection status:', error);
         }
     }
 

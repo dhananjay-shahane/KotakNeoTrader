@@ -27,24 +27,29 @@ class TradingDashboard {
     }
 
     initializeEventListeners() {
-        // Refresh button click handlers
-        const refreshButtons = document.querySelectorAll('[onclick*="refresh"]');
-        refreshButtons.forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', this.handleRefresh.bind(this));
-            }
-        });
+        // Safely add event listeners only if elements exist
+        try {
+            // Refresh button click handlers
+            const refreshButtons = document.querySelectorAll('[onclick*="refresh"]');
+            refreshButtons.forEach(btn => {
+                if (btn && typeof btn.addEventListener === 'function') {
+                    btn.addEventListener('click', this.handleRefresh.bind(this));
+                }
+            });
 
-        // Order form submissions
-        const orderForms = document.querySelectorAll('form[id*="Order"]');
-        orderForms.forEach(form => {
-            if (form) {
-                form.addEventListener('submit', this.handleOrderSubmit.bind(this));
-            }
-        });
+            // Order form submissions
+            const orderForms = document.querySelectorAll('form[id*="Order"]');
+            orderForms.forEach(form => {
+                if (form && typeof form.addEventListener === 'function') {
+                    form.addEventListener('submit', this.handleOrderSubmit.bind(this));
+                }
+            });
 
-        // Real-time price updates
-        this.setupPriceUpdateHandlers();
+            // Real-time price updates
+            this.setupPriceUpdateHandlers();
+        } catch (error) {
+            console.warn('Error initializing event listeners:', error);
+        }
     }
 
     setupPriceUpdateHandlers() {
@@ -100,13 +105,10 @@ class TradingDashboard {
 
     async refreshCriticalData() {
         try {
-            // Refresh positions P&L
-            await this.updatePositionsPnL();
-
-            // Refresh holdings values
-            await this.updateHoldingsValues();
-
-            // Update portfolio summary
+            // Refresh specific sections without full page reload
+            await this.refreshDashboardSection('quotes');
+            await this.refreshDashboardSection('positions');
+            await this.refreshDashboardSection('orders');
             await this.updatePortfolioSummary();
 
             // Only log if debug mode is enabled
@@ -114,8 +116,44 @@ class TradingDashboard {
                 console.log('Critical data refreshed');
             }
         } catch (error) {
-            // Only log errors, not regular updates
             console.error('Error refreshing critical data:', error);
+        }
+    }
+
+    async refreshDashboardSection(section) {
+        try {
+            let endpoint = '';
+            let targetElement = '';
+
+            switch(section) {
+                case 'quotes':
+                    endpoint = '/api/dashboard_quotes';
+                    targetElement = '#quotesTableBody';
+                    break;
+                case 'positions':
+                    endpoint = '/api/dashboard_positions';
+                    targetElement = '#positionsTableBody';
+                    break;
+                case 'orders':
+                    endpoint = '/api/dashboard_orders';
+                    targetElement = '#ordersTableBody';
+                    break;
+                default:
+                    return;
+            }
+
+            const response = await fetch(endpoint);
+            const data = await response.json();
+
+            if (data.success && data.html) {
+                const element = document.querySelector(targetElement);
+                if (element) {
+                    element.innerHTML = data.html;
+                    console.log(`${section} section refreshed`);
+                }
+            }
+        } catch (error) {
+            console.warn(`Error refreshing ${section} section:`, error);
         }
     }
 

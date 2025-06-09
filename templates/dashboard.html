@@ -823,92 +823,198 @@ function refreshDashboard() {
         button.disabled = true;
     }
 
-    setTimeout(() => {
-        window.location.reload();
-    }, 500);
+    // Refresh specific sections instead of full page
+    Promise.all([
+        refreshQuotes(),
+        refreshPositions(),
+        refreshPortfolioSummary()
+    ]).then(() => {
+        if (button) {
+            button.innerHTML = '<i class="fas fa-sync-alt fa-2x mb-2"></i><br><span class="fw-bold">Refresh</span>';
+            button.disabled = false;
+        }
+    }).catch(error => {
+        console.error('Error refreshing dashboard:', error);
+        if (button) {
+            button.innerHTML = '<i class="fas fa-sync-alt fa-2x mb-2"></i><br><span class="fw-bold">Refresh</span>';
+            button.disabled = false;
+        }
+    });
 }
 
-function refreshQuotes() {
+async function refreshQuotes() {
     const button = document.querySelector('[onclick="refreshQuotes()"]');
     if (button) {
         button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
         button.disabled = true;
     }
 
-    // Simulate quote refresh with random price updates
-    setTimeout(() => {
-        const quotes = document.querySelectorAll('#quotesTable .price-ltp');
-        quotes.forEach(quote => {
-            const currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
-            const change = (Math.random() - 0.5) * 20; // Random change between -10 to +10
-            const newPrice = currentPrice + change;
+    try {
+        // Fetch fresh quote data from server
+        const response = await fetch('/api/live_quotes');
+        const data = await response.json();
 
-            quote.textContent = `₹${newPrice.toFixed(2)}`;
+        if (data.success) {
+            // Update quotes table with real data
+            const quotesTableBody = document.getElementById('quotesTableBody');
+            if (quotesTableBody && data.quotes) {
+                data.quotes.forEach(quote => {
+                    const row = document.querySelector(`tr[data-symbol="${quote.symbol}"]`);
+                    if (row) {
+                        const ltpCell = row.querySelector('.price-ltp');
+                        const changeCell = row.querySelector('.price-change');
+                        const changePctCell = row.cells[3];
+                        const timeCell = row.querySelector('small');
 
-            // Update change columns
-            const row = quote.closest('tr');
-            const changeCell = row.querySelector('.price-change');
-            const changePctCell = row.cells[3];
+                        if (ltpCell) {
+                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
+                            const newPrice = parseFloat(quote.ltp);
+                            
+                            ltpCell.textContent = `₹${newPrice.toFixed(2)}`;
+                            
+                            // Add animation based on price change
+                            if (newPrice > oldPrice) {
+                                ltpCell.classList.add('price-up');
+                            } else if (newPrice < oldPrice) {
+                                ltpCell.classList.add('price-down');
+                            }
+                            
+                            setTimeout(() => {
+                                ltpCell.classList.remove('price-up', 'price-down');
+                            }, 1000);
+                        }
 
-            if (changeCell && changePctCell) {
-                const changePercent = (change / currentPrice * 100);
-                changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
-                changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
+                        if (changeCell && quote.change !== undefined) {
+                            changeCell.textContent = `${quote.change >= 0 ? '+' : ''}${parseFloat(quote.change).toFixed(2)}`;
+                            changeCell.className = `price-change ${quote.change >= 0 ? 'text-success' : 'text-danger'}`;
+                        }
 
-                changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-                changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
+                        if (changePctCell && quote.changePct !== undefined) {
+                            changePctCell.textContent = `${quote.changePct >= 0 ? '+' : ''}${parseFloat(quote.changePct).toFixed(2)}%`;
+                            changePctCell.className = quote.changePct >= 0 ? 'text-success' : 'text-danger';
+                        }
+
+                        if (timeCell) {
+                            timeCell.textContent = new Date().toLocaleTimeString();
+                        }
+                    }
+                });
             }
-
-            // Add animation
-            quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
-            setTimeout(() => {
-                quote.classList.remove('price-up', 'price-down');
-            }, 1000);
-        });
-
-        // Update timestamp
-        const timeElements = document.querySelectorAll('#quotesTable small');
-        const now = new Date();
-        timeElements.forEach(time => {
-            time.textContent = now.toLocaleTimeString();
-        });
-
-        if (button) {
-            button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-            button.disabled = false;
+        } else {
+            // Fallback to simulated updates if API fails
+            simulateQuoteUpdates();
         }
-    }, 1000);
+    } catch (error) {
+        console.error('Error refreshing quotes:', error);
+        // Fallback to simulated updates
+        simulateQuoteUpdates();
+    }
+
+    if (button) {
+        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        button.disabled = false;
+    }
 }
 
-function refreshPositions() {
+function simulateQuoteUpdates() {
+    const quotes = document.querySelectorAll('#quotesTable .price-ltp');
+    quotes.forEach(quote => {
+        const currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
+        const change = (Math.random() - 0.5) * 20;
+        const newPrice = currentPrice + change;
+
+        quote.textContent = `₹${newPrice.toFixed(2)}`;
+
+        const row = quote.closest('tr');
+        const changeCell = row.querySelector('.price-change');
+        const changePctCell = row.cells[3];
+
+        if (changeCell && changePctCell) {
+            const changePercent = (change / currentPrice * 100);
+            changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
+            changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
+
+            changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
+        }
+
+        quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        setTimeout(() => {
+            quote.classList.remove('price-up', 'price-down');
+        }, 1000);
+    });
+}
+
+async function refreshPositions() {
     const button = document.querySelector('[onclick="refreshPositions()"]');
     if (button) {
         button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
         button.disabled = true;
     }
 
-    // Simulate position refresh
-    setTimeout(() => {
-        const positions = document.querySelectorAll('#positionsTable .price-ltp');
-        positions.forEach(position => {
-            const currentPrice = parseFloat(position.textContent.replace(/[₹,]/g, ''));
-            const change = (Math.random() - 0.5) * 10; // Random change
-            const newPrice = currentPrice + change;
+    try {
+        const response = await fetch('/api/positions');
+        const data = await response.json();
 
-            position.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        if (data.success && data.positions) {
+            const positionsTableBody = document.getElementById('positionsTableBody');
+            if (positionsTableBody) {
+                // Update positions with fresh data
+                data.positions.forEach(position => {
+                    const row = document.querySelector(`tr[data-position-symbol="${position.trdSym || position.sym}"]`);
+                    if (row) {
+                        const ltpCell = row.querySelector('.price-ltp');
+                        const pnlCell = row.querySelector('.position-pnl');
 
-            // Add animation
-            position.classList.add(change >= 0 ? 'price-up' : 'price-down');
-            setTimeout(() => {
-                position.classList.remove('price-up', 'price-down');
-            }, 1000);
-        });
+                        if (ltpCell && position.ltp) {
+                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
+                            const newPrice = parseFloat(position.ltp);
+                            
+                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                            
+                            if (newPrice !== oldPrice) {
+                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
+                                setTimeout(() => {
+                                    ltpCell.classList.remove('price-up', 'price-down');
+                                }, 1000);
+                            }
+                        }
 
-        if (button) {
-            button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-            button.disabled = false;
+                        if (pnlCell && position.pnl !== undefined) {
+                            const pnl = parseFloat(position.pnl);
+                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
+                        }
+                    }
+                });
+                
+                console.log('Positions refreshed successfully');
+            }
         }
-    }, 1000);
+    } catch (error) {
+        console.error('Error refreshing positions:', error);
+        // Fallback to simulated updates
+        simulatePositionUpdates();
+    }
+
+    if (button) {
+        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        button.disabled = false;
+    }
+}
+
+function simulatePositionUpdates() {
+    const positions = document.querySelectorAll('#positionsTable .price-ltp');
+    positions.forEach(position => {
+        const currentPrice = parseFloat(position.textContent.replace(/[₹,]/g, ''));
+        const change = (Math.random() - 0.5) * 10;
+        const newPrice = currentPrice + change;
+
+        position.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        position.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        setTimeout(() => {
+            position.classList.remove('price-up', 'price-down');
+        }, 1000);
+    });
 }
 
 // User Profile Functions
@@ -934,6 +1040,36 @@ function showAccountSummary() {
     new bootstrap.Modal(document.getElementById('accountSummaryModal')).show();
 }
 
+async function refreshPortfolioSummary() {
+    try {
+        const response = await fetch('/api/portfolio_summary');
+        const data = await response.json();
+
+        if (data.success) {
+            // Update portfolio summary cards
+            const totalPositionsEl = document.getElementById('totalPositions');
+            const totalHoldingsEl = document.getElementById('totalHoldings');
+            const totalOrdersEl = document.getElementById('totalOrders');
+            const availableMarginEl = document.getElementById('availableMargin');
+
+            if (totalPositionsEl && data.total_positions !== undefined) {
+                totalPositionsEl.textContent = data.total_positions;
+            }
+            if (totalHoldingsEl && data.total_holdings !== undefined) {
+                totalHoldingsEl.textContent = data.total_holdings;
+            }
+            if (totalOrdersEl && data.total_orders !== undefined) {
+                totalOrdersEl.textContent = data.total_orders;
+            }
+            if (availableMarginEl && data.available_margin !== undefined) {
+                availableMarginEl.textContent = `₹${parseFloat(data.available_margin).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing portfolio summary:', error);
+    }
+}
+
 // Set last login time on page load
 document.addEventListener('DOMContentLoaded', function() {
     const lastLoginElement = document.getElementById('lastLoginTime');
@@ -943,7 +1079,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Auto-refresh dashboard every 30 seconds
-setInterval(refreshDashboard, 30000);
+// Auto-refresh specific sections every 15 seconds instead of full page
+setInterval(() => {
+    refreshQuotes();
+    refreshPositions();
+    refreshPortfolioSummary();
+}, 15000);
 </script>
 {% endblock %}
