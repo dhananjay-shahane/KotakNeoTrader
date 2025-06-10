@@ -18,11 +18,11 @@ class NeoClient:
             # 3. Don't validate immediately as tokens might be from existing session
             
             client = NeoAPI(
-                consumer_key="",  # Not needed for token-based init
-                consumer_secret="",  # Not needed for token-based init
+                consumer_key=os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa'),
+                consumer_secret=os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a'),
                 environment='prod',
                 access_token=access_token,
-                neo_fin_key="neotradeapi"
+                neo_fin_key=os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
             )
             
             # Set session data according to API docs
@@ -97,11 +97,11 @@ class NeoClient:
                 return None
                 
             client = NeoAPI(
-                consumer_key=credentials['consumer_key'],
-                consumer_secret=credentials['consumer_secret'],
+                consumer_key=credentials.get('consumer_key', os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')),
+                consumer_secret=credentials.get('consumer_secret', os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')),
                 environment='prod',
                 access_token=None,
-                neo_fin_key=credentials.get('neo_fin_key', 'neotradeapi')
+                neo_fin_key=credentials.get('neo_fin_key', os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi'))
             )
             
             self.logger.info("Neo API client initialized successfully!")
@@ -118,18 +118,22 @@ class NeoClient:
             
             # Initialize client for TOTP login with proper credentials
             # Note: These should be obtained from Kotak Neo developer portal
-            client = NeoAPI(
-                consumer_key=os.environ.get('KOTAK_CONSUMER_KEY', ''),
-                consumer_secret=os.environ.get('KOTAK_CONSUMER_SECRET', ''),
-                environment='prod',
-                access_token=None,
-                neo_fin_key="neotradeapi"
-            )
+            # Use credentials from notebook or environment variables
+            consumer_key = os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
+            consumer_secret = os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
+            neo_fin_key = os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
             
-            # Check if consumer credentials are provided
-            if not client.consumer_key or not client.consumer_secret:
+            if not consumer_key or not consumer_secret:
                 self.logger.error("❌ Consumer Key and Consumer Secret are required for TOTP login")
                 return {'success': False, 'message': 'Consumer Key and Consumer Secret are required. Please set KOTAK_CONSUMER_KEY and KOTAK_CONSUMER_SECRET environment variables.'}
+            
+            client = NeoAPI(
+                consumer_key=consumer_key,
+                consumer_secret=consumer_secret,
+                environment='prod',
+                access_token=None,
+                neo_fin_key=neo_fin_key
+            )
             
             # Step 1: TOTP Login
             self.logger.info("📱 Attempting TOTP login...")

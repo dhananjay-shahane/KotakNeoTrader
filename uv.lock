@@ -469,6 +469,8 @@ dependencies = [
     { name = "neo-api-client" },
     { name = "pandas" },
     { name = "psycopg2-binary" },
+    { name = "python-dotenv" },
+    { name = "werkzeug" },
 ]
 
 [package.metadata]
@@ -481,6 +483,8 @@ requires-dist = [
     { name = "neo-api-client", git = "https://github.com/Kotak-Neo/kotak-neo-api.git" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
 ]
 
 [[package]]

@@ -7,6 +7,14 @@ from trading_functions import TradingFunctions
 from websocket_handler import WebSocketHandler
 import json
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not available, environment variables should be set directly
+    pass
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
