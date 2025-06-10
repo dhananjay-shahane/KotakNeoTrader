@@ -159,13 +159,14 @@ def login():
                     session['greeting_name'] = session_data.get('greetingName', ucc)
                     session.permanent = True
                     
-                    # Store session persistently
-                    persistent_data = {
+                    # Store complete session persistently
+                    persistent_data = session_data.copy()  # Start with complete response
+                    persistent_data.update({
                         'access_token': session_data.get('access_token'),
                         'session_token': session_data.get('session_token'),
                         'sid': session_data.get('sid'),
                         'ucc': ucc
-                    }
+                    })
                     session_manager.store_session('default_user', persistent_data)
                     
                     flash('Successfully authenticated with TOTP!', 'success')
@@ -198,12 +199,26 @@ def login():
                     session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     session.permanent = True
                     
-                    # Store session persistently
+                    # Store complete session persistently
                     session_data = {
                         'access_token': access_token,
                         'session_token': session_token,
                         'sid': sid,
-                        'ucc': session['ucc']
+                        'ucc': session['ucc'],
+                        'greeting_name': session.get('greeting_name'),
+                        'is_trial_account': session.get('is_trial_account'),
+                        'rid': session.get('rid'),
+                        'user_id': session.get('user_id'),
+                        'client_code': session.get('client_code'),
+                        'product_code': session.get('product_code'),
+                        'account_type': session.get('account_type'),
+                        'branch_code': session.get('branch_code'),
+                        'exchange_codes': session.get('exchange_codes'),
+                        'order_types': session.get('order_types'),
+                        'product_types': session.get('product_types'),
+                        'token_type': session.get('token_type'),
+                        'scope': session.get('scope'),
+                        'expires_in': session.get('expires_in')
                     }
                     session_manager.store_session('default_user', session_data)
                     
@@ -631,6 +646,9 @@ def get_user_profile():
                     session.clear()
                     session_manager.remove_session('default_user')
 
+        # Get complete session data from persistent storage
+        stored_session = session_manager.get_session('default_user')
+        
         profile_data = {
             'ucc': session.get('ucc', 'N/A'),
             'greeting_name': session.get('greeting_name', session.get('ucc', 'User')),
@@ -638,6 +656,19 @@ def get_user_profile():
             'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
             'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
             'sid': session.get('sid', 'N/A')[:15] + '...' if session.get('sid') else 'N/A',
+            'rid': session.get('rid', stored_session.get('rid', 'N/A') if stored_session else 'N/A'),
+            'is_trial_account': session.get('is_trial_account', stored_session.get('is_trial_account', False) if stored_session else False),
+            'user_id': session.get('user_id', stored_session.get('user_id', 'N/A') if stored_session else 'N/A'),
+            'client_code': session.get('client_code', stored_session.get('client_code', 'N/A') if stored_session else 'N/A'),
+            'product_code': session.get('product_code', stored_session.get('product_code', 'N/A') if stored_session else 'N/A'),
+            'account_type': session.get('account_type', stored_session.get('account_type', 'N/A') if stored_session else 'N/A'),
+            'branch_code': session.get('branch_code', stored_session.get('branch_code', 'N/A') if stored_session else 'N/A'),
+            'exchange_codes': session.get('exchange_codes', stored_session.get('exchange_codes', []) if stored_session else []),
+            'order_types': session.get('order_types', stored_session.get('order_types', []) if stored_session else []),
+            'product_types': session.get('product_types', stored_session.get('product_types', []) if stored_session else []),
+            'token_type': session.get('token_type', stored_session.get('token_type', 'N/A') if stored_session else 'N/A'),
+            'scope': session.get('scope', stored_session.get('scope', 'N/A') if stored_session else 'N/A'),
+            'expires_in': session.get('expires_in', stored_session.get('expires_in', 'N/A') if stored_session else 'N/A'),
             'authenticated': session.get('authenticated', False),
             'account_status': 'Active' if token_status == 'Valid' else 'Token Expired - Please Re-login',
             'token_status': token_status,

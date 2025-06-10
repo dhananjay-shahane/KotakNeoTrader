@@ -130,13 +130,36 @@ class NeoClient:
             if login_result['success']:
                 self.logger.info("🎉 Login completed successfully!")
                 
-                # Extract session data from validation response
+                # Extract complete session data from validation response
                 validation_data = login_result['validation_response'].get('data', {})
+                
+                # Prepare complete session data with all available fields
+                complete_session_data = validation_data.copy()
+                complete_session_data.update({
+                    'access_token': validation_data.get('token'),
+                    'session_token': validation_data.get('token'),
+                    'sid': validation_data.get('sid'),
+                    'rid': validation_data.get('rid'),
+                    'ucc': validation_data.get('ucc'),
+                    'greeting_name': validation_data.get('greetingName'),
+                    'is_trial_account': validation_data.get('isTrialAccount'),
+                    'user_id': validation_data.get('userId'),
+                    'client_code': validation_data.get('clientCode'),
+                    'product_code': validation_data.get('productCode'),
+                    'account_type': validation_data.get('accountType'),
+                    'branch_code': validation_data.get('branchCode'),
+                    'exchange_codes': validation_data.get('exchangeCodes'),
+                    'order_types': validation_data.get('orderTypes'),
+                    'product_types': validation_data.get('productTypes'),
+                    'token_type': validation_data.get('token_type'),
+                    'scope': validation_data.get('scope'),
+                    'expires_in': validation_data.get('expires_in')
+                })
                 
                 return {
                     'success': True,
                     'client': client,
-                    'session_data': validation_data,
+                    'session_data': complete_session_data,
                     'access_token': validation_data.get('token'),
                     'session_token': validation_data.get('token'),
                     'sid': validation_data.get('sid'),

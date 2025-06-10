@@ -32,19 +32,35 @@ class SessionManager:
             self.logger.error(f"Error saving sessions: {e}")
     
     def store_session(self, user_id, session_data):
-        """Store session data for a user"""
+        """Store complete session data for a user"""
         try:
+            # Store complete login response data
             self.sessions[user_id] = {
                 'access_token': session_data.get('access_token'),
                 'session_token': session_data.get('session_token'),
                 'sid': session_data.get('sid'),
+                'rid': session_data.get('rid'),
                 'ucc': session_data.get('ucc'),
+                'greeting_name': session_data.get('greetingName') or session_data.get('greeting_name'),
+                'is_trial_account': session_data.get('isTrialAccount'),
+                'user_id': session_data.get('userId'),
+                'client_code': session_data.get('clientCode'),
+                'product_code': session_data.get('productCode'),
+                'account_type': session_data.get('accountType'),
+                'branch_code': session_data.get('branchCode'),
+                'exchange_codes': session_data.get('exchangeCodes'),
+                'order_types': session_data.get('orderTypes'),
+                'product_types': session_data.get('productTypes'),
+                'token_type': session_data.get('token_type'),
+                'scope': session_data.get('scope'),
+                'expires_in': session_data.get('expires_in'),
                 'created_at': datetime.now(),
                 'expires_at': datetime.now() + timedelta(hours=24),
-                'authenticated': True
+                'authenticated': True,
+                'full_response': session_data  # Store complete response for future reference
             }
             self.save_sessions()
-            self.logger.info(f"Session stored for user: {user_id}")
+            self.logger.info(f"Complete session data stored for user: {user_id}")
             return True
         except Exception as e:
             self.logger.error(f"Error storing session: {e}")
@@ -87,6 +103,28 @@ class SessionManager:
             self.logger.error(f"Error getting valid session: {e}")
             return None
     
+    def get_session_field(self, user_id, field_name):
+        """Get specific field from user session"""
+        try:
+            session_data = self.get_session(user_id)
+            if session_data:
+                return session_data.get(field_name)
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting session field {field_name}: {e}")
+            return None
+    
+    def get_full_response(self, user_id):
+        """Get complete original login response"""
+        try:
+            session_data = self.get_session(user_id)
+            if session_data:
+                return session_data.get('full_response', {})
+            return {}
+        except Exception as e:
+            self.logger.error(f"Error getting full response: {e}")
+            return {}
+
     def clean_expired_sessions(self):
         """Remove all expired sessions"""
         try:
