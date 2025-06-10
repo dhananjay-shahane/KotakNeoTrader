@@ -1,6 +1,6 @@
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
@@ -930,6 +930,116 @@ def cleanup_sessions():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/test-user-storage', methods=['POST'])
+def test_user_storage():
+    """Test endpoint to create sample user data and verify storage"""
+    try:
+        # Create test login response data
+        test_login_response = {
+            'success': True,
+            'data': {
+                'ucc': 'TEST123456',
+                'mobile_number': '9876543210',
+                'greeting_name': 'Test User',
+                'user_id': 'USER001',
+                'client_code': 'CLIENT001',
+                'product_code': 'PROD001',
+                'account_type': 'INDIVIDUAL',
+                'branch_code': 'BRANCH001',
+                'is_trial_account': False,
+                'access_token': 'test_access_token_12345',
+                'session_token': 'test_session_token_67890',
+                'sid': 'SID123456789',
+                'rid': 'RID987654321'
+            }
+        }
+        
+        # Create or update user in database
+        db_user = user_manager.create_or_update_user(test_login_response)
+        
+        # Create session record
+        user_session = user_manager.create_user_session(db_user.id, test_login_response)
+        
+        return jsonify({
+            "success": True,
+            "message": "Test user data stored successfully",
+            "data": {
+                "user_id": db_user.id,
+                "ucc": db_user.ucc,
+                "stored_fields": {
+                    "sid": db_user.sid,
+                    "rid": db_user.rid,
+                    "access_token": db_user.access_token[:20] + "..." if db_user.access_token else None,
+                    "session_token": db_user.session_token[:20] + "..." if db_user.session_token else None,
+                    "mobile_number": db_user.mobile_number,
+                    "greeting_name": db_user.greeting_name,
+                    "user_id": db_user.user_id,
+                    "client_code": db_user.client_code,
+                    "product_code": db_user.product_code,
+                    "account_type": db_user.account_type,
+                    "branch_code": db_user.branch_code,
+                    "is_trial_account": db_user.is_trial_account,
+                    "last_login": db_user.last_login.isoformat() if db_user.last_login else None
+                },
+                "session_id": user_session.session_id
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/database-status')
+def database_status():
+    """Check database connection and show stored data"""
+    try:
+        # Test database connection
+        db.session.execute(db.text('SELECT 1'))
+        
+        # Get counts
+        user_count = User.query.count()
+        session_count = UserSession.query.count()
+        preference_count = UserPreferences.query.count()
+        
+        # Get sample data if exists
+        sample_user = User.query.first()
+        sample_data = None
+        if sample_user:
+            sample_data = {
+                "ucc": sample_user.ucc,
+                "sid": sample_user.sid,
+                "rid": sample_user.rid,
+                "greeting_name": sample_user.greeting_name,
+                "last_login": sample_user.last_login.isoformat() if sample_user.last_login else None
+            }
+        
+        return jsonify({
+            "success": True,
+            "database_connected": True,
+            "tables": {
+                "users": user_count,
+                "user_sessions": session_count,
+                "user_preferences": preference_count
+            },
+            "sample_user_data": sample_data,
+            "data_fields_stored": [
+                "ucc", "mobile_number", "greeting_name", "user_id", 
+                "client_code", "product_code", "account_type", "branch_code",
+                "is_trial_account", "access_token", "session_token", 
+                "sid", "rid", "created_at", "updated_at", "last_login",
+                "session_expires_at", "is_active"
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "database_connected": False,
+            "error": str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
