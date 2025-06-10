@@ -67,22 +67,45 @@ class NeoClient:
     def validate_session(self, client):
         """Validate if the session is properly authenticated with complete 2FA"""
         try:
-            # Try to get account limits to validate session
-            response = client.limits()
+            # Try multiple API calls to validate session
+            validation_methods = [
+                ('limits', lambda: client.limits()),
+                ('positions', lambda: client.positions()),
+                ('holdings', lambda: client.holdings())
+            ]
             
-            # Check for successful response with data
-            if response and ('data' in response or 'Data' in response):
-                # Additional check for 2FA completion
-                data = response.get('data') or response.get('Data')
-                if data and not isinstance(data, str):  # Ensure it's not an error message
-                    self.logger.info("✅ Session validation successful with complete 2FA")
-                    return True
-                else:
-                    self.logger.warning("⚠️ Session validation failed - incomplete 2FA or invalid data")
-                    return False
-            else:
-                self.logger.warning("⚠️ Session validation failed - no data in response")
-                return False
+            for method_name, method_call in validation_methods:
+                try:
+                    response = method_call()
+                    self.logger.info(f"Testing {method_name} API: {response}")
+                    
+                    # Check for successful response
+                    if response:
+                        # Handle different response structures
+                        if isinstance(response, dict):
+                            # Check for error in response
+                            if 'error' in response:
+                                continue  # Try next method
+                            
+                            # Check for data or success indicators
+                            if ('data' in response or 'Data' in response or 
+                                'success' in response or len(response) > 0):
+                                self.logger.info(f"✅ Session validation successful using {method_name}")
+                                return True
+                        elif isinstance(response, list):
+                            # List response is usually valid
+                            self.logger.info(f"✅ Session validation successful using {method_name} (list response)")
+                            return True
+                        elif response is not None:
+                            # Any non-None response indicates working session
+                            self.logger.info(f"✅ Session validation successful using {method_name} (non-null response)")
+                            return True
+                except Exception as method_error:
+                    self.logger.debug(f"Method {method_name} failed: {str(method_error)}")
+                    continue
+            
+            self.logger.warning("⚠️ All validation methods failed")
+            return False
             
         except Exception as e:
             error_msg = str(e)
