@@ -52,9 +52,11 @@ neo_client = NeoClient()
 trading_functions = TradingFunctions()
 websocket_handler = WebSocketHandler()
 
-# Initialize Session Manager
+# Initialize Session Manager and User Manager
 from session_manager import SessionManager
+from user_manager import UserManager
 session_manager = SessionManager()
+user_manager = UserManager()
 
 # Create database tables
 with app.app_context():
@@ -176,6 +178,45 @@ def login():
                 # Store additional user data in session
                 session['rid'] = session_data.get('rid')
                 session['user_id'] = session_data.get('user_id')
+                
+                # Store user data in PostgreSQL database
+                try:
+                    # Create the complete login response for database storage
+                    login_response = {
+                        'success': True,
+                        'data': {
+                            'ucc': ucc,
+                            'mobile_number': mobile_number,
+                            'greeting_name': session_data.get('greetingName'),
+                            'user_id': session_data.get('user_id'),
+                            'client_code': session_data.get('client_code'),
+                            'product_code': session_data.get('product_code'),
+                            'account_type': session_data.get('account_type'),
+                            'branch_code': session_data.get('branch_code'),
+                            'is_trial_account': session_data.get('is_trial_account', False),
+                            'access_token': session_data.get('access_token'),
+                            'session_token': session_data.get('session_token'),
+                            'sid': session_data.get('sid'),
+                            'rid': session_data.get('rid')
+                        }
+                    }
+                    
+                    # Create or update user in database
+                    db_user = user_manager.create_or_update_user(login_response)
+                    
+                    # Create session record
+                    user_session = user_manager.create_user_session(db_user.id, login_response)
+                    
+                    # Store database user ID in session
+                    session['db_user_id'] = db_user.id
+                    session['db_session_id'] = user_session.session_id
+                    
+                    logging.info(f"User data stored in database for UCC: {ucc}")
+                    
+                except Exception as db_error:
+                    logging.error(f"Failed to store user data in database: {db_error}")
+                    # Don't fail the login if database storage fails
+                    pass
                 session['client_code'] = session_data.get('client_code')
                 session['is_trial_account'] = session_data.get('is_trial_account')
                 
@@ -764,6 +805,131 @@ def get_test_positions():
         'positions': test_positions,
         'count': len(test_positions)
     })
+
+# Database Management Endpoints
+@app.route('/api/users')
+def get_users():
+    """Get all users from database"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        users = User.query.filter_by(is_active=True).all()
+        users_data = [user.to_dict() for user in users]
+        
+        return jsonify({
+            "success": True,
+            "data": users_data,
+            "count": len(users_data)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/user/<int:user_id>')
+def get_user(user_id):
+    """Get specific user by ID"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        # Get user sessions
+        sessions = UserSession.query.filter_by(user_id=user_id).order_by(UserSession.created_at.desc()).limit(5).all()
+        sessions_data = []
+        for s in sessions:
+            sessions_data.append({
+                "id": s.id,
+                "session_id": s.session_id,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+                "is_active": s.is_active
+            })
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "user": user.to_dict(),
+                "recent_sessions": sessions_data
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/user-stats')
+def get_user_stats():
+    """Get user statistics"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        stats = user_manager.get_user_stats()
+        
+        # Get additional stats
+        total_sessions = UserSession.query.count()
+        recent_logins = User.query.filter(
+            User.last_login > datetime.utcnow() - timedelta(hours=24)
+        ).count()
+        
+        stats.update({
+            "total_sessions": total_sessions,
+            "recent_logins_24h": recent_logins
+        })
+        
+        return jsonify({
+            "success": True,
+            "data": stats
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/current-user')
+def get_current_user():
+    """Get current logged-in user data"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        db_user_id = session.get('db_user_id')
+        if db_user_id:
+            user = User.query.get(db_user_id)
+            if user:
+                return jsonify({
+                    "success": True,
+                    "data": user.to_dict()
+                })
+        
+        # Fallback to session data if no database user
+        return jsonify({
+            "success": True,
+            "data": {
+                "ucc": session.get('ucc'),
+                "greeting_name": session.get('greeting_name'),
+                "user_id": session.get('user_id'),
+                "source": "session_only"
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/cleanup-sessions', methods=['POST'])
+def cleanup_sessions():
+    """Clean up expired sessions"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        cleaned_count = user_manager.clean_expired_sessions()
+        return jsonify({
+            "success": True,
+            "data": {
+                "cleaned_sessions": cleaned_count
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
