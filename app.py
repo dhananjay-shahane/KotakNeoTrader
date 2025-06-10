@@ -611,6 +611,21 @@ def get_user_profile():
         if not session.get('authenticated'):
             return jsonify({'success': False, 'message': 'Not authenticated'})
 
+        # Check if client is valid
+        client = session.get('client')
+        token_status = 'Invalid'
+        
+        if client:
+            try:
+                # Try a simple API call to validate token
+                limits_response = client.limits()
+                if limits_response and 'data' in limits_response:
+                    token_status = 'Valid'
+                else:
+                    token_status = 'Expired'
+            except:
+                token_status = 'Expired'
+
         profile_data = {
             'ucc': session.get('ucc', 'N/A'),
             'greeting_name': session.get('greeting_name', session.get('ucc', 'User')),
@@ -619,7 +634,9 @@ def get_user_profile():
             'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
             'sid': session.get('sid', 'N/A')[:15] + '...' if session.get('sid') else 'N/A',
             'authenticated': session.get('authenticated', False),
-            'account_status': 'Active' if session.get('authenticated') else 'Inactive'
+            'account_status': 'Active' if token_status == 'Valid' else 'Token Expired - Please Re-login',
+            'token_status': token_status,
+            'needs_reauth': token_status != 'Valid'
         }
         
         return jsonify({

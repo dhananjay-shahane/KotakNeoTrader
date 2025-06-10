@@ -280,7 +280,7 @@
                                 <td class="price-ltp" data-symbol="INFY">₹1,832.45</td>
                                 <td class="price-change text-success">+22.15</td>
                                 <td class="text-success">+1.22%</td>
-                                <td>2,45,789</td>
+                                <td> 2,45,789</td>
                                 <td><small class="text-muted">15:29:41</small></td>
                                 <td>
                                     <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'INFY')">
@@ -296,7 +296,7 @@
                                 <td class="price-ltp" data-symbol="HDFCBANK">₹1,645.80</td>
                                 <td class="price-change text-success">+5.60</td>
                                 <td class="text-success">+0.34%</td>
-                                <td>1,67,890</td>
+                                <td> 1,67,890</td>
                                 <td><small class="text-muted">15:29:40</small></td>
                                 <td>
                                     <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'HDFCBANK')">
@@ -312,7 +312,7 @@
                                 <td class="price-ltp" data-symbol="ICICIBANK">₹1,198.25</td>
                                 <td class="price-change text-danger">-3.75</td>
                                 <td class="text-danger">-0.31%</td>
-                                <td>3,21,456</td>
+                                <td> 3,21,456</td>
                                 <td><small class="text-muted">15:29:38</small></td>
                                 <td>
                                     <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'ICICIBANK')">
@@ -1264,16 +1264,16 @@ async function loadUserProfile() {
     try {
         const response = await fetch('/api/user_profile');
         const data = await response.json();
-        
+
         if (data.success && data.profile) {
             const profile = data.profile;
-            
+
             // Update login time if available
             const loginTimeElement = document.getElementById('loginTime');
             if (loginTimeElement && profile.login_time !== 'N/A') {
                 loginTimeElement.textContent = profile.login_time;
             }
-            
+
             console.log('User profile loaded:', profile);
         }
     } catch (error) {
@@ -1359,5 +1359,57 @@ function simulateHoldingUpdates() {
         }, 1000);
     });
 }
+
+// Update user profile section
+        async function updateUserProfile() {
+            try {
+                const response = await fetch('/api/user_profile');
+                const data = await response.json();
+
+                if (data.success && data.profile) {
+                    const profile = data.profile;
+
+                    // Update profile information
+                    document.getElementById('userUCC').textContent = profile.ucc;
+                    document.getElementById('userGreeting').textContent = profile.greeting_name;
+                    document.getElementById('loginTime').textContent = profile.login_time;
+
+                    // Show truncated tokens for security
+                    document.getElementById('accessTokenDisplay').value = profile.access_token;
+                    document.getElementById('sessionTokenDisplay').value = profile.session_token;
+                    document.getElementById('sidDisplay').value = profile.sid;
+
+                    // Update token status
+                    const tokenStatusText = document.getElementById('tokenStatusText');
+                    const refreshTokenBtn = document.getElementById('refreshTokenBtn');
+                    const authWarning = document.getElementById('authWarning');
+
+                    if (profile.token_status === 'Valid') {
+                        tokenStatusText.textContent = 'Valid';
+                        tokenStatusText.className = 'text-success';
+                        refreshTokenBtn.style.display = 'none';
+                        authWarning.style.display = 'none';
+                    } else if (profile.token_status === 'Expired') {
+                        tokenStatusText.textContent = 'Expired';
+                        tokenStatusText.className = 'text-danger';
+                        refreshTokenBtn.style.display = 'block';
+                        authWarning.style.display = 'block';
+                        refreshTokenBtn.onclick = () => window.location.href = '/login';
+                    } else {
+                        tokenStatusText.textContent = 'Invalid';
+                        tokenStatusText.className = 'text-warning';
+                        refreshTokenBtn.style.display = 'block';
+                        authWarning.style.display = 'block';
+                        refreshTokenBtn.onclick = () => window.location.href = '/login';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating user profile:', error);
+                // Show error state
+                const tokenStatusText = document.getElementById('tokenStatusText');
+                tokenStatusText.textContent = 'Error';
+                tokenStatusText.className = 'text-danger';
+            }
+        }
 </script>
 {% endblock %}
