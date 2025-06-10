@@ -50,7 +50,22 @@ def validate_current_session():
         if not session.get('authenticated'):
             return False
             
+        # Check if we have required session data
+        access_token = session.get('access_token')
+        if not access_token:
+            return False
+            
+        # Try to recreate client from session data if needed
         client = session.get('client')
+        if not client and access_token:
+            client = neo_client.initialize_client_with_tokens(
+                access_token,
+                session.get('session_token'),
+                session.get('sid')
+            )
+            if client:
+                session['client'] = client
+            
         if not client:
             return False
             
@@ -118,6 +133,11 @@ def login():
                 client = result['client']
                 session_data = result['session_data']
                 
+                # Validate the client immediately after login
+                if not neo_client.validate_session(client):
+                    flash('Authentication completed but session validation failed. Please try again.', 'error')
+                    return render_template('login.html')
+                
                 # Store in session
                 session['authenticated'] = True
                 session['access_token'] = session_data.get('access_token')
@@ -129,13 +149,20 @@ def login():
                 session['greeting_name'] = session_data.get('greetingName', ucc)
                 session.permanent = True
                 
+                # Store additional user data in session
+                session['rid'] = session_data.get('rid')
+                session['user_id'] = session_data.get('user_id')
+                session['client_code'] = session_data.get('client_code')
+                session['is_trial_account'] = session_data.get('is_trial_account')
+                
                 # Store complete session persistently
                 persistent_data = session_data.copy()  # Start with complete response
                 persistent_data.update({
                     'access_token': session_data.get('access_token'),
                     'session_token': session_data.get('session_token'),
                     'sid': session_data.get('sid'),
-                    'ucc': ucc
+                    'ucc': ucc,
+                    'mobile_number': mobile_number
                 })
                 session_manager.store_session('default_user', persistent_data)
                 

@@ -105,17 +105,29 @@ class NeoClient:
             self.logger.info("🔐 Attempting TOTP login...")
             
             # Step 1: TOTP Login - following notebook method
-            totp_response = client.login(
-                mobilenumber=mobile_number,
-                password=totp
-            )
-            self.logger.info("✅ TOTP login successful!")
-            self.logger.info(f"Login Response: {totp_response}")
+            try:
+                totp_response = client.login(
+                    mobilenumber=mobile_number,
+                    password=totp
+                )
+                self.logger.info("✅ TOTP login successful!")
+                self.logger.info(f"Login Response: {totp_response}")
+            except Exception as login_error:
+                self.logger.error(f"❌ TOTP login step failed: {str(login_error)}")
+                return {'success': False, 'message': f'TOTP login failed. Please check your mobile number and TOTP code: {str(login_error)}'}
             
             # Step 2: TOTP Validation - following notebook method
-            validation_response = client.session_2fa(OTP=mpin)
-            self.logger.info("✅ TOTP validation successful!")
-            self.logger.info(f"Validation Response: {validation_response}")
+            try:
+                validation_response = client.session_2fa(OTP=mpin)
+                self.logger.info("✅ TOTP validation successful!")
+                self.logger.info(f"Validation Response: {validation_response}")
+            except Exception as validation_error:
+                self.logger.error(f"❌ TOTP validation step failed: {str(validation_error)}")
+                return {'success': False, 'message': f'MPIN validation failed. Please check your MPIN: {str(validation_error)}'}
+            
+            # Check if validation response contains proper data
+            if not validation_response or 'data' not in validation_response:
+                return {'success': False, 'message': 'Invalid response from authentication server'}
             
             return {
                 'success': True,
