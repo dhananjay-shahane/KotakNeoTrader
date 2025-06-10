@@ -611,7 +611,7 @@ def get_user_profile():
         if not session.get('authenticated'):
             return jsonify({'success': False, 'message': 'Not authenticated'})
 
-        # Check if client is valid
+        # Check if client is valid and test with a simple API call
         client = session.get('client')
         token_status = 'Invalid'
         
@@ -619,12 +619,17 @@ def get_user_profile():
             try:
                 # Try a simple API call to validate token
                 limits_response = client.limits()
-                if limits_response and 'data' in limits_response:
+                if limits_response and ('data' in limits_response or 'Data' in limits_response):
                     token_status = 'Valid'
                 else:
                     token_status = 'Expired'
-            except:
+            except Exception as e:
+                logging.error(f"Token validation error: {str(e)}")
                 token_status = 'Expired'
+                # Clear session if token is invalid
+                if "Invalid Credentials" in str(e) or "Invalid JWT token" in str(e):
+                    session.clear()
+                    session_manager.remove_session('default_user')
 
         profile_data = {
             'ucc': session.get('ucc', 'N/A'),

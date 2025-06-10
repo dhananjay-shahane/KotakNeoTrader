@@ -375,7 +375,7 @@ class TradingDashboard {
 
         // Display key limit fields
         const keyFields = ['cash', 'payin', 'payout', 'buyingPower', 'utilizedMargin', 'availableMargin'];
-        
+
         keyFields.forEach(field => {
             if (limitsData[field] !== undefined) {
                 html += `
@@ -616,6 +616,112 @@ class TradingDashboard {
         }
         console.log('Trading Dashboard destroyed');
     }
+    loadLiveQuotes() {
+        fetch('/api/live_quotes')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayLiveQuotes(data.quotes);
+                } else {
+                    console.error('Failed to load live quotes:', data.message);
+                    document.getElementById('live-quotes').innerHTML = 
+                        '<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load quotes</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading live quotes:', error);
+                document.getElementById('live-quotes').innerHTML = 
+                    '<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Error loading quotes</div>';
+            });
+    }
+
+    loadUserProfile() {
+        fetch('/api/user_profile')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayUserProfile(data.profile);
+                } else {
+                    console.error('Failed to load user profile:', data.message);
+                    document.getElementById('user-profile').innerHTML = 
+                        '<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load profile</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading user profile:', error);
+                document.getElementById('user-profile').innerHTML = 
+                    '<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Error loading profile</div>';
+            });
+    }
+    displayLiveQuotes(quotes) {
+        const quotesContainer = document.getElementById('live-quotes');
+        if (!quotes || quotes.length === 0) {
+            quotesContainer.innerHTML = '<div class="text-muted">No live quotes available</div>';
+            return;
+        }
+
+        const quotesHtml = quotes.map(quote => `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <div>
+                    <strong>${quote.symbol}</strong>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold ${quote.changePct >= 0 ? 'text-success' : 'text-danger'}">
+                        ₹${quote.ltp}
+                    </div>
+                    <small class="${quote.changePct >= 0 ? 'text-success' : 'text-danger'}">
+                        ${quote.changePct >= 0 ? '+' : ''}${quote.changePct}%
+                    </small>
+                </div>
+            </div>
+        `).join('');
+
+        quotesContainer.innerHTML = quotesHtml;
+    }
+
+    displayUserProfile(profile) {
+        const profileContainer = document.getElementById('user-profile');
+
+        const statusColor = profile.token_status === 'Valid' ? 'success' : 'danger';
+        const statusIcon = profile.token_status === 'Valid' ? 'check-circle' : 'exclamation-triangle';
+
+        const profileHtml = `
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>${profile.greeting_name}
+                        </h6>
+                        <span class="badge bg-${statusColor}">
+                            <i class="fas fa-${statusIcon} me-1"></i>${profile.token_status}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">UCC</small>
+                    <div class="fw-bold">${profile.ucc}</div>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Login Time</small>
+                    <div class="fw-bold">${profile.login_time}</div>
+                </div>
+                <div class="col-12 mt-2">
+                    <small class="text-muted">Session Token</small>
+                    <div class="text-truncate small" style="font-family: monospace;">${profile.session_token}</div>
+                </div>
+                ${profile.needs_reauth ? `
+                <div class="col-12 mt-2">
+                    <div class="alert alert-warning alert-sm mb-0 py-2">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <small>Session expired. Please <a href="/logout">re-login</a>.</small>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        profileContainer.innerHTML = profileHtml;
+    }
 }
 
 // Initialize dashboard when DOM is loaded
@@ -623,6 +729,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Only initialize if we're on an authenticated page
     if (document.querySelector('.navbar')) {
         window.tradingDashboard = new TradingDashboard();
+        // Load live quotes
+        window.tradingDashboard.loadLiveQuotes();
+
+        // Load user profile
+        window.tradingDashboard.loadUserProfile();
     }
 });
 

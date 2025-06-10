@@ -52,6 +52,11 @@ class NeoClient:
                 neo_fin_key=neo_fin_key
             )
             
+            # Set the session ID if provided
+            if sid:
+                client.session_token = sid
+                self.logger.info(f"Session ID set: {sid[:10]}...")
+            
             self.logger.info("Neo API client initialized with existing tokens")
             return client
             
@@ -64,16 +69,21 @@ class NeoClient:
         try:
             # Try to get account limits to validate session
             response = client.limits()
-            if response and ('data' in response or 'status' in response):
+            if response and ('data' in response or 'Data' in response):
                 self.logger.info("✅ Session validation successful")
                 return True
-            
-            self.logger.info("✅ Session appears valid")
-            return True
+            else:
+                self.logger.warning("⚠️ Session validation failed - no data in response")
+                return False
             
         except Exception as e:
-            self.logger.warning(f"⚠️ Session validation warning: {str(e)}")
-            return True
+            error_msg = str(e)
+            if "Invalid Credentials" in error_msg or "Invalid JWT token" in error_msg:
+                self.logger.error(f"❌ Session validation failed: {error_msg}")
+                return False
+            else:
+                self.logger.warning(f"⚠️ Session validation warning: {error_msg}")
+                return False
     
     def login_with_totp(self, client, mobile_number, ucc, totp, mpin):
         """Login using TOTP (Time-based One-Time Password) - following notebook implementation"""
