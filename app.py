@@ -84,12 +84,7 @@ def index():
     # Only check current session, no auto-authentication bypass
     if validate_current_session():
         return redirect(url_for('dashboard'))
-    return redirect(url_for('token_login'))
-
-@app.route('/token-login')
-def token_login():
-    """Quick token login page"""
-    return render_template('token_login.html')
+    return redirect(url_for('login'))
 
 @app.route('/debug-session')
 def debug_session():
@@ -103,109 +98,52 @@ def debug_session():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page with token-based and TOTP authentication"""
+    """Login page with TOTP authentication only"""
     if request.method == 'POST':
         try:
-            # Check which login method is being used
-            login_type = request.form.get('login_type', 'token')
+            # TOTP Login
+            mobile_number = request.form.get('mobile_number', '').strip()
+            ucc = request.form.get('ucc', '').strip()
+            totp = request.form.get('totp', '').strip()
+            mpin = request.form.get('mpin', '').strip()
             
-            if login_type == 'totp':
-                # TOTP Login
-                mobile_number = request.form.get('mobile_number', '').strip()
-                ucc = request.form.get('ucc', '').strip()
-                totp = request.form.get('totp', '').strip()
-                mpin = request.form.get('mpin', '').strip()
-                
-                if not mobile_number or not ucc or not totp or not mpin:
-                    flash('All TOTP fields are required', 'error')
-                    return render_template('login.html')
-                
-                # Execute TOTP login
-                result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
-                
-                if result['success']:
-                    client = result['client']
-                    session_data = result['session_data']
-                    
-                    # Store in session
-                    session['authenticated'] = True
-                    session['access_token'] = session_data.get('access_token')
-                    session['session_token'] = session_data.get('session_token')
-                    session['sid'] = session_data.get('sid')
-                    session['ucc'] = ucc
-                    session['client'] = client
-                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    session['greeting_name'] = session_data.get('greetingName', ucc)
-                    session.permanent = True
-                    
-                    # Store complete session persistently
-                    persistent_data = session_data.copy()  # Start with complete response
-                    persistent_data.update({
-                        'access_token': session_data.get('access_token'),
-                        'session_token': session_data.get('session_token'),
-                        'sid': session_data.get('sid'),
-                        'ucc': ucc
-                    })
-                    session_manager.store_session('default_user', persistent_data)
-                    
-                    flash('Successfully authenticated with TOTP!', 'success')
-                    return redirect(url_for('dashboard'))
-                else:
-                    flash(f'TOTP login failed: {result.get("message", "Unknown error")}', 'error')
-                    return render_template('login.html')
+            if not mobile_number or not ucc or not totp or not mpin:
+                flash('All fields are required', 'error')
+                return render_template('login.html')
             
+            # Execute TOTP login
+            result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+            
+            if result['success']:
+                client = result['client']
+                session_data = result['session_data']
+                
+                # Store in session
+                session['authenticated'] = True
+                session['access_token'] = session_data.get('access_token')
+                session['session_token'] = session_data.get('session_token')
+                session['sid'] = session_data.get('sid')
+                session['ucc'] = ucc
+                session['client'] = client
+                session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                session['greeting_name'] = session_data.get('greetingName', ucc)
+                session.permanent = True
+                
+                # Store complete session persistently
+                persistent_data = session_data.copy()  # Start with complete response
+                persistent_data.update({
+                    'access_token': session_data.get('access_token'),
+                    'session_token': session_data.get('session_token'),
+                    'sid': session_data.get('sid'),
+                    'ucc': ucc
+                })
+                session_manager.store_session('default_user', persistent_data)
+                
+                flash('Successfully authenticated with TOTP!', 'success')
+                return redirect(url_for('dashboard'))
             else:
-                # Token Login
-                access_token = request.form.get('access_token', '').strip()
-                session_token = request.form.get('session_token', '').strip()
-                sid = request.form.get('sid', '').strip()
-                
-                if not access_token or not session_token:
-                    flash('Access Token and Session Token are required', 'error')
-                    return render_template('login.html')
-                
-                # Initialize client with tokens
-                client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
-                
-                if client and neo_client.validate_session(client):
-                    # Store in session only if 2FA is complete
-                    session['authenticated'] = True
-                    session['access_token'] = access_token
-                    session['session_token'] = session_token
-                    session['sid'] = sid
-                    session['ucc'] = request.form.get('ucc', '').strip()
-                    session['client'] = client
-                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    session.permanent = True
-                    
-                    # Store complete session persistently
-                    session_data = {
-                        'access_token': access_token,
-                        'session_token': session_token,
-                        'sid': sid,
-                        'ucc': session['ucc'],
-                        'greeting_name': session.get('greeting_name'),
-                        'is_trial_account': session.get('is_trial_account'),
-                        'rid': session.get('rid'),
-                        'user_id': session.get('user_id'),
-                        'client_code': session.get('client_code'),
-                        'product_code': session.get('product_code'),
-                        'account_type': session.get('account_type'),
-                        'branch_code': session.get('branch_code'),
-                        'exchange_codes': session.get('exchange_codes'),
-                        'order_types': session.get('order_types'),
-                        'product_types': session.get('product_types'),
-                        'token_type': session.get('token_type'),
-                        'scope': session.get('scope'),
-                        'expires_in': session.get('expires_in')
-                    }
-                    session_manager.store_session('default_user', session_data)
-                    
-                    flash('Successfully authenticated with stored tokens!', 'success')
-                    return redirect(url_for('dashboard'))
-                else:
-                    flash('Complete the 2FA process before accessing this application. Please ensure 2FA is completed and tokens are valid.', 'error')
-                    return render_template('login.html')
+                flash(f'TOTP login failed: {result.get("message", "Unknown error")}', 'error')
+                return render_template('login.html')
                 
         except Exception as e:
             logging.error(f"Login error: {str(e)}")
@@ -232,7 +170,7 @@ def logout():
     except Exception as e:
         logging.error(f"Logout error: {str(e)}")
 
-    return redirect(url_for('token_login'))
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -241,20 +179,20 @@ def dashboard():
     if not validate_current_session():
         flash('Complete the 2FA process before accessing this application', 'error')
         session.clear()
-        return redirect(url_for('token_login'))
+        return redirect(url_for('login'))
 
     try:
         client = session.get('client')
         if not client:
             flash('Session expired. Please complete the 2FA process and login again.', 'error')
             session.clear()
-            return redirect(url_for('token_login'))
+            return redirect(url_for('login'))
 
         # Validate client has proper 2FA before proceeding
         if not neo_client.validate_session(client):
             flash('Complete the 2FA process before accessing this application', 'error')
             session.clear()
-            return redirect(url_for('token_login'))
+            return redirect(url_for('login'))
 
         # Fetch dashboard data
         dashboard_data = trading_functions.get_dashboard_data(client)
@@ -266,7 +204,7 @@ def dashboard():
         if "Complete the 2fa process" in str(e) or "Invalid Credentials" in str(e):
             flash('Complete the 2FA process before accessing this application', 'error')
             session.clear()
-            return redirect(url_for('token_login'))
+            return redirect(url_for('login'))
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
