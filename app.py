@@ -43,49 +43,28 @@ websocket_handler = WebSocketHandler()
 from session_manager import SessionManager
 session_manager = SessionManager()
 
-def auto_authenticate():
-    """Auto authenticate using stored session if available"""
+def validate_current_session():
+    """Validate current session without auto-login bypass"""
     try:
-        # Check if user is already authenticated
-        if session.get('authenticated'):
-            # Validate existing session
-            client = session.get('client')
-            if client and neo_client.validate_session(client):
-                return True
-            else:
-                # Clear invalid session
-                session.clear()
-        
-        # Try to load from stored sessions
-        stored_session = session_manager.get_valid_session()
-        if stored_session:
-            # Initialize client with stored tokens
-            client = neo_client.initialize_client_with_tokens(
-                stored_session['access_token'],
-                stored_session['session_token'],
-                stored_session['sid']
-            )
+        # Only validate if user is already authenticated in this session
+        if not session.get('authenticated'):
+            return False
             
-            if client:
-                # Restore session
-                session['authenticated'] = True
-                session['access_token'] = stored_session['access_token']
-                session['session_token'] = stored_session['session_token']
-                session['sid'] = stored_session['sid']
-                session['ucc'] = stored_session['ucc']
-                session['client'] = client
-                session.permanent = True
-                
-                logging.info("✅ Auto-authentication successful")
-                return True
-            else:
-                # Remove invalid stored session
-                session_manager.remove_session('default_user')
-                logging.warning("⚠️ Removed invalid stored session")
-        
-        return False
+        client = session.get('client')
+        if not client:
+            return False
+            
+        # Validate session with proper 2FA check
+        if neo_client.validate_session(client):
+            return True
+        else:
+            # Clear invalid session
+            session.clear()
+            session_manager.remove_session('default_user')
+            return False
+            
     except Exception as e:
-        logging.error(f"Auto-authentication failed: {e}")
+        logging.error(f"Session validation failed: {e}")
         # Clear any corrupted session data
         session.clear()
         return False
@@ -102,8 +81,8 @@ def health_check():
 @app.route('/')
 def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
-    # Try auto-authentication first
-    if auto_authenticate() or (session.get('authenticated')):
+    # Only check current session, no auto-authentication bypass
+    if validate_current_session():
         return redirect(url_for('dashboard'))
     return redirect(url_for('token_login'))
 
@@ -188,8 +167,8 @@ def login():
                 # Initialize client with tokens
                 client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
                 
-                if client:
-                    # Store in session
+                if client and neo_client.validate_session(client):
+                    # Store in session only if 2FA is complete
                     session['authenticated'] = True
                     session['access_token'] = access_token
                     session['session_token'] = session_token
@@ -225,7 +204,7 @@ def login():
                     flash('Successfully authenticated with stored tokens!', 'success')
                     return redirect(url_for('dashboard'))
                 else:
-                    flash('Failed to authenticate with provided tokens. Please ensure 2FA is completed and tokens are valid.', 'error')
+                    flash('Complete the 2FA process before accessing this application. Please ensure 2FA is completed and tokens are valid.', 'error')
                     return render_template('login.html')
                 
         except Exception as e:
@@ -258,39 +237,22 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     """Main dashboard with portfolio overview"""
-    # Try auto-authentication first
-    if not auto_authenticate() and not session.get('authenticated'):
-        flash('Please login to access the dashboard.', 'warning')
+    # Require proper authentication - no bypass
+    if not validate_current_session():
+        flash('Complete the 2FA process before accessing this application', 'error')
+        session.clear()
         return redirect(url_for('token_login'))
 
     try:
-        # Get client from session or reinitialize if needed
         client = session.get('client')
         if not client:
-            # Try to reinitialize with session tokens
-            if session.get('access_token'):
-                client = neo_client.initialize_client_with_tokens(
-                    session.get('access_token'),
-                    session.get('session_token'),
-                    session.get('sid')
-                )
-                if client:
-                    session['client'] = client
-            
-            # If still no client, try stored session
-            if not client:
-                stored_session = session_manager.get_valid_session()
-                if stored_session:
-                    client = neo_client.initialize_client_with_tokens(
-                        stored_session['access_token'],
-                        stored_session['session_token'],
-                        stored_session['sid']
-                    )
-                    if client:
-                        session['client'] = client
+            flash('Session expired. Please complete the 2FA process and login again.', 'error')
+            session.clear()
+            return redirect(url_for('token_login'))
 
-        if not client:
-            flash('Session expired. Please login again.', 'error')
+        # Validate client has proper 2FA before proceeding
+        if not neo_client.validate_session(client):
+            flash('Complete the 2FA process before accessing this application', 'error')
             session.clear()
             return redirect(url_for('token_login'))
 
@@ -301,6 +263,10 @@ def dashboard():
 
     except Exception as e:
         logging.error(f"Dashboard error: {str(e)}")
+        if "Complete the 2fa process" in str(e) or "Invalid Credentials" in str(e):
+            flash('Complete the 2FA process before accessing this application', 'error')
+            session.clear()
+            return redirect(url_for('token_login'))
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
@@ -497,12 +463,12 @@ def get_live_quotes():
 @app.route('/api/portfolio_summary')
 def get_portfolio_summary():
     try:
-        if not session.get('authenticated'):
-            return jsonify({'success': False, 'message': 'Not authenticated'})
+        if not validate_current_session():
+            return jsonify({'success': False, 'message': 'Complete the 2FA process before accessing this application'})
 
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired'})
+            return jsonify({'success': False, 'message': 'Complete the 2FA process before accessing this application'})
 
         # Get individual components instead of combined summary to avoid repeated calls
         positions_data = trading_functions.get_positions(client)
@@ -623,8 +589,8 @@ def get_holdings_api():
 def get_user_profile():
     """API endpoint to get user profile information"""
     try:
-        if not session.get('authenticated'):
-            return jsonify({'success': False, 'message': 'Not authenticated'})
+        if not validate_current_session():
+            return jsonify({'success': False, 'message': 'Complete the 2FA process before accessing this application'})
 
         # Check if client is valid and test with a simple API call
         client = session.get('client')
@@ -632,17 +598,29 @@ def get_user_profile():
         
         if client:
             try:
-                # Try a simple API call to validate token
+                # Try a simple API call to validate token and 2FA
                 limits_response = client.limits()
                 if limits_response and ('data' in limits_response or 'Data' in limits_response):
-                    token_status = 'Valid'
+                    data = limits_response.get('data') or limits_response.get('Data')
+                    if data and not isinstance(data, str):
+                        token_status = 'Valid'
+                    else:
+                        token_status = 'Incomplete 2FA'
                 else:
                     token_status = 'Expired'
             except Exception as e:
                 logging.error(f"Token validation error: {str(e)}")
-                token_status = 'Expired'
-                # Clear session if token is invalid
-                if "Invalid Credentials" in str(e) or "Invalid JWT token" in str(e):
+                error_msg = str(e)
+                if "Complete the 2fa process" in error_msg:
+                    token_status = 'Incomplete 2FA'
+                else:
+                    token_status = 'Expired'
+                # Clear session if token is invalid or 2FA incomplete
+                if any(phrase in error_msg for phrase in [
+                    "Complete the 2fa process",
+                    "Invalid Credentials", 
+                    "Invalid JWT token"
+                ]):
                     session.clear()
                     session_manager.remove_session('default_user')
 

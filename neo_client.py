@@ -65,21 +65,35 @@ class NeoClient:
             return None
     
     def validate_session(self, client):
-        """Validate if the session is properly authenticated"""
+        """Validate if the session is properly authenticated with complete 2FA"""
         try:
             # Try to get account limits to validate session
             response = client.limits()
+            
+            # Check for successful response with data
             if response and ('data' in response or 'Data' in response):
-                self.logger.info("✅ Session validation successful")
-                return True
+                # Additional check for 2FA completion
+                data = response.get('data') or response.get('Data')
+                if data and not isinstance(data, str):  # Ensure it's not an error message
+                    self.logger.info("✅ Session validation successful with complete 2FA")
+                    return True
+                else:
+                    self.logger.warning("⚠️ Session validation failed - incomplete 2FA or invalid data")
+                    return False
             else:
                 self.logger.warning("⚠️ Session validation failed - no data in response")
                 return False
             
         except Exception as e:
             error_msg = str(e)
-            if "Invalid Credentials" in error_msg or "Invalid JWT token" in error_msg:
-                self.logger.error(f"❌ Session validation failed: {error_msg}")
+            if any(phrase in error_msg for phrase in [
+                "Complete the 2fa process", 
+                "Invalid Credentials", 
+                "Invalid JWT token",
+                "2fa process",
+                "authentication"
+            ]):
+                self.logger.error(f"❌ Session validation failed - 2FA required: {error_msg}")
                 return False
             else:
                 self.logger.warning(f"⚠️ Session validation warning: {error_msg}")
