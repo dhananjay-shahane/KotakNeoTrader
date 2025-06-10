@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_session import Session
 from neo_client import NeoClient
@@ -154,6 +155,8 @@ def login():
                     session['sid'] = session_data.get('sid')
                     session['ucc'] = ucc
                     session['client'] = client
+                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    session['greeting_name'] = session_data.get('greetingName', ucc)
                     session.permanent = True
                     
                     # Store session persistently
@@ -192,6 +195,7 @@ def login():
                     session['sid'] = sid
                     session['ucc'] = request.form.get('ucc', '').strip()
                     session['client'] = client
+                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     session.permanent = True
                     
                     # Store session persistently
@@ -598,6 +602,33 @@ def get_holdings_api():
             
     except Exception as e:
         logging.error(f"Holdings API error: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/user_profile')
+def get_user_profile():
+    """API endpoint to get user profile information"""
+    try:
+        if not session.get('authenticated'):
+            return jsonify({'success': False, 'message': 'Not authenticated'})
+
+        profile_data = {
+            'ucc': session.get('ucc', 'N/A'),
+            'greeting_name': session.get('greeting_name', session.get('ucc', 'User')),
+            'login_time': session.get('login_time', 'N/A'),
+            'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
+            'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
+            'sid': session.get('sid', 'N/A')[:15] + '...' if session.get('sid') else 'N/A',
+            'authenticated': session.get('authenticated', False),
+            'account_status': 'Active' if session.get('authenticated') else 'Inactive'
+        }
+        
+        return jsonify({
+            'success': True,
+            'profile': profile_data
+        })
+            
+    except Exception as e:
+        logging.error(f"User profile API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/test_positions')

@@ -24,7 +24,7 @@
                                 <i class="fas fa-user-circle fa-3x text-white"></i>
                             </div>
                             <div>
-                                <h3 class="text-white mb-1">Welcome back, {{ session.credentials.ucc if session.credentials else 'Trader' }}!</h3>
+                                <h3 class="text-white mb-1">Welcome back, {{ session.get('ucc', 'Trader') }}!</h3>
                                 <p class="text-white-50 mb-0">
                                     <i class="fas fa-clock me-1"></i>
                                     Last login: <span id="lastLoginTime">Today</span>
@@ -596,7 +596,7 @@
                         <div class="user-profile-avatar mb-3">
                             <i class="fas fa-user-circle fa-5x text-primary"></i>
                         </div>
-                        <h4 class="text-light">{{ session.credentials.ucc if session.credentials else 'User' }}</h4>
+                        <h4 class="text-light">{{ session.get('ucc', 'User') }}</h4>
                         <span class="badge bg-success">Active Trader</span>
                     </div>
                     <div class="col-md-8">
@@ -607,7 +607,7 @@
                             <div class="col-sm-6 mb-3">
                                 <label class="form-label text-muted">UCC (User Code)</label>
                                 <div class="form-control bg-secondary text-light border-0">
-                                    {{ session.credentials.ucc if session.credentials else 'N/A' }}
+                                    {{ session.get('ucc', 'N/A') }}
                                 </div>
                             </div>
                             <div class="col-sm-6 mb-3">
@@ -621,13 +621,27 @@
                             <div class="col-sm-6 mb-3">
                                 <label class="form-label text-muted">Session Token</label>
                                 <div class="form-control bg-secondary text-light border-0" style="font-family: monospace; font-size: 0.8rem;">
-                                    {{ session.credentials.session_token[:20] if session.credentials and session.credentials.session_token else 'N/A' }}...
+                                    {{ session.get('session_token', 'N/A')[:20] if session.get('session_token') else 'N/A' }}...
                                 </div>
                             </div>
                             <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">Access Token</label>
+                                <div class="form-control bg-secondary text-light border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                    {{ session.get('access_token', 'N/A')[:20] if session.get('access_token') else 'N/A' }}...
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
                                 <label class="form-label text-muted">Login Time</label>
                                 <div class="form-control bg-secondary text-light border-0">
-                                    <span id="loginTime">{{ session.get('login_time', 'N/A') }}</span>
+                                    <span id="loginTime">{{ session.get('login_time', 'Today') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label text-muted">Session ID</label>
+                                <div class="form-control bg-secondary text-light border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                    {{ session.get('sid', 'N/A')[:15] if session.get('sid') else 'N/A' }}...
                                 </div>
                             </div>
                         </div>
@@ -1226,7 +1240,7 @@ function refreshPortfolioData() {
     }
 }
 
-// Set last login time on page load
+// Set last login time on page load and load user profile
 document.addEventListener('DOMContentLoaded', function() {
     const lastLoginElement = document.getElementById('lastLoginTime');
     if (lastLoginElement) {
@@ -1240,7 +1254,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         portfolioUpdateElement.textContent = now.toLocaleTimeString();
     }
+
+    // Load user profile data
+    loadUserProfile();
 });
+
+// Function to load user profile data
+async function loadUserProfile() {
+    try {
+        const response = await fetch('/api/user_profile');
+        const data = await response.json();
+        
+        if (data.success && data.profile) {
+            const profile = data.profile;
+            
+            // Update login time if available
+            const loginTimeElement = document.getElementById('loginTime');
+            if (loginTimeElement && profile.login_time !== 'N/A') {
+                loginTimeElement.textContent = profile.login_time;
+            }
+            
+            console.log('User profile loaded:', profile);
+        }
+    } catch (error) {
+        console.error('Error loading user profile:', error);
+    }
+}
 
 // Auto-refresh specific sections every 15 seconds instead of full page
 setInterval(() => {

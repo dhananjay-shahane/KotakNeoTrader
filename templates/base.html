@@ -60,7 +60,7 @@
                                 <i class="fas fa-user-circle fa-lg"></i>
                             </div>
                             <div class="user-info d-none d-md-block">
-                                <small class="text-light">{{ session.credentials.ucc if session.credentials else 'User' }}</small>
+                                <small class="text-light">{{ session.get('greeting_name', session.get('ucc', 'User')) }}</small>
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userDropdown">
