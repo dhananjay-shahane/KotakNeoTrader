@@ -24,7 +24,7 @@ app.secret_key = os.environ.get("SESSION_SECRET", "kotak-neo-trading-app-secret-
 
 # Configure for Replit deployment
 from werkzeug.middleware.proxy_fix import ProxyFix
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_prefix=1, x_for=1, x_port=1)
 
 # Configure session for persistent storage
 app.config['SESSION_TYPE'] = 'filesystem'
