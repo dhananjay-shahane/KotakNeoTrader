@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 from neo_client import NeoClient
 from trading_functions import TradingFunctions
 from websocket_handler import WebSocketHandler
@@ -26,6 +27,14 @@ app.secret_key = os.environ.get("SESSION_SECRET", "kotak-neo-trading-app-secret-
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_prefix=1, x_for=1, x_port=1)
 
+# Configure PostgreSQL database
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 # Configure session for persistent storage
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
@@ -33,6 +42,10 @@ app.config['SESSION_FILE_DIR'] = './flask_session'
 app.config['SESSION_FILE_THRESHOLD'] = 500
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 Session(app)
+
+# Initialize database
+from models import db, User, UserSession, UserPreferences
+db.init_app(app)
 
 # Initialize Neo Client and Trading Functions
 neo_client = NeoClient()
@@ -42,6 +55,10 @@ websocket_handler = WebSocketHandler()
 # Initialize Session Manager
 from session_manager import SessionManager
 session_manager = SessionManager()
+
+# Create database tables
+with app.app_context():
+    db.create_all()
 
 def validate_current_session():
     """Validate current session without auto-login bypass"""
