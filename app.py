@@ -233,7 +233,32 @@ def dashboard():
         # Fetch dashboard data with error handling
         dashboard_data = {}
         try:
-            dashboard_data = trading_functions.get_dashboard_data(client)
+            raw_dashboard_data = trading_functions.get_dashboard_data(client)
+            
+            # Ensure dashboard_data is a dictionary
+            if isinstance(raw_dashboard_data, dict):
+                dashboard_data = raw_dashboard_data
+            else:
+                # If it's not a dict, create a proper structure
+                dashboard_data = {
+                    'positions': raw_dashboard_data if isinstance(raw_dashboard_data, list) else [],
+                    'holdings': [],
+                    'limits': {},
+                    'recent_orders': [],
+                    'total_positions': len(raw_dashboard_data) if isinstance(raw_dashboard_data, list) else 0,
+                    'total_holdings': 0,
+                    'total_orders': 0
+                }
+                
+            # Ensure all required keys exist with default values
+            dashboard_data.setdefault('positions', [])
+            dashboard_data.setdefault('holdings', [])
+            dashboard_data.setdefault('limits', {})
+            dashboard_data.setdefault('recent_orders', [])
+            dashboard_data.setdefault('total_positions', 0)
+            dashboard_data.setdefault('total_holdings', 0)
+            dashboard_data.setdefault('total_orders', 0)
+            
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
             # Check if it's a 2FA error specifically
@@ -248,7 +273,15 @@ def dashboard():
             else:
                 # For other errors, show dashboard with empty data
                 flash(f'Some data could not be loaded: {str(dashboard_error)}', 'warning')
-                dashboard_data = {}
+                dashboard_data = {
+                    'positions': [],
+                    'holdings': [],
+                    'limits': {},
+                    'recent_orders': [],
+                    'total_positions': 0,
+                    'total_holdings': 0,
+                    'total_orders': 0
+                }
 
         return render_template('dashboard.html', data=dashboard_data)
 

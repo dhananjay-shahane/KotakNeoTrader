@@ -39,10 +39,20 @@ class TradingFunctions:
             try:
                 self.logger.info("🏦 Fetching holdings...")
                 holdings_response = client.holdings()
-                if holdings_response and isinstance(holdings_response, dict) and 'data' in holdings_response:
-                    dashboard_data['holdings'] = holdings_response['data']
-                    dashboard_data['total_holdings'] = len(holdings_response['data'])
-                    self.logger.info(f"✅ Found {len(holdings_response['data'])} holdings")
+                if holdings_response and isinstance(holdings_response, dict):
+                    if 'data' in holdings_response:
+                        dashboard_data['holdings'] = holdings_response['data']
+                        dashboard_data['total_holdings'] = len(holdings_response['data'])
+                        self.logger.info(f"✅ Found {len(holdings_response['data'])} holdings")
+                    elif 'message' in holdings_response or 'error' in holdings_response:
+                        # API returned error response
+                        self.logger.warning(f"⚠️ Holdings API error: {holdings_response}")
+                        dashboard_data['holdings'] = []
+                        dashboard_data['total_holdings'] = 0
+                    else:
+                        dashboard_data['holdings'] = []
+                        dashboard_data['total_holdings'] = 0
+                        self.logger.info("🏦 Holdings response structure unexpected")
                 elif holdings_response and isinstance(holdings_response, list):
                     dashboard_data['holdings'] = holdings_response
                     dashboard_data['total_holdings'] = len(holdings_response)
