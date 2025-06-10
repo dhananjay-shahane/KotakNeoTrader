@@ -130,58 +130,6 @@ def debug_session():
         'session_keys': list(session.keys())
     })
 
-@app.route('/token_login', methods=['GET', 'POST'])
-def token_login():
-    """Token-based login page"""
-    if request.method == 'POST':
-        try:
-            # Get tokens from form
-            access_token = request.form.get('access_token', '').strip()
-            session_token = request.form.get('session_token', '').strip()
-            ucc = request.form.get('ucc', '').strip()
-            sid = request.form.get('sid', '').strip()
-            
-            if not access_token or not session_token or not ucc:
-                flash('Access token, session token, and UCC are required', 'error')
-                return render_template('token_login.html')
-            
-            # Initialize client with tokens
-            client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
-            
-            if client:
-                # Store in session
-                session['authenticated'] = True
-                session['access_token'] = access_token
-                session['session_token'] = session_token
-                session['sid'] = sid
-                session['ucc'] = ucc
-                session['client'] = client
-                session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                session['greeting_name'] = ucc
-                session.permanent = True
-                
-                # Store persistent session
-                persistent_data = {
-                    'access_token': access_token,
-                    'session_token': session_token,
-                    'sid': sid,
-                    'ucc': ucc
-                }
-                session_manager.store_session('default_user', persistent_data)
-                
-                flash('Successfully logged in with tokens!', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Invalid tokens or session expired', 'error')
-                return render_template('token_login.html')
-                
-        except Exception as e:
-            logging.error(f"Token login error: {str(e)}")
-            flash(f'Token login failed: {str(e)}', 'error')
-            return render_template('token_login.html')
-    
-    return render_template('token_login.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page with TOTP authentication only"""
