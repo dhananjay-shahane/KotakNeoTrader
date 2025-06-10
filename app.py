@@ -13,6 +13,10 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "kotak-neo-trading-app-secret-key")
 
+# Configure for Replit deployment
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 # Configure session for persistent storage
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
@@ -76,6 +80,15 @@ def auto_authenticate():
         # Clear any corrupted session data
         session.clear()
         return False
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'kotak-neo-trading-app',
+        'timestamp': str(os.environ.get('REPL_SLUG', 'development'))
+    })
 
 @app.route('/')
 def index():
