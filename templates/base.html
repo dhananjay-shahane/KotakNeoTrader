@@ -1024,71 +1024,48 @@
         });
     </script>
 
-    
-        // Theme management
-        function initTheme() {
-            const themeToggle = document.getElementById('themeToggle');
-            const savedTheme = localStorage.getItem('theme');
+<script>
+// Theme management - executed immediately
+(function() {
+    // Initialize theme from localStorage or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
 
-            // Default to dark theme if no saved preference
-            const theme = savedTheme || 'dark';
-
-            // Apply theme to document
-            document.documentElement.setAttribute('data-theme', theme);
-
-            // Update toggle button if it exists
-            if (themeToggle) {
-                updateThemeToggleIcon(theme);
-
-                // Add click event listener
-                themeToggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    toggleTheme();
-                });
-            }
-
-            console.log('Theme initialized:', theme);
-        }
-
-        function updateThemeToggleIcon(theme) {
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                const icon = themeToggle.querySelector('i');
-                if (icon) {
-                    icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                }
+    // Function to update theme toggle button
+    function updateThemeToggleButton(theme) {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
+    }
 
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    // Function to toggle theme
+    window.toggleTheme = function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-            // Update theme
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+        // Apply new theme
+        document.documentElement.setAttribute('data-theme', newTheme);
 
-            // Update icon
-            updateThemeToggleIcon(newTheme);
+        // Save to localStorage
+        localStorage.setItem('theme', newTheme);
 
-            console.log('Theme switched to:', newTheme);
-        }
+        // Update toggle button
+        updateThemeToggleButton(newTheme);
 
-        // Initialize theme when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initTheme);
-        } else {
-            initTheme();
-        }
+        console.log('Theme switched to:', newTheme);
+    };
 
-        // Ensure theme is applied on page navigation
-        window.addEventListener('beforeunload', function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            if (currentTheme) {
-                localStorage.setItem('theme', currentTheme);
-            }
-        });
-    
+    // Update button when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        updateThemeToggleButton(currentTheme);
+    });
+})();
+</script>
 
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>

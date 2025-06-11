@@ -177,128 +177,149 @@ body {
 
 /* Light theme styles */
 [data-theme="light"] {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-tertiary: #e9ecef;
-    --text-primary: #212529;
-    --text-secondary: #6c757d;
-    --text-muted: #6c757d;
-    --border-color: #dee2e6;
-    --accent-primary: #0d6efd;
-    --accent-secondary: #6f42c1;
-    --success-color: #198754;
-    --danger-color: #dc3545;
-    --warning-color: #fd7e14;
-    --info-color: #0dcaf0;
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212529;
+    --bs-primary: #0d6efd;
+    --bs-secondary: #6c757d;
+    --bs-success: #198754;
+    --bs-info: #0dcaf0;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
 }
 
-/* Light theme overrides */
 [data-theme="light"] body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-}
-
-[data-theme="light"] .navbar {
-    background-color: var(--bg-secondary) !important;
-    border-bottom: 1px solid var(--border-color);
-}
-
-[data-theme="light"] .navbar-brand,
-[data-theme="light"] .navbar-nav .nav-link {
-    color: var(--text-primary) !important;
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
 }
 
 [data-theme="light"] .card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    background-color: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    color: #212529 !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
 }
 
 [data-theme="light"] .card-header {
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-primary);
+    background-color: #e9ecef !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    color: #212529 !important;
 }
 
 [data-theme="light"] .card-footer {
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
-    color: var(--text-primary);
+    background-color: #e9ecef !important;
+    border-top: 1px solid #dee2e6 !important;
+    color: #212529 !important;
 }
 
 [data-theme="light"] .table {
-    color: var(--text-primary);
+    --bs-table-bg: #ffffff;
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
 }
 
 [data-theme="light"] .table-dark {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    --bs-table-bg: #ffffff;
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
 }
 
-[data-theme="light"] .table-dark th,
-[data-theme="light"] .table-dark td {
-    border-color: var(--border-color);
-    color: var(--text-primary);
+[data-theme="light"] .table-dark thead th {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+    border-color: #0d6efd !important;
+}
+
+[data-theme="light"] .table-primary {
+    --bs-table-bg: #0d6efd;
+    --bs-table-color: #ffffff;
 }
 
 [data-theme="light"] .table-hover tbody tr:hover {
-    background-color: var(--bg-tertiary);
+    background-color: #f8f9fa !important;
 }
 
-[data-theme="light"] .btn {
-    border: 1px solid var(--border-color);
+[data-theme="light"] .navbar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
 }
 
-[data-theme="light"] .btn-outline-light {
-    color: var(--text-primary);
-    border-color: var(--border-color);
+[data-theme="light"] .navbar-brand,
+[data-theme="light"] .nav-link {
+    color: #212529 !important;
 }
 
-[data-theme="light"] .btn-outline-light:hover {
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
+[data-theme="light"] .navbar-brand:hover,
+[data-theme="light"] .nav-link:hover {
+    color: #0d6efd !important;
+}
+
+[data-theme="light"] .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+[data-theme="light"] .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #ffffff;
+}
+
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+    background-color: #ffffff !important;
+    border-color: #ced4da !important;
+    color: #212529 !important;
+}
+
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
 }
 
 [data-theme="light"] .modal-content {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
 }
 
 [data-theme="light"] .modal-header {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #dee2e6 !important;
 }
 
 [data-theme="light"] .modal-footer {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid #dee2e6 !important;
 }
 
-[data-theme="light"] .form-control {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-[data-theme="light"] .form-select {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-[data-theme="light"] .bg-secondary {
-    background-color: var(--bg-secondary) !important;
-}
-
-[data-theme="light"] .bg-dark {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-}
-
-[data-theme="light"] .text-light {
-    color: var(--text-primary) !important;
+[data-theme="light"] .btn-close {
+    filter: none !important;
+    background-color: transparent !important;
 }
 
 [data-theme="light"] .text-muted {
-    color: var(--text-secondary) !important;
+    color: #6c757d !important;
+}
+
+[data-theme="light"] .border {
+    border-color: #dee2e6 !important;
+}
+
+/* Light theme dashboard cards */
+[data-theme="light"] .dashboard-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+[data-theme="light"] .dashboard-card .card-body {
+    color: #212529 !important;
+}
+
+[data-theme="light"] .dashboard-card h3,
+[data-theme="light"] .dashboard-card h4,
+[data-theme="light"] .dashboard-card h5 {
+    color: #212529 !important;
 }
 
 /* Dark theme overrides */
