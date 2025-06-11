@@ -835,17 +835,22 @@
         function initializeTheme() {
             // Get saved theme from localStorage or default to 'dark'
             const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
+            console.log('Saved theme from localStorage:', savedTheme);
 
             // Apply the theme immediately before DOM content loads
             document.documentElement.setAttribute('data-theme', savedTheme);
+            console.log('Theme initialized:', savedTheme);
+            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
 
             // Wait for DOM to be ready before setting up toggle
             function setupThemeToggle() {
                 const themeToggle = document.getElementById('themeToggle');
                 if (!themeToggle) {
-                    console.warn('Theme toggle element not found');
+                    console.log('Theme toggle button not found');
                     return;
                 }
+
+                console.log('Theme toggle found, setting up...');
 
                 // Set toggle state based on saved theme
                 themeToggle.checked = savedTheme === 'light';
@@ -967,16 +972,16 @@
                 });
         }
 
-        // Auto-refresh data every 30 seconds (only for authenticated users)
+        // Auto-refresh specific sections only (no full page reload)
         const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
             setInterval(function() {
-                // Only refresh if page is visible
-                if (!document.hidden) {
-                    const currentPage = window.location.pathname;
-                    if (currentPage === '/dashboard') {
-                        location.reload();
-                    }
+                // Only refresh if page is visible and user is on dashboard
+                if (!document.hidden && window.location.pathname === '/dashboard') {
+                    // Refresh specific sections instead of full page
+                    if (typeof refreshQuotes === 'function') refreshQuotes();
+                    if (typeof refreshPositions === 'function') refreshPositions();
+                    if (typeof refreshPortfolioSummary === 'function') refreshPortfolioSummary();
                 }
             }, 30000);
         }
@@ -1024,48 +1029,7 @@
         });
     </script>
 
-<script>
-// Theme management - executed immediately
-(function() {
-    // Initialize theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Function to update theme toggle button
-    function updateThemeToggleButton(theme) {
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {
-            const icon = themeToggle.querySelector('i');
-            if (icon) {
-                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            }
-        }
-    }
-
-    // Function to toggle theme
-    window.toggleTheme = function() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-        // Apply new theme
-        document.documentElement.setAttribute('data-theme', newTheme);
-
-        // Save to localStorage
-        localStorage.setItem('theme', newTheme);
-
-        // Update toggle button
-        updateThemeToggleButton(newTheme);
-
-        console.log('Theme switched to:', newTheme);
-    };
-
-    // Update button when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        updateThemeToggleButton(currentTheme);
-    });
-})();
-</script>
 
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>

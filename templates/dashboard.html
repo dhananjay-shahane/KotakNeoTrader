@@ -3,9 +3,9 @@
 {% block title %}Dashboard - Kotak Neo Trading{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 class="h3 mb-1">Trading Dashboard</h1>
+        <h1 class="h4 mb-1">Trading Dashboard</h1>
         <p class="text-muted mb-0">Real-time portfolio overview and market data</p>
     </div>
     <div class="d-flex gap-2">
@@ -1225,12 +1225,14 @@ async function loadUserProfile() {
     }
 }
 
-// Auto-refresh specific sections every 15 seconds instead of full page
+// Auto-refresh specific sections every 30 seconds instead of full page
 setInterval(() => {
-    refreshQuotes();
-    refreshPositions();
-    refreshPortfolioSummary();
-}, 15000);
+    if (!document.hidden) {
+        refreshQuotes();
+        refreshPositions();
+        refreshPortfolioSummary();
+    }
+}, 30000);
 
 async function refreshHoldings() {
     const button = document.querySelector('[onclick="refreshHoldings()"]');

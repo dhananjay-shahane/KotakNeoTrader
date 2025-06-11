@@ -1,3 +1,57 @@
+
+from flask import jsonify
+
+# Add these new API endpoints for section-specific refreshes
+@app.route('/api/dashboard_quotes')
+def api_dashboard_quotes():
+    """API endpoint for refreshing quotes section only"""
+    if not session.get('authenticated'):
+        return jsonify({'success': False, 'message': 'Not authenticated'})
+    
+    try:
+        # Simulate quote data (replace with actual API call)
+        quotes = [
+            {'symbol': 'RELIANCE', 'ltp': 2450.75, 'change': 12.50, 'changePct': 0.51},
+            {'symbol': 'TCS', 'ltp': 3675.20, 'change': -8.30, 'changePct': -0.23},
+            {'symbol': 'INFY', 'ltp': 1832.45, 'change': 22.15, 'changePct': 1.22},
+        ]
+        return jsonify({'success': True, 'quotes': quotes})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/dashboard_positions')
+def api_dashboard_positions():
+    """API endpoint for refreshing positions section only"""
+    if not session.get('authenticated'):
+        return jsonify({'success': False, 'message': 'Not authenticated'})
+    
+    try:
+        # Get fresh positions data
+        positions_data = get_positions()
+        return jsonify({'success': True, 'positions': positions_data})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/portfolio_summary')
+def api_portfolio_summary():
+    """API endpoint for refreshing portfolio summary only"""
+    if not session.get('authenticated'):
+        return jsonify({'success': False, 'message': 'Not authenticated'})
+    
+    try:
+        # Get fresh summary data
+        data = get_dashboard_data()
+        summary = {
+            'total_positions': len(data.get('positions', [])),
+            'total_holdings': len(data.get('holdings', [])),
+            'total_orders': len(data.get('recent_orders', [])),
+            'available_margin': data.get('limits', {}).get('Net', 0)
+        }
+        return jsonify({'success': True, **summary})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
 import os
 import logging
 from datetime import datetime, timedelta
