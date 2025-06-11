@@ -564,7 +564,7 @@ def get_portfolio_summary():
         
         # Calculate P&L from positions
         total_pnl = 0.0
-        if positions_data:
+        if positions_data and isinstance(positions_data, list):
             for position in positions_data:
                 try:
                     pnl = float(position.get('pnl', 0) or position.get('urPnl', 0) or 0)
@@ -574,11 +574,11 @@ def get_portfolio_summary():
         
         # Calculate investment from holdings
         total_investment = 0.0
-        if holdings_data:
+        if holdings_data and isinstance(holdings_data, list):
             for holding in holdings_data:
                 try:
                     quantity = float(holding.get('quantity', 0) or holding.get('holdQty', 0) or 0)
-                    avg_price = float(holding.get('avgPrice', 0) or holding.get('avgRate', 0) or 0)
+                    avg_price = float(holding.get('avgPrice', 0) or holding.get('avgRate', 0) or holding.get('mktPrice', 0) or 0)
                     total_investment += quantity * avg_price
                 except (ValueError, TypeError):
                     continue
