@@ -57,8 +57,10 @@
         <div class="card stats-card border-0 shadow-sm bg-gradient-primary">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Positions</h6>
+                    <div class="flex-grow-1">
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2 d-flex align-items-center">
+                            <i class="fas fa-chart-pie me-2"></i>Total Positions
+                        </h6>
                         <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.total_positions or 0 }}</h2>
                         <small class="text-white-50">
                             <i class="fas fa-chart-line me-1"></i>
@@ -80,8 +82,10 @@
         <div class="card stats-card border-0 shadow-sm bg-gradient-success">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
+                    <div class="flex-grow-1">
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2 d-flex align-items-center">
+                            <i class="fas fa-briefcase me-2"></i>Total Holdings
+                        </h6>
                         <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
                         <small class="text-white-50" id="holdingsValue">
                             <i class="fas fa-wallet me-1"></i>
@@ -107,8 +111,10 @@
         <div class="card stats-card border-0 shadow-sm bg-gradient-info">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Today's Orders</h6>
+                    <div class="flex-grow-1">
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2 d-flex align-items-center">
+                            <i class="fas fa-list-alt me-2"></i>Today's Orders
+                        </h6>
                         <h2 class="mb-0 fw-bold text-white" id="totalOrders">{{ data.total_orders or 0 }}</h2>
                         <small class="text-white-50">
                             <i class="fas fa-clock me-1"></i>
@@ -130,16 +136,18 @@
         <div class="card stats-card border-0 shadow-sm bg-gradient-warning">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-dark fw-bold mb-2">Available Margin</h6>
-                        <h2 class="mb-0 fw-bold text-dark" id="availableMargin">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title text-uppercase text-white fw-bold mb-2 d-flex align-items-center">
+                            <i class="fas fa-coins me-2"></i>Available Margin
+                        </h6>
+                        <h2 class="mb-0 fw-bold text-white" id="availableMargin">
                             {% if data.limits and data.limits.cash %}
                                 ₹{{ "{:,.2f}"|format(data.limits.cash|float) }}
                             {% else %}
                                 ₹0.00
                             {% endif %}
                         </h2>
-                        <small class="text-dark" id="marginUsed">
+                        <small class="text-white-50" id="marginUsed">
                             <i class="fas fa-rupee-sign me-1"></i>
                             {% if data.limits and data.limits.payin %}
                                 Used: ₹{{ "{:,.2f}"|format(data.limits.payin|float) }}
@@ -149,8 +157,8 @@
                         </small>
                     </div>
                     <div class="stats-icon">
-                        <div class="bg-dark bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-coins fa-2x text-dark"></i>
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-coins fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
