@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kotak Neo Trading{% endblock %}</title>
     
+    <!-- Theme persistence script (runs immediately) -->
+    <script>
+        // Apply saved theme immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -427,37 +436,50 @@
         /* Light Theme Variables */
         :root[data-theme="light"] {
             --primary-color: #2563eb;
-            --secondary-color: #f8fafc;
+            --secondary-color: #ffffff;
             --accent-color: #0ea5e9;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --dark-bg: #ffffff;
-            --card-bg: #f8fafc;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --dark-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: #d1d5db;
         }
 
         /* Light theme specific overrides */
         :root[data-theme="light"] .main-header {
             background: #ffffff;
+            border-bottom-color: #e5e7eb;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         :root[data-theme="light"] .sidebar {
             background: #ffffff;
+            border-right-color: #e5e7eb;
             box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
         }
 
         :root[data-theme="light"] .card {
             background: #ffffff;
+            border-color: #e5e7eb;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         :root[data-theme="light"] .table-dark {
             --bs-table-bg: #ffffff;
-            --bs-table-color: #1e293b;
+            --bs-table-color: #111827;
+            --bs-table-border-color: #e5e7eb;
+        }
+
+        :root[data-theme="light"] .table-dark thead th {
+            border-bottom-color: #d1d5db;
+            color: #374151;
+        }
+
+        :root[data-theme="light"] .table-hover > tbody > tr:hover {
+            background-color: rgba(59, 130, 246, 0.05);
         }
 
         :root[data-theme="light"] .btn-primary {
@@ -465,20 +487,35 @@
             border-color: var(--primary-color);
         }
 
+        :root[data-theme="light"] .notification-btn {
+            color: #6b7280;
+        }
+
         :root[data-theme="light"] .notification-btn:hover {
-            background: #f1f5f9;
+            background: #f3f4f6;
+            color: #374151;
         }
 
         :root[data-theme="light"] .user-profile:hover {
-            background: #f1f5f9;
+            background: #f3f4f6;
+        }
+
+        :root[data-theme="light"] .nav-link {
+            color: #6b7280;
         }
 
         :root[data-theme="light"] .nav-link:hover {
             background: rgba(37, 99, 235, 0.1);
+            color: #374151;
+        }
+
+        :root[data-theme="light"] .nav-link.active {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.1);
         }
 
         :root[data-theme="light"] .theme-toggle-label {
-            background: #f1f5f9;
+            background: #f9fafb;
             border-color: #d1d5db;
         }
 
@@ -487,7 +524,45 @@
         }
 
         :root[data-theme="light"] .theme-icon-dark {
+            color: #6b7280;
+        }
+
+        :root[data-theme="light"] .dropdown-menu {
+            background: #ffffff;
+            border-color: #e5e7eb;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        :root[data-theme="light"] .dropdown-item {
+            color: #374151;
+        }
+
+        :root[data-theme="light"] .dropdown-item:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        :root[data-theme="light"] .toaster {
+            background: #ffffff;
+            border-color: #e5e7eb;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        :root[data-theme="light"] .toaster-title {
+            color: #111827;
+        }
+
+        :root[data-theme="light"] .toaster-message {
+            color: #6b7280;
+        }
+
+        :root[data-theme="light"] .toaster-close {
             color: #9ca3af;
+        }
+
+        :root[data-theme="light"] .toaster-close:hover {
+            color: #374151;
+            background: rgba(0, 0, 0, 0.05);
         }
 
         /* Toaster Styles */
@@ -758,31 +833,45 @@
 
         // Theme Toggle Functionality
         function initializeTheme() {
-            const themeToggle = document.getElementById('themeToggle');
-            if (!themeToggle) return;
-
             // Get saved theme from localStorage or default to 'dark'
             const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
             
-            // Apply the theme immediately
+            // Apply the theme immediately before DOM content loads
             document.documentElement.setAttribute('data-theme', savedTheme);
             
-            // Set toggle state based on saved theme
-            themeToggle.checked = savedTheme === 'light';
-            
-            // Add event listener for theme changes
-            themeToggle.addEventListener('change', function() {
-                const newTheme = this.checked ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('neo-trading-theme', newTheme);
+            // Wait for DOM to be ready before setting up toggle
+            function setupThemeToggle() {
+                const themeToggle = document.getElementById('themeToggle');
+                if (!themeToggle) {
+                    console.warn('Theme toggle element not found');
+                    return;
+                }
+
+                // Set toggle state based on saved theme
+                themeToggle.checked = savedTheme === 'light';
                 
-                // Show confirmation toast
-                const message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
-                showToaster('Theme Updated', message, 'info');
-                
-                // Optional: Log for debugging
-                console.log('Theme changed to:', newTheme);
-            });
+                // Add event listener for theme changes
+                themeToggle.addEventListener('change', function() {
+                    const newTheme = this.checked ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('neo-trading-theme', newTheme);
+                    
+                    // Show confirmation toast
+                    const message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
+                    if (typeof showToaster === 'function') {
+                        showToaster('Theme Updated', message, 'info');
+                    }
+                    
+                    console.log('Theme changed to:', newTheme);
+                });
+            }
+
+            // If DOM is already loaded, setup immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setupThemeToggle);
+            } else {
+                setupThemeToggle();
+            }
         }
 
         // Toaster Functionality
@@ -901,11 +990,11 @@
             console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
         }
 
+        // Initialize theme immediately (before DOM loads)
+        initializeTheme();
+
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize theme first
-            initializeTheme();
-            
             // Debug theme setup
             setTimeout(() => {
                 debugThemeToggle();
@@ -927,14 +1016,11 @@
             alerts.forEach(alert => {
                 const message = alert.textContent.trim();
                 const type = alert.classList.contains('alert-success') ? 'success' : 'error';
-                showToaster('System Message', message, type);
+                if (typeof showToaster === 'function') {
+                    showToaster('System Message', message, type);
+                }
                 alert.remove();
             });
-
-            // Show welcome toast for theme functionality
-            setTimeout(() => {
-                showToaster('Welcome', 'Use the theme toggle in the header to switch between light and dark modes', 'info');
-            }, 1000);
         });
     </script>
     
