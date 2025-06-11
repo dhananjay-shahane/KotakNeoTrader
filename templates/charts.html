@@ -181,7 +181,7 @@
                         <h6 class="mb-0">Symbol Search</h6>
                     </div>
                     <div class="card-body p-3">
-                    
+
                     <!-- Search Input -->
                     <div class="mb-3">
                         <input type="text" class="form-control symbol-search" id="symbolSearch" 
@@ -217,7 +217,7 @@
             </div>
 
             <!-- Main Chart Area -->
-            <div class="col-md-6">
+            <div class="col-md-9">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div class="price-info">
@@ -227,7 +227,7 @@
                                 <span class="price-change" id="priceChange">--</span>
                             </div>
                         </div>
-                        
+
                         <!-- Timeframe Buttons -->
                         <div class="timeframe-controls">
                             <button class="timeframe-btn" data-period="1D">1D</button>
@@ -279,7 +279,7 @@
                 this.currentSymbol = null;
                 this.currentPeriod = '1W';
                 this.searchTimeout = null;
-                
+
                 this.initializeChart();
                 this.setupEventListeners();
                 this.loadInitialData();
@@ -288,7 +288,7 @@
             initializeChart() {
                 const chartContainer = document.getElementById('chartContainer');
                 chartContainer.innerHTML = '';
-                
+
                 this.chart = LightweightCharts.createChart(chartContainer, {
                     width: chartContainer.clientWidth,
                     height: chartContainer.clientHeight,
@@ -371,7 +371,7 @@
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        
+
                         if (btn.dataset.period === 'custom') {
                             document.getElementById('customDateRange').classList.add('show');
                         } else {
@@ -388,7 +388,7 @@
                 document.getElementById('applyDateRange').addEventListener('click', () => {
                     const startDate = document.getElementById('startDate').value;
                     const endDate = document.getElementById('endDate').value;
-                    
+
                     if (startDate && endDate && this.currentSymbol) {
                         this.loadChartData(this.currentSymbol, 'custom', startDate, endDate);
                     }
@@ -409,7 +409,7 @@
                 try {
                     const response = await fetch(`/api/search-symbols?q=${encodeURIComponent(query)}`);
                     const symbols = await response.json();
-                    
+
                     const resultsContainer = document.getElementById('symbolResults');
                     resultsContainer.innerHTML = symbols.map(symbol => `
                         <div class="symbol-item" data-symbol="${symbol.symbol}">
@@ -434,12 +434,12 @@
                 document.getElementById('symbolTitle').textContent = symbol;
                 document.getElementById('symbolSearch').value = symbol;
                 document.getElementById('symbolResults').innerHTML = '';
-                
+
                 // Remove active class from all symbol items
                 document.querySelectorAll('.symbol-item').forEach(item => {
                     item.classList.remove('active');
                 });
-                
+
                 this.loadChartData(symbol, this.currentPeriod);
             }
 
@@ -447,7 +447,7 @@
                 try {
                     const chartContainer = document.getElementById('chartContainer');
                     chartContainer.innerHTML = '<div class="loading"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-                    
+
                     let url = `/api/chart-data?symbol=${encodeURIComponent(symbol)}&period=${period}`;
                     if (startDate && endDate) {
                         url += `&start=${startDate}&end=${endDate}`;
