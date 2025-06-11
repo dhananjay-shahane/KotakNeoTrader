@@ -1289,6 +1289,43 @@ async function loadUserProfile() {
     }
 }
 
+// Portfolio summary refresh function
+async function refreshPortfolioSummary() {
+    try {
+        const response = await fetch('/api/limits');
+        const data = await response.json();
+        
+        if (data.success && data.limits) {
+            const limits = data.limits;
+            
+            // Update portfolio value
+            const portfolioValue = document.querySelector('[data-stat="portfolio-value"]');
+            if (portfolioValue) {
+                portfolioValue.textContent = `₹${parseFloat(limits.Net || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            }
+            
+            // Update available margin
+            const availableMargin = document.querySelector('[data-stat="available-margin"]');
+            if (availableMargin) {
+                const available = parseFloat(limits.Net || 0) - parseFloat(limits.MarginUsed || 0);
+                availableMargin.textContent = `₹${available.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            }
+            
+            // Update P&L
+            const totalPnl = document.querySelector('[data-stat="total-pnl"]');
+            if (totalPnl) {
+                const unrealized = parseFloat(limits.UnrealizedMtomPrsnt || 0);
+                const realized = parseFloat(limits.RealizedMtomPrsnt || 0);
+                const total = unrealized + realized;
+                totalPnl.textContent = `₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                totalPnl.className = `fw-bold ${total > 0 ? 'text-success' : total < 0 ? 'text-danger' : 'text-muted'}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing portfolio summary:', error);
+    }
+}
+
 // Auto-refresh specific sections every 15 seconds instead of full page
 setInterval(() => {
     refreshQuotes();

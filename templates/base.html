@@ -247,7 +247,7 @@
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 1rem 2rem;
             min-height: calc(100vh - var(--header-height));
             transition: margin-left 0.3s ease;
         }
@@ -775,7 +775,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="main-content" style="padding-top: 1rem;">
+            <div style="position: fixed; top: calc(var(--header-height) + 1rem); left: 50%; transform: translateX(-50%); z-index: 1050; width: 90%; max-width: 500px;">
                 {% for category, message in messages %}
                     {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
                     <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
@@ -967,7 +967,7 @@
                 });
         }
 
-        // Auto-refresh data every 30 seconds (only for authenticated users)
+        // Auto-refresh specific sections every 30 seconds (only for authenticated users)
         const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
             setInterval(function() {
@@ -975,7 +975,16 @@
                 if (!document.hidden) {
                     const currentPage = window.location.pathname;
                     if (currentPage === '/dashboard') {
-                        location.reload();
+                        // Refresh specific sections instead of full page
+                        if (typeof refreshQuotes === 'function') refreshQuotes();
+                        if (typeof refreshPositions === 'function') refreshPositions();
+                        if (typeof refreshPortfolioSummary === 'function') refreshPortfolioSummary();
+                    } else if (currentPage === '/orders') {
+                        if (typeof refreshOrdersTable === 'function') refreshOrdersTable();
+                    } else if (currentPage === '/positions') {
+                        if (typeof refreshPositionsData === 'function') refreshPositionsData();
+                    } else if (currentPage === '/holdings') {
+                        if (typeof refreshHoldingsData === 'function') refreshHoldingsData();
                     }
                 }
             }, 30000);
