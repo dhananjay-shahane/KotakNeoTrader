@@ -1,3 +1,11 @@
+` tags.
+
+```
+Replacing the theme toggle functionality and removing extra spacing in the javascript section.
+```
+
+```html
+<replit_final_file>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -831,53 +839,56 @@
             setTimeout(() => showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'), 1000);
         }
 
-        // Theme Toggle Functionality
+        // Theme management
         function initializeTheme() {
-            // Get saved theme from localStorage or default to 'dark'
-            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
-            console.log('Saved theme from localStorage:', savedTheme);
+            const savedTheme = localStorage.getItem('theme');
+            const currentTheme = savedTheme || 'dark';
 
-            // Apply the theme immediately before DOM content loads
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            console.log('Theme initialized:', savedTheme);
-            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
+            document.documentElement.setAttribute('data-theme', currentTheme);
 
-            // Wait for DOM to be ready before setting up toggle
-            function setupThemeToggle() {
-                const themeToggle = document.getElementById('themeToggle');
-                if (!themeToggle) {
-                    console.log('Theme toggle button not found');
-                    return;
-                }
+            // Update theme toggle button if exists
+            updateThemeToggleButton(currentTheme);
+        }
 
-                console.log('Theme toggle found, setting up...');
-
-                // Set toggle state based on saved theme
-                themeToggle.checked = savedTheme === 'light';
-
-                // Add event listener for theme changes
-                themeToggle.addEventListener('change', function() {
-                    const newTheme = this.checked ? 'light' : 'dark';
-                    document.documentElement.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('neo-trading-theme', newTheme);
-
-                    // Show confirmation toast
-                    const message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
-                    if (typeof showToaster === 'function') {
-                        showToaster('Theme Updated', message, 'info');
+        function updateThemeToggleButton(theme) {
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    if (theme === 'dark') {
+                        icon.className = 'fas fa-sun';
+                        themeToggle.setAttribute('title', 'Switch to Light Mode');
+                    } else {
+                        icon.className = 'fas fa-moon';
+                        themeToggle.setAttribute('title', 'Switch to Dark Mode');
                     }
-
-                    console.log('Theme changed to:', newTheme);
-                });
-            }
-
-            // If DOM is already loaded, setup immediately
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', setupThemeToggle);
-            } else {
-                setupThemeToggle();
+                }
             }
         }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            updateThemeToggleButton(newTheme);
+        }
+
+        // Initialize theme immediately
+        initializeTheme();
+
+        // Also initialize on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+
+            // Add theme toggle event listener
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+        });
 
         // Toaster Functionality
         function showToaster(title, message, type = 'info') {
@@ -1028,8 +1039,6 @@
             });
         });
     </script>
-
-
 
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
