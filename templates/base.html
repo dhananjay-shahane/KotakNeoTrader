@@ -12,92 +12,436 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            --primary-color: #2563eb;
+            --secondary-color: #1e293b;
+            --accent-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Fixed Header */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+        }
+
+        .header-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--success-color);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-indicator.live {
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notification-btn:hover {
+            color: var(--text-primary);
+            background: var(--card-bg);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: var(--danger-color);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.25rem;
+            border-radius: 50%;
+            min-width: 1rem;
+            height: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .user-profile:hover {
+            background: var(--card-bg);
+        }
+
+        .user-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-info h6 {
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .user-info small {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        /* Fixed Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: var(--secondary-color);
+            border-right: 1px solid var(--border-color);
+            z-index: 999;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin: 0.25rem 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.15);
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary-color);
+        }
+
+        .nav-icon {
+            width: 1.25rem;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .header-left {
+                margin-left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+                background: none;
+                border: none;
+                color: var(--text-primary);
+                font-size: 1.25rem;
+                padding: 0.5rem;
+                margin-right: 1rem;
+            }
+
+            .user-info {
+                display: none;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+        }
+
+        /* Cards and Components */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        .table-dark {
+            --bs-table-bg: var(--card-bg);
+        }
+
+        /* Dropdown Styles */
+        .dropdown-menu {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--text-primary);
+        }
+
+        .dropdown-divider {
+            border-color: var(--border-color);
+        }
+    </style>
     
     {% block head %}{% endblock %}
 </head>
-<body class="bg-dark text-light">
-    <!-- Navigation -->
+<body>
     {% if session.authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-chart-line me-2"></i>Kotak Neo Trading
+    <!-- Fixed Header -->
+    <header class="main-header">
+        <button class="mobile-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-left">
+            <a href="{{ url_for('dashboard') }}" class="header-brand">
+                <i class="fas fa-chart-line"></i>
+                <span>Neo Trading</span>
             </a>
+        </div>
+        
+        <div class="header-right">
+            <div class="status-indicator live">
+                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                <span>Live Market</span>
+            </div>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            <button class="notification-btn" onclick="showNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
             </button>
             
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('positions') }}">
-                            <i class="fas fa-chart-pie me-1"></i>Positions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('holdings') }}">
-                            <i class="fas fa-wallet me-1"></i>Holdings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('orders') }}">
-                            <i class="fas fa-list-alt me-1"></i>Orders
-                        </a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="user-avatar me-2">
-                                <i class="fas fa-user-circle fa-lg"></i>
-                            </div>
-                            <div class="user-info d-none d-md-block">
-                                <small class="text-light">{{ session.get('greeting_name', session.get('ucc', 'User')) }}</small>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userDropdown">
-                            <li>
-                                <h6 class="dropdown-header">
-                                    <i class="fas fa-user me-1"></i>Account Details
-                                </h6>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="showUserProfile()">
-                                    <i class="fas fa-id-card me-2"></i>View Profile
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="showAccountSummary()">
-                                    <i class="fas fa-chart-bar me-2"></i>Account Summary
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+            <div class="user-profile" onclick="toggleUserMenu()">
+                <div class="user-avatar">
+                    {{ session.get('greeting_name', session.get('ucc', 'User'))[0].upper() }}
+                </div>
+                <div class="user-info">
+                    <h6>{{ session.get('greeting_name', session.get('ucc', 'User')) }}</h6>
+                    <small>{{ session.get('ucc', 'Trading Account') }}</small>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 0.75rem; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Fixed Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-nav">
+            <div class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-signal nav-icon"></i>
+                    <span>Trading Signals</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-area nav-icon"></i>
+                    <span>Charts</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('orders') }}" class="nav-link {% if request.endpoint == 'orders' %}active{% endif %}">
+                    <i class="fas fa-list-alt nav-icon"></i>
+                    <span>Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('positions') }}" class="nav-link {% if request.endpoint == 'positions' %}active{% endif %}">
+                    <i class="fas fa-chart-pie nav-icon"></i>
+                    <span>Positions</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('holdings') }}" class="nav-link {% if request.endpoint == 'holdings' %}active{% endif %}">
+                    <i class="fas fa-wallet nav-icon"></i>
+                    <span>Holdings</span>
+                </a>
             </div>
         </div>
     </nav>
+
+    <!-- User Dropdown Menu -->
+    <div class="dropdown-menu position-absolute" id="userMenu" style="display: none; top: var(--header-height); right: 1rem; min-width: 200px;">
+        <h6 class="dropdown-header">
+            <i class="fas fa-user me-2"></i>Account Details
+        </h6>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="#" onclick="showUserProfile()">
+            <i class="fas fa-id-card me-2"></i>View Profile
+        </a>
+        <a class="dropdown-item" href="#" onclick="showAccountSummary()">
+            <i class="fas fa-chart-bar me-2"></i>Account Summary
+        </a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
     {% endif %}
     
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="container mt-3">
+            <div class="main-content" style="padding-top: 1rem;">
                 {% for category, message in messages %}
                     {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
                     <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
@@ -111,19 +455,9 @@
     {% endwith %}
     
     <!-- Main Content -->
-    <main class="{% if session.authenticated %}container mt-4{% else %}container-fluid{% endif %}">
+    <main class="{% if session.authenticated %}main-content{% else %}container-fluid{% endif %}">
         {% block content %}{% endblock %}
     </main>
-    
-    <!-- Footer -->
-    <footer class="bg-secondary text-center py-3 mt-5">
-        <div class="container">
-            <small class="text-muted">
-                <i class="fas fa-shield-alt me-1"></i>
-                Kotak Neo Trading Platform - Live Market Data
-            </small>
-        </div>
-    </footer>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -132,6 +466,103 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Custom JavaScript -->
+    <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // User menu toggle
+        function toggleUserMenu() {
+            const userMenu = document.getElementById('userMenu');
+            const isVisible = userMenu.style.display !== 'none';
+            userMenu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userProfile = document.querySelector('.user-profile');
+            const userMenu = document.getElementById('userMenu');
+            
+            if (userProfile && userMenu && !userProfile.contains(event.target)) {
+                userMenu.style.display = 'none';
+            }
+        });
+
+        // Show notifications
+        function showNotifications() {
+            alert('Live market updates:\n• Portfolio value updated\n• Order status changed\n• Market volatility alert');
+        }
+
+        // Show user profile
+        function showUserProfile() {
+            fetch('/api/user/profile')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const profile = data.data;
+                        let profileInfo = `Account Details:\n`;
+                        profileInfo += `UCC: ${profile.ucc || 'N/A'}\n`;
+                        profileInfo += `Name: ${profile.greeting_name || 'N/A'}\n`;
+                        profileInfo += `User ID: ${profile.user_id || 'N/A'}\n`;
+                        profileInfo += `Account Type: ${profile.account_type || 'N/A'}\n`;
+                        profileInfo += `Branch: ${profile.branch_code || 'N/A'}`;
+                        alert(profileInfo);
+                    }
+                })
+                .catch(error => {
+                    alert('Unable to load profile information');
+                });
+        }
+
+        // Show account summary
+        function showAccountSummary() {
+            fetch('/api/portfolio/summary')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const summary = data.data;
+                        let summaryInfo = `Portfolio Summary:\n`;
+                        summaryInfo += `Net Worth: ₹${summary.net_worth || 'N/A'}\n`;
+                        summaryInfo += `Available Margin: ₹${summary.available_margin || 'N/A'}\n`;
+                        summaryInfo += `Used Margin: ₹${summary.used_margin || 'N/A'}\n`;
+                        summaryInfo += `P&L: ₹${summary.total_pnl || 'N/A'}`;
+                        alert(summaryInfo);
+                    }
+                })
+                .catch(error => {
+                    alert('Unable to load account summary');
+                });
+        }
+
+        // Auto-refresh data every 30 seconds
+        {% if session.authenticated %}
+        setInterval(function() {
+            // Only refresh if page is visible
+            if (!document.hidden) {
+                const currentPage = window.location.pathname;
+                if (currentPage === '/dashboard') {
+                    location.reload();
+                }
+            }
+        }, 30000);
+        {% endif %}
+
+        // Highlight active navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && currentPath === href) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
