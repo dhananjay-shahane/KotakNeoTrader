@@ -841,52 +841,61 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
 
         // Theme management
         function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const currentTheme = savedTheme || 'dark';
+            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
+            console.log('Saved theme from localStorage:', savedTheme);
+            
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            console.log('Theme initialized:', savedTheme);
+            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
 
-            document.documentElement.setAttribute('data-theme', currentTheme);
-
-            // Update theme toggle button if exists
-            updateThemeToggleButton(currentTheme);
+            // Update theme toggle switch
+            updateThemeToggleSwitch(savedTheme);
         }
 
-        function updateThemeToggleButton(theme) {
-            const themeToggle = document.getElementById('theme-toggle');
-            if (themeToggle) {
-                const icon = themeToggle.querySelector('i');
-                if (icon) {
-                    if (theme === 'dark') {
-                        icon.className = 'fas fa-sun';
-                        themeToggle.setAttribute('title', 'Switch to Light Mode');
-                    } else {
-                        icon.className = 'fas fa-moon';
-                        themeToggle.setAttribute('title', 'Switch to Dark Mode');
-                    }
-                }
+        function updateThemeToggleSwitch(theme) {
+            const themeToggleInput = document.getElementById('themeToggle');
+            if (themeToggleInput) {
+                themeToggleInput.checked = (theme === 'light');
+                console.log('Theme toggle updated:', theme);
+            } else {
+                console.log('Theme toggle button not found');
             }
         }
 
         function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            console.log('Toggling theme from', currentTheme, 'to', newTheme);
 
-            updateThemeToggleButton(newTheme);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('neo-trading-theme', newTheme);
+
+            updateThemeToggleSwitch(newTheme);
+            
+            // Show notification
+            if (typeof showToaster === 'function') {
+                showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'info');
+            }
         }
 
-        // Initialize theme immediately
-        initializeTheme();
+        // Initialize theme immediately (before DOM loads)
+        (function() {
+            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
 
-        // Also initialize on DOMContentLoaded
+        // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             initializeTheme();
 
             // Add theme toggle event listener
-            const themeToggle = document.getElementById('theme-toggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', toggleTheme);
+            const themeToggleInput = document.getElementById('themeToggle');
+            if (themeToggleInput) {
+                themeToggleInput.addEventListener('change', toggleTheme);
+                console.log('Theme toggle event listener added');
+            } else {
+                console.log('Theme toggle element not found');
             }
         });
 
@@ -1006,10 +1015,7 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
             console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
         }
 
-        // Initialize theme immediately (before DOM loads)
-        initializeTheme();
-
-        // Initialize everything when DOM is ready
+        // Additional initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             // Debug theme setup
             setTimeout(() => {

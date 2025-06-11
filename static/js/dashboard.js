@@ -105,10 +105,12 @@ class TradingDashboard {
 
     async refreshCriticalData() {
         try {
-            // Refresh specific sections without full page reload
-            await this.refreshDashboardSection('quotes');
-            await this.refreshDashboardSection('positions');
-            await this.refreshDashboardSection('orders');
+            // Only refresh if on dashboard page
+            if (window.location.pathname !== '/dashboard') {
+                return;
+            }
+
+            // Refresh portfolio summary only to avoid excessive API calls
             await this.refreshPortfolioSummary();
 
             // Only log if debug mode is enabled
