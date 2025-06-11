@@ -536,18 +536,19 @@
                 });
         }
 
-        // Auto-refresh data every 30 seconds
-        {% if session.authenticated %}
-        setInterval(function() {
-            // Only refresh if page is visible
-            if (!document.hidden) {
-                const currentPage = window.location.pathname;
-                if (currentPage === '/dashboard') {
-                    location.reload();
+        // Auto-refresh data every 30 seconds (only for authenticated users)
+        const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
+        if (isAuthenticated) {
+            setInterval(function() {
+                // Only refresh if page is visible
+                if (!document.hidden) {
+                    const currentPage = window.location.pathname;
+                    if (currentPage === '/dashboard') {
+                        location.reload();
+                    }
                 }
-            }
-        }, 30000);
-        {% endif %}
+            }, 30000);
+        }
 
         // Highlight active navigation
         document.addEventListener('DOMContentLoaded', function() {
