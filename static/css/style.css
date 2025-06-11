@@ -786,10 +786,6 @@ input[name="totp"], input[name="mpin"] {
     .navbar-brand {
         font-size: 1.25rem !important;
     }
-
-    .main-content {
-        padding: 0.5rem 1rem !important;
-    }
 }
 
 /* Footer */

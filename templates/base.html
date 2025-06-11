@@ -247,7 +247,7 @@
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 1rem 2rem;
+            padding: 2rem;
             min-height: calc(100vh - var(--header-height));
             transition: margin-left 0.3s ease;
         }
@@ -775,7 +775,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div style="position: fixed; top: calc(var(--header-height) + 1rem); left: 50%; transform: translateX(-50%); z-index: 1050; width: 90%; max-width: 500px;">
+            <div class="main-content" style="padding-top: 1rem;">
                 {% for category, message in messages %}
                     {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
                     <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
@@ -939,7 +939,6 @@
                         profileInfo += `User ID: ${profile.user_id || 'N/A'}\n`;
                         profileInfo += `Account Type: ${profile.account_type || 'N/A'}\n`;
                         profileInfo += `Branch: ${profile.branch_code || 'N/A'}`;
-                        ```
                         alert(profileInfo);
                     }
                 })
@@ -968,7 +967,7 @@
                 });
         }
 
-        // Auto-refresh specific sections every 30 seconds (only for authenticated users)
+        // Auto-refresh data every 30 seconds (only for authenticated users)
         const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
             setInterval(function() {
@@ -976,16 +975,7 @@
                 if (!document.hidden) {
                     const currentPage = window.location.pathname;
                     if (currentPage === '/dashboard') {
-                        // Refresh specific sections instead of full page
-                        if (typeof refreshQuotes === 'function') refreshQuotes();
-                        if (typeof refreshPositions === 'function') refreshPositions();
-                        if (typeof refreshPortfolioSummary === 'function') refreshPortfolioSummary();
-                    } else if (currentPage === '/orders') {
-                        if (typeof refreshOrdersTable === 'function') refreshOrdersTable();
-                    } else if (currentPage === '/positions') {
-                        if (typeof refreshPositionsData === 'function') refreshPositionsData();
-                    } else if (currentPage === '/holdings') {
-                        if (typeof refreshHoldingsData === 'function') refreshHoldingsData();
+                        location.reload();
                     }
                 }
             }, 30000);
@@ -1035,60 +1025,46 @@
     </script>
 
 <script>
-// Theme Management
-        function initializeTheme() {
-            const themeToggle = document.getElementById('themeToggle');
-            if (!themeToggle) {
-                // Theme toggle not available on this page, skip initialization
-                return;
-            }
+// Theme management - executed immediately
+(function() {
+    // Initialize theme from localStorage or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
 
-            const savedTheme = localStorage.getItem('theme');
-            console.log('Saved theme from localStorage:', savedTheme);
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-
-            let finalTheme = savedTheme || currentTheme || 'dark';
-
-            document.documentElement.setAttribute('data-theme', finalTheme);
-            localStorage.setItem('theme', finalTheme);
-            updateThemeToggle(finalTheme);
-
-            console.log('Theme initialized:', finalTheme);
-            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
-        }
-
-        function toggleTheme() {
-            const themeToggle = document.getElementById('themeToggle');
-            if (!themeToggle) {
-                console.log('Theme toggle button not found');
-                return;
-            }
-
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeToggle(newTheme);
-        }
-
-        function updateThemeToggle(theme) {
-            const themeToggle = document.getElementById('themeToggle');
-            if (!themeToggle) {
-                return;
-            }
-
+    // Function to update theme toggle button
+    function updateThemeToggleButton(theme) {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
             const icon = themeToggle.querySelector('i');
             if (icon) {
-                if (theme === 'dark') {
-                    icon.className = 'fas fa-sun';
-                    themeToggle.title = 'Switch to light mode';
-                } else {
-                    icon.className = 'fas fa-moon';
-                    themeToggle.title = 'Switch to dark mode';
-                }
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
+    }
+
+    // Function to toggle theme
+    window.toggleTheme = function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        // Apply new theme
+        document.documentElement.setAttribute('data-theme', newTheme);
+
+        // Save to localStorage
+        localStorage.setItem('theme', newTheme);
+
+        // Update toggle button
+        updateThemeToggleButton(newTheme);
+
+        console.log('Theme switched to:', newTheme);
+    };
+
+    // Update button when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        updateThemeToggleButton(currentTheme);
+    });
+})();
 </script>
 
     {% if session.authenticated %}
