@@ -182,16 +182,9 @@ body.bg-dark {
 }
 
 /* Light theme body */
-:root[data-theme="light"] body,
-html.light-theme body,
-body.bg-light {
+:root[data-theme="light"] body {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
     color: var(--text-color) !important;
-}
-
-/* Ensure light theme override for body background */
-:root[data-theme="light"] body.bg-dark {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
 }
 
 /* Light theme main content */
@@ -314,40 +307,6 @@ body.bg-light {
 
 .navbar-dark .navbar-nav .nav-link:hover {
     color: #ffffff !important;
-}
-
-/* Light theme navbar overrides */
-:root[data-theme="light"] .navbar-dark {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid #e5e7eb !important;
-}
-
-:root[data-theme="light"] .navbar-dark .navbar-brand,
-:root[data-theme="light"] .navbar-dark .navbar-nav .nav-link,
-:root[data-theme="light"] .navbar-dark .btn-outline-light {
-    color: #374151 !important;
-}
-
-:root[data-theme="light"] .navbar-dark .btn-outline-light {
-    border-color: #374151 !important;
-}
-
-:root[data-theme="light"] .navbar-dark .btn-outline-light:hover {
-    background-color: #374151 !important;
-    color: #ffffff !important;
-}
-
-:root[data-theme="light"] .navbar-dark .dropdown-menu {
-    background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-}
-
-:root[data-theme="light"] .navbar-dark .dropdown-item {
-    color: #374151 !important;
-}
-
-:root[data-theme="light"] .navbar-dark .dropdown-item:hover {
-    background-color: #f3f4f6 !important;
 }
 
 /* Tables */
