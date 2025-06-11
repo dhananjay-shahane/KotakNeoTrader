@@ -337,7 +337,8 @@
 
         /* Theme Toggle Styles */
         .theme-toggle {
-            position: relative;
+            display: flex;
+            align-items: center;
             margin-right: 1rem;
         }
 
@@ -349,52 +350,78 @@
             position: relative;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 2rem;
+            border-radius: 1.5rem;
             padding: 0.25rem;
             cursor: pointer;
             transition: all 0.3s ease;
             width: 3.5rem;
             height: 1.75rem;
+            overflow: hidden;
         }
 
         .theme-toggle-label:hover {
             background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary-color);
         }
 
         .theme-icon-light,
         .theme-icon-dark {
             position: absolute;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             transition: all 0.3s ease;
             z-index: 2;
+            pointer-events: none;
         }
 
         .theme-icon-light {
-            left: 0.5rem;
-            color: #fbbf24;
+            left: 0.4rem;
+            color: #f59e0b;
         }
 
         .theme-icon-dark {
-            right: 0.5rem;
-            color: #6b7280;
+            right: 0.4rem;
+            color: #64748b;
         }
 
         .theme-toggle-slider {
             position: absolute;
-            top: 0.125rem;
-            left: 0.125rem;
+            top: 0.15rem;
+            left: 0.15rem;
             width: 1.25rem;
             height: 1.25rem;
             background: var(--primary-color);
             border-radius: 50%;
             transition: transform 0.3s ease;
             z-index: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .theme-toggle-input:checked + .theme-toggle-label .theme-toggle-slider {
-            transform: translateX(1.5rem);
+            transform: translateX(1.6rem);
+        }
+
+        .theme-toggle-input:checked + .theme-toggle-label {
+            background: var(--primary-color);
+        }
+
+        .theme-toggle-input:checked + .theme-toggle-label .theme-icon-light {
+            opacity: 0.3;
+        }
+
+        .theme-toggle-input:checked + .theme-toggle-label .theme-icon-dark {
+            opacity: 1;
+            color: #e2e8f0;
+        }
+
+        .theme-toggle-input:not(:checked) + .theme-toggle-label .theme-icon-light {
+            opacity: 1;
+        }
+
+        .theme-toggle-input:not(:checked) + .theme-toggle-label .theme-icon-dark {
+            opacity: 0.3;
         }
 
         /* Light Theme Variables */
@@ -732,18 +759,29 @@
         // Theme Toggle Functionality
         function initializeTheme() {
             const themeToggle = document.getElementById('themeToggle');
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            if (savedTheme === 'light') {
-                themeToggle.checked = true;
-            }
+            if (!themeToggle) return;
 
+            // Get saved theme from localStorage or default to 'dark'
+            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
+            
+            // Apply the theme immediately
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Set toggle state based on saved theme
+            themeToggle.checked = savedTheme === 'light';
+            
+            // Add event listener for theme changes
             themeToggle.addEventListener('change', function() {
                 const newTheme = this.checked ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'info');
+                localStorage.setItem('neo-trading-theme', newTheme);
+                
+                // Show confirmation toast
+                const message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
+                showToaster('Theme Updated', message, 'info');
+                
+                // Optional: Log for debugging
+                console.log('Theme changed to:', newTheme);
             });
         }
 
@@ -854,10 +892,24 @@
             }, 30000);
         }
 
+        // Debug function to check theme toggle
+        function debugThemeToggle() {
+            const toggle = document.getElementById('themeToggle');
+            const saved = localStorage.getItem('neo-trading-theme');
+            console.log('Theme toggle element:', toggle);
+            console.log('Saved theme:', saved);
+            console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
+        }
+
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize theme
+            // Initialize theme first
             initializeTheme();
+            
+            // Debug theme setup
+            setTimeout(() => {
+                debugThemeToggle();
+            }, 100);
             
             // Highlight active navigation
             const currentPath = window.location.pathname;
@@ -878,6 +930,11 @@
                 showToaster('System Message', message, type);
                 alert.remove();
             });
+
+            // Show welcome toast for theme functionality
+            setTimeout(() => {
+                showToaster('Welcome', 'Use the theme toggle in the header to switch between light and dark modes', 'info');
+            }, 1000);
         });
     </script>
     
