@@ -1,56 +1,3 @@
-from flask import jsonify
-
-# Add these new API endpoints for section-specific refreshes
-@app.route('/api/dashboard_quotes')
-def api_dashboard_quotes():
-    """API endpoint for refreshing quotes section only"""
-    if not session.get('authenticated'):
-        return jsonify({'success': False, 'message': 'Not authenticated'})
-
-    try:
-        # Simulate quote data (replace with actual API call)
-        quotes = [
-            {'symbol': 'RELIANCE', 'ltp': 2450.75, 'change': 12.50, 'changePct': 0.51},
-            {'symbol': 'TCS', 'ltp': 3675.20, 'change': -8.30, 'changePct': -0.23},
-            {'symbol': 'INFY', 'ltp': 1832.45, 'change': 22.15, 'changePct': 1.22},
-        ]
-        return jsonify({'success': True, 'quotes': quotes})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-@app.route('/api/dashboard_positions')
-def api_dashboard_positions():
-    """API endpoint for refreshing positions section only"""
-    if not session.get('authenticated'):
-        return jsonify({'success': False, 'message': 'Not authenticated'})
-
-    try:
-        # Get fresh positions data
-        positions_data = get_positions()
-        return jsonify({'success': True, 'positions': positions_data})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-@app.route('/api/portfolio_summary')
-def api_portfolio_summary():
-    """API endpoint for refreshing portfolio summary only"""
-    if not session.get('authenticated'):
-        return jsonify({'success': False, 'message': 'Not authenticated'})
-
-    try:
-        # Get fresh summary data
-        data = get_dashboard_data()
-        summary = {
-            'total_positions': len(data.get('positions', [])),
-            'total_holdings': len(data.get('holdings', [])),
-            'total_orders': len(data.get('recent_orders', [])),
-            'available_margin': data.get('limits', {}).get('Net', 0)
-        }
-        return jsonify({'success': True, **summary})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-
 import os
 import logging
 from datetime import datetime, timedelta
@@ -121,12 +68,12 @@ def validate_current_session():
         # Only validate if user is already authenticated in this session
         if not session.get('authenticated'):
             return False
-
+            
         # Check if we have required session data
         access_token = session.get('access_token')
         if not access_token:
             return False
-
+            
         # Try to recreate client from session data if needed
         client = session.get('client')
         if not client and access_token:
@@ -137,10 +84,10 @@ def validate_current_session():
             )
             if client:
                 session['client'] = client
-
+            
         if not client:
             return False
-
+            
         # Validate session with proper 2FA check
         if neo_client.validate_session(client):
             return True
@@ -149,7 +96,7 @@ def validate_current_session():
             session.clear()
             session_manager.remove_session('default_user')
             return False
-
+            
     except Exception as e:
         logging.error(f"Session validation failed: {e}")
         # Clear any corrupted session data
@@ -193,18 +140,18 @@ def login():
             ucc = request.form.get('ucc', '').strip()
             totp = request.form.get('totp', '').strip()
             mpin = request.form.get('mpin', '').strip()
-
+            
             if not mobile_number or not ucc or not totp or not mpin:
                 flash('All fields are required', 'error')
                 return render_template('login.html')
-
+            
             # Execute TOTP login
             result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
-
+            
             if result['success']:
                 client = result['client']
                 session_data = result['session_data']
-
+                
                 # Store in session first (needed for API calls to work)
                 session['authenticated'] = True
                 session['access_token'] = session_data.get('access_token')
@@ -215,7 +162,7 @@ def login():
                 session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 session['greeting_name'] = session_data.get('greetingName', ucc)
                 session.permanent = True
-
+                
                 # Validate the client after storing session data
                 validation_success = False
                 try:
@@ -223,15 +170,15 @@ def login():
                 except Exception as val_error:
                     logging.warning(f"Session validation error (proceeding anyway): {val_error}")
                     validation_success = True  # Proceed if validation fails but login succeeded
-
+                
                 if not validation_success:
                     logging.warning("Session validation failed but login was successful - proceeding")
                     # Don't fail the login if validation fails, as the login itself was successful
-
+                
                 # Store additional user data in session
                 session['rid'] = session_data.get('rid')
                 session['user_id'] = session_data.get('user_id')
-
+                
                 # Store user data in PostgreSQL database
                 try:
                     # Create the complete login response for database storage
@@ -253,26 +200,26 @@ def login():
                             'rid': session_data.get('rid')
                         }
                     }
-
+                    
                     # Create or update user in database
                     db_user = user_manager.create_or_update_user(login_response)
-
+                    
                     # Create session record
                     user_session = user_manager.create_user_session(db_user.id, login_response)
-
+                    
                     # Store database user ID in session
                     session['db_user_id'] = db_user.id
                     session['db_session_id'] = user_session.session_id
-
+                    
                     logging.info(f"User data stored in database for UCC: {ucc}")
-
+                    
                 except Exception as db_error:
                     logging.error(f"Failed to store user data in database: {db_error}")
                     # Don't fail the login if database storage fails
                     pass
                 session['client_code'] = session_data.get('client_code')
                 session['is_trial_account'] = session_data.get('is_trial_account')
-
+                
                 # Store complete session persistently
                 persistent_data = session_data.copy()  # Start with complete response
                 persistent_data.update({
@@ -283,18 +230,18 @@ def login():
                     'mobile_number': mobile_number
                 })
                 session_manager.store_session('default_user', persistent_data)
-
+                
                 flash('Successfully authenticated with TOTP!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 flash(f'TOTP login failed: {result.get("message", "Unknown error")}', 'error')
                 return render_template('login.html')
-
+                
         except Exception as e:
             logging.error(f"Login error: {str(e)}")
             flash(f'Login failed: {str(e)}', 'error')
             return render_template('login.html')
-
+    
     return render_template('login.html')
 
 @app.route('/logout')
@@ -345,7 +292,7 @@ def dashboard():
         dashboard_data = {}
         try:
             raw_dashboard_data = trading_functions.get_dashboard_data(client)
-
+            
             # Ensure dashboard_data is a dictionary
             if isinstance(raw_dashboard_data, dict):
                 dashboard_data = raw_dashboard_data
@@ -360,7 +307,7 @@ def dashboard():
                     'total_holdings': 0,
                     'total_orders': 0
                 }
-
+                
             # Ensure all required keys exist with default values
             dashboard_data.setdefault('positions', [])
             dashboard_data.setdefault('holdings', [])
@@ -369,7 +316,7 @@ def dashboard():
             dashboard_data.setdefault('total_positions', 0)
             dashboard_data.setdefault('total_holdings', 0)
             dashboard_data.setdefault('total_orders', 0)
-
+            
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
             # Check if it's a 2FA error specifically
@@ -609,33 +556,33 @@ def get_portfolio_summary():
         positions_data = trading_functions.get_positions(client)
         holdings_data = trading_functions.get_holdings(client)
         orders_data = trading_functions.get_orders(client)
-
+        
         # Calculate summary statistics
         total_positions = len(positions_data) if positions_data else 0
         total_holdings = len(holdings_data) if holdings_data else 0
         total_orders = len(orders_data) if orders_data else 0
-
+        
         # Calculate P&L from positions
         total_pnl = 0.0
-        if positions_data:
+        if positions_data and isinstance(positions_data, list):
             for position in positions_data:
                 try:
                     pnl = float(position.get('pnl', 0) or position.get('urPnl', 0) or 0)
                     total_pnl += pnl
                 except (ValueError, TypeError):
                     continue
-
+        
         # Calculate investment from holdings
         total_investment = 0.0
-        if holdings_data:
+        if holdings_data and isinstance(holdings_data, list):
             for holding in holdings_data:
                 try:
                     quantity = float(holding.get('quantity', 0) or holding.get('holdQty', 0) or 0)
-                    avg_price = float(holding.get('avgPrice', 0) or holding.get('avgRate', 0) or 0)
+                    avg_price = float(holding.get('avgPrice', 0) or holding.get('avgRate', 0) or holding.get('mktPrice', 0) or 0)
                     total_investment += quantity * avg_price
                 except (ValueError, TypeError):
                     continue
-
+        
         return jsonify({
             'success': True,
             'total_positions': total_positions,
@@ -649,7 +596,7 @@ def get_portfolio_summary():
             'holdings': holdings_data[:5] if holdings_data else [],  # First 5 holdings
             'recent_orders': orders_data[:5] if orders_data else []  # Last 5 orders
         })
-
+            
     except Exception as e:
         logging.error(f"Portfolio summary API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
@@ -667,9 +614,9 @@ def get_portfolio_details():
 
         # Get comprehensive portfolio data
         result = trading_functions.get_portfolio_summary(client)
-
+        
         return jsonify(result)
-
+            
     except Exception as e:
         logging.error(f"Portfolio details error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
@@ -686,13 +633,13 @@ def get_positions_api():
             return jsonify({'success': False, 'message': 'Session expired'})
 
         positions_data = trading_functions.get_positions(client)
-
+        
         return jsonify({
             'success': True,
             'positions': positions_data,
             'count': len(positions_data) if positions_data else 0
         })
-
+            
     except Exception as e:
         logging.error(f"Positions API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
@@ -709,13 +656,13 @@ def get_holdings_api():
             return jsonify({'success': False, 'message': 'Session expired'})
 
         holdings_data = trading_functions.get_holdings(client)
-
+        
         return jsonify({
             'success': True,
             'holdings': holdings_data,
             'count': len(holdings_data) if holdings_data else 0
         })
-
+            
     except Exception as e:
         logging.error(f"Holdings API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
@@ -730,7 +677,7 @@ def get_user_profile():
         # Check if client is valid and test with a simple API call
         client = session.get('client')
         token_status = 'Invalid'
-
+        
         if client:
             try:
                 # Try a simple API call to validate token and 2FA
@@ -761,7 +708,7 @@ def get_user_profile():
 
         # Get complete session data from persistent storage
         stored_session = session_manager.get_session('default_user')
-
+        
         profile_data = {
             'ucc': session.get('ucc', 'N/A'),
             'greeting_name': session.get('greeting_name', session.get('ucc', 'User')),
@@ -787,12 +734,12 @@ def get_user_profile():
             'token_status': token_status,
             'needs_reauth': token_status != 'Valid'
         }
-
+        
         return jsonify({
             'success': True,
             'profile': profile_data
         })
-
+            
     except Exception as e:
         logging.error(f"User profile API error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)})
@@ -802,7 +749,7 @@ def get_test_positions():
     """Test endpoint showing position data structure based on Kotak Neo API"""
     if not session.get('authenticated'):
         return jsonify({'success': False, 'message': 'Not authenticated'})
-
+    
     # Sample position data structure from real Kotak Neo API response
     test_positions = [
         {
@@ -852,7 +799,7 @@ def get_test_positions():
             'lot_size': 75
         }
     ]
-
+    
     return jsonify({
         'success': True,
         'positions': test_positions,
@@ -865,11 +812,11 @@ def get_users():
     """Get all users from database"""
     if not session.get('authenticated'):
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         users = User.query.filter_by(is_active=True).all()
         users_data = [user.to_dict() for user in users]
-
+        
         return jsonify({
             "success": True,
             "data": users_data,
@@ -883,12 +830,12 @@ def get_user(user_id):
     """Get specific user by ID"""
     if not session.get('authenticated'):
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         user = User.query.get(user_id)
         if not user:
             return jsonify({"error": "User not found"}), 404
-
+        
         # Get user sessions
         sessions = UserSession.query.filter_by(user_id=user_id).order_by(UserSession.created_at.desc()).limit(5).all()
         sessions_data = []
@@ -900,7 +847,7 @@ def get_user(user_id):
                 "expires_at": s.expires_at.isoformat() if s.expires_at else None,
                 "is_active": s.is_active
             })
-
+        
         return jsonify({
             "success": True,
             "data": {
@@ -916,21 +863,21 @@ def get_user_stats():
     """Get user statistics"""
     if not session.get('authenticated'):
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         stats = user_manager.get_user_stats()
-
+        
         # Get additional stats
         total_sessions = UserSession.query.count()
         recent_logins = User.query.filter(
             User.last_login > datetime.utcnow() - timedelta(hours=24)
         ).count()
-
+        
         stats.update({
             "total_sessions": total_sessions,
             "recent_logins_24h": recent_logins
         })
-
+        
         return jsonify({
             "success": True,
             "data": stats
@@ -943,7 +890,7 @@ def get_current_user():
     """Get current logged-in user data"""
     if not session.get('authenticated'):
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         db_user_id = session.get('db_user_id')
         if db_user_id:
@@ -953,7 +900,7 @@ def get_current_user():
                     "success": True,
                     "data": user.to_dict()
                 })
-
+        
         # Fallback to session data if no database user
         return jsonify({
             "success": True,
@@ -972,7 +919,7 @@ def cleanup_sessions():
     """Clean up expired sessions"""
     if not session.get('authenticated'):
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     try:
         cleaned_count = user_manager.clean_expired_sessions()
         return jsonify({
@@ -1007,13 +954,13 @@ def test_user_storage():
                 'rid': 'RID987654321'
             }
         }
-
+        
         # Create or update user in database
         db_user = user_manager.create_or_update_user(test_login_response)
-
+        
         # Create session record
         user_session = user_manager.create_user_session(db_user.id, test_login_response)
-
+        
         return jsonify({
             "success": True,
             "message": "Test user data stored successfully",
@@ -1038,7 +985,7 @@ def test_user_storage():
                 "session_id": user_session.session_id
             }
         })
-
+        
     except Exception as e:
         return jsonify({
             "success": False,
@@ -1051,12 +998,12 @@ def database_status():
     try:
         # Test database connection
         db.session.execute(db.text('SELECT 1'))
-
+        
         # Get counts
         user_count = User.query.count()
         session_count = UserSession.query.count()
         preference_count = UserPreferences.query.count()
-
+        
         # Get sample data if exists
         sample_user = User.query.first()
         sample_data = None
@@ -1068,7 +1015,7 @@ def database_status():
                 "greeting_name": sample_user.greeting_name,
                 "last_login": sample_user.last_login.isoformat() if sample_user.last_login else None
             }
-
+        
         return jsonify({
             "success": True,
             "database_connected": True,
@@ -1086,7 +1033,7 @@ def database_status():
                 "session_expires_at", "is_active"
             ]
         })
-
+        
     except Exception as e:
         return jsonify({
             "success": False,

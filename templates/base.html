@@ -1,11 +1,3 @@
-` tags.
-
-```
-Replacing the theme toggle functionality and removing extra spacing in the javascript section.
-```
-
-```html
-<replit_final_file>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -255,7 +247,7 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 1rem 2rem;
             min-height: calc(100vh - var(--header-height));
             transition: margin-left 0.3s ease;
         }
@@ -783,7 +775,7 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="main-content" style="padding-top: 1rem;">
+            <div style="position: fixed; top: calc(var(--header-height) + 1rem); left: 50%; transform: translateX(-50%); z-index: 1050; width: 90%; max-width: 500px;">
                 {% for category, message in messages %}
                     {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
                     <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
@@ -839,65 +831,48 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
             setTimeout(() => showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'), 1000);
         }
 
-        // Theme management
+        // Theme Toggle Functionality
         function initializeTheme() {
+            // Get saved theme from localStorage or default to 'dark'
             const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
-            console.log('Saved theme from localStorage:', savedTheme);
-            
+
+            // Apply the theme immediately before DOM content loads
             document.documentElement.setAttribute('data-theme', savedTheme);
-            console.log('Theme initialized:', savedTheme);
-            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
 
-            // Update theme toggle switch
-            updateThemeToggleSwitch(savedTheme);
-        }
+            // Wait for DOM to be ready before setting up toggle
+            function setupThemeToggle() {
+                const themeToggle = document.getElementById('themeToggle');
+                if (!themeToggle) {
+                    console.warn('Theme toggle element not found');
+                    return;
+                }
 
-        function updateThemeToggleSwitch(theme) {
-            const themeToggleInput = document.getElementById('themeToggle');
-            if (themeToggleInput) {
-                themeToggleInput.checked = (theme === 'light');
-                console.log('Theme toggle updated:', theme);
+                // Set toggle state based on saved theme
+                themeToggle.checked = savedTheme === 'light';
+
+                // Add event listener for theme changes
+                themeToggle.addEventListener('change', function() {
+                    const newTheme = this.checked ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('neo-trading-theme', newTheme);
+
+                    // Show confirmation toast
+                    const message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
+                    if (typeof showToaster === 'function') {
+                        showToaster('Theme Updated', message, 'info');
+                    }
+
+                    console.log('Theme changed to:', newTheme);
+                });
+            }
+
+            // If DOM is already loaded, setup immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setupThemeToggle);
             } else {
-                console.log('Theme toggle button not found');
+                setupThemeToggle();
             }
         }
-
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            console.log('Toggling theme from', currentTheme, 'to', newTheme);
-
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('neo-trading-theme', newTheme);
-
-            updateThemeToggleSwitch(newTheme);
-            
-            // Show notification
-            if (typeof showToaster === 'function') {
-                showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'info');
-            }
-        }
-
-        // Initialize theme immediately (before DOM loads)
-        (function() {
-            const savedTheme = localStorage.getItem('neo-trading-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        })();
-
-        // Initialize everything when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTheme();
-
-            // Add theme toggle event listener
-            const themeToggleInput = document.getElementById('themeToggle');
-            if (themeToggleInput) {
-                themeToggleInput.addEventListener('change', toggleTheme);
-                console.log('Theme toggle event listener added');
-            } else {
-                console.log('Theme toggle element not found');
-            }
-        });
 
         // Toaster Functionality
         function showToaster(title, message, type = 'info') {
@@ -964,6 +939,7 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
                         profileInfo += `User ID: ${profile.user_id || 'N/A'}\n`;
                         profileInfo += `Account Type: ${profile.account_type || 'N/A'}\n`;
                         profileInfo += `Branch: ${profile.branch_code || 'N/A'}`;
+                        ```
                         alert(profileInfo);
                     }
                 })
@@ -992,16 +968,25 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
                 });
         }
 
-        // Auto-refresh specific sections only (no full page reload)
+        // Auto-refresh specific sections every 30 seconds (only for authenticated users)
         const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
             setInterval(function() {
-                // Only refresh if page is visible and user is on dashboard
-                if (!document.hidden && window.location.pathname === '/dashboard') {
-                    // Refresh specific sections instead of full page
-                    if (typeof refreshQuotes === 'function') refreshQuotes();
-                    if (typeof refreshPositions === 'function') refreshPositions();
-                    if (typeof refreshPortfolioSummary === 'function') refreshPortfolioSummary();
+                // Only refresh if page is visible
+                if (!document.hidden) {
+                    const currentPage = window.location.pathname;
+                    if (currentPage === '/dashboard') {
+                        // Refresh specific sections instead of full page
+                        if (typeof refreshQuotes === 'function') refreshQuotes();
+                        if (typeof refreshPositions === 'function') refreshPositions();
+                        if (typeof refreshPortfolioSummary === 'function') refreshPortfolioSummary();
+                    } else if (currentPage === '/orders') {
+                        if (typeof refreshOrdersTable === 'function') refreshOrdersTable();
+                    } else if (currentPage === '/positions') {
+                        if (typeof refreshPositionsData === 'function') refreshPositionsData();
+                    } else if (currentPage === '/holdings') {
+                        if (typeof refreshHoldingsData === 'function') refreshHoldingsData();
+                    }
                 }
             }, 30000);
         }
@@ -1015,7 +1000,10 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
             console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
         }
 
-        // Additional initialization when DOM is ready
+        // Initialize theme immediately (before DOM loads)
+        initializeTheme();
+
+        // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             // Debug theme setup
             setTimeout(() => {
@@ -1045,6 +1033,63 @@ Replacing the theme toggle functionality and removing extra spacing in the javas
             });
         });
     </script>
+
+<script>
+// Theme Management
+        function initializeTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) {
+                // Theme toggle not available on this page, skip initialization
+                return;
+            }
+
+            const savedTheme = localStorage.getItem('theme');
+            console.log('Saved theme from localStorage:', savedTheme);
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+
+            let finalTheme = savedTheme || currentTheme || 'dark';
+
+            document.documentElement.setAttribute('data-theme', finalTheme);
+            localStorage.setItem('theme', finalTheme);
+            updateThemeToggle(finalTheme);
+
+            console.log('Theme initialized:', finalTheme);
+            console.log('HTML data-theme attribute:', document.documentElement.getAttribute('data-theme'));
+        }
+
+        function toggleTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) {
+                console.log('Theme toggle button not found');
+                return;
+            }
+
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggle(newTheme);
+        }
+
+        function updateThemeToggle(theme) {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) {
+                return;
+            }
+
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-sun';
+                    themeToggle.title = 'Switch to light mode';
+                } else {
+                    icon.className = 'fas fa-moon';
+                    themeToggle.title = 'Switch to dark mode';
+                }
+            }
+        }
+</script>
 
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
