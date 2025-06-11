@@ -72,6 +72,7 @@
             align-items: center;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease;
+            flex: 1;
         }
 
         .header-brand {
@@ -263,6 +264,7 @@
             border-radius: 0.375rem;
             transition: all 0.2s ease;
             cursor: pointer;
+            z-index: 1001;
         }
 
         .mobile-toggle:hover {
@@ -278,7 +280,9 @@
         /* Mobile Responsiveness */
         @media (max-width: 992px) {
             .mobile-toggle {
-                display: block !important;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
             }
 
             .sidebar {
@@ -717,11 +721,10 @@
     {% if session.authenticated %}
     <!-- Fixed Header -->
     <header class="main-header">
-        <button class="mobile-toggle" onclick="toggleSidebar()">
-            <i class="fas fa-bars"></i>
-        </button>
-
         <div class="header-left">
+            <button class="mobile-toggle me-3" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <a href="{{ url_for('dashboard') }}" class="header-brand">
                 <i class="fas fa-chart-line"></i>
                 <span>Neo Trading</span>
