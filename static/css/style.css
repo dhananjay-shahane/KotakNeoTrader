@@ -187,24 +187,6 @@ body.bg-dark {
     color: var(--text-color) !important;
 }
 
-/* Light theme main content */
-:root[data-theme="light"] .main-content {
-    background: transparent;
-}
-
-/* Light theme welcome card */
-:root[data-theme="light"] .card.bg-gradient-primary h3,
-:root[data-theme="light"] .card.bg-gradient-primary p {
-    color: #ffffff !important;
-}
-
-/* Light theme card headers */
-:root[data-theme="light"] .card-header {
-    background: #f8f9fa !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    color: #374151 !important;
-}
-
 /* Cards */
 .card.bg-secondary {
     background-color: var(--card-bg) !important;
@@ -222,36 +204,8 @@ body.bg-dark {
 :root[data-theme="light"] .card.bg-secondary,
 :root[data-theme="light"] .card.bg-dark {
     background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
+    border-color: #e9ecef !important;
     color: #212529 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-:root[data-theme="light"] .stats-card {
-    background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    color: #212529 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-:root[data-theme="light"] .stats-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:root[data-theme="light"] .stats-card .card-body {
-    color: #212529 !important;
-}
-
-:root[data-theme="light"] .stats-card h6 {
-    color: #6b7280 !important;
-}
-
-:root[data-theme="light"] .stats-card h2 {
-    color: #111827 !important;
-}
-
-:root[data-theme="light"] .stats-card small {
-    color: #6b7280 !important;
 }
 
 /* Form controls */
@@ -417,45 +371,18 @@ body.bg-dark {
 /* Gradient backgrounds */
 .bg-gradient-primary {
     background: var(--gradient-primary) !important;
-    color: #ffffff !important;
 }
 
 .bg-gradient-success {
     background: var(--gradient-success) !important;
-    color: #ffffff !important;
 }
 
 .bg-gradient-warning {
     background: var(--gradient-warning) !important;
-    color: #ffffff !important;
 }
 
 .bg-gradient-info {
     background: var(--gradient-info) !important;
-    color: #ffffff !important;
-}
-
-/* Ensure gradient cards maintain proper styling in light theme */
-:root[data-theme="light"] .bg-gradient-primary,
-:root[data-theme="light"] .bg-gradient-success,
-:root[data-theme="light"] .bg-gradient-warning,
-:root[data-theme="light"] .bg-gradient-info {
-    color: #ffffff !important;
-}
-
-:root[data-theme="light"] .bg-gradient-primary h6,
-:root[data-theme="light"] .bg-gradient-success h6,
-:root[data-theme="light"] .bg-gradient-warning h6,
-:root[data-theme="light"] .bg-gradient-info h6,
-:root[data-theme="light"] .bg-gradient-primary h2,
-:root[data-theme="light"] .bg-gradient-success h2,
-:root[data-theme="light"] .bg-gradient-warning h2,
-:root[data-theme="light"] .bg-gradient-info h2,
-:root[data-theme="light"] .bg-gradient-primary small,
-:root[data-theme="light"] .bg-gradient-success small,
-:root[data-theme="light"] .bg-gradient-warning small,
-:root[data-theme="light"] .bg-gradient-info small {
-    color: #ffffff !important;
 }
 
 /* User Profile Styles */
