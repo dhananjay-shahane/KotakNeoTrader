@@ -36,7 +36,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="ordersTableBody">
+                <tbody>
                     {% for order in orders %}
                     <tr>
                         <td>
@@ -106,7 +106,7 @@
             </table>
         </div>
     </div>
-
+    
     <!-- Summary Footer -->
     <div class="card-footer bg-dark">
         <div class="row text-center">
@@ -169,22 +169,22 @@
             <div class="modal-body">
                 <form id="modifyOrderForm">
                     <input type="hidden" name="order_id" id="modifyOrderId">
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Quantity</label>
                         <input type="number" class="form-control bg-secondary text-light" name="quantity" min="1" required>
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Price</label>
                         <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01" required>
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Trigger Price (for SL orders)</label>
                         <input type="number" class="form-control bg-secondary text-light" name="trigger_price" step="0.01">
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Validity</label>
                         <select class="form-select bg-secondary text-light" name="validity" required>
@@ -231,16 +231,13 @@
 
 {% block scripts %}
 <script>
-// Function for refreshing just the orders table
 function refreshOrdersTable() {
     const button = document.querySelector('[onclick="refreshOrdersTable()"]');
     const originalHtml = button.innerHTML;
-
+    
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
     button.disabled = true;
-    const tableBody = document.getElementById('ordersTableBody');
-    if (!tableBody) return;
-
+    
     fetch('/orders')
         .then(response => response.text())
         .then(html => {
@@ -249,21 +246,21 @@ function refreshOrdersTable() {
             const doc = parser.parseFromString(html, 'text/html');
             const newTableBody = doc.querySelector('table tbody');
             const newSummaryFooter = doc.querySelector('.card-footer');
-
+            
             if (newTableBody) {
                 const currentTableBody = document.querySelector('table tbody');
                 if (currentTableBody) {
                     currentTableBody.innerHTML = newTableBody.innerHTML;
                 }
             }
-
+            
             if (newSummaryFooter) {
                 const currentSummaryFooter = document.querySelector('.card-footer');
                 if (currentSummaryFooter) {
                     currentSummaryFooter.innerHTML = newSummaryFooter.innerHTML;
                 }
             }
-
+            
             console.log('Orders table refreshed successfully');
         })
         .catch(error => {
@@ -276,6 +273,9 @@ function refreshOrdersTable() {
         });
 }
 
+function refreshOrders() {
+    refreshOrdersTable();
+}
 
 function modifyOrder(orderId) {
     document.getElementById('modifyOrderId').value = orderId;
@@ -286,7 +286,7 @@ function submitModifyOrder() {
     const form = document.getElementById('modifyOrderForm');
     const formData = new FormData(form);
     const orderData = Object.fromEntries(formData.entries());
-
+    
     fetch('/api/modify_order', {
         method: 'POST',
         headers: {
@@ -343,9 +343,9 @@ function viewOrderDetails(orderId) {
             </div>
         </div>
     `;
-
+    
     new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
-
+    
     // Fetch order history/details
     // This would typically call an API endpoint to get detailed order information
     setTimeout(() => {
@@ -361,7 +361,7 @@ function viewOrderDetails(orderId) {
     }, 1000);
 }
 
-// Auto-refresh orders every 30 seconds
+// Auto-refresh orders table every 30 seconds (reduced frequency for better performance)
 setInterval(refreshOrdersTable, 30000);
 </script>
 {% endblock %}

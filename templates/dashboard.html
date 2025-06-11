@@ -59,21 +59,11 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Positions</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.get('total_positions', 0) }}</h2>
+                        <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.total_positions or 0 }}</h2>
                         <small class="text-white-50">
                             <i class="fas fa-chart-line me-1"></i>
-                            {% if data.get('positions') %}
-                                {% set active_positions = 0 %}
-                                {% for position in data.positions %}
-                                    {% set net_qty = (position.get('flBuyQty', 0)|int) - (position.get('flSellQty', 0)|int) %}
-                                    {% if net_qty != 0 %}
-                                        {% set active_positions = active_positions + 1 %}
-                                    {% endif %}
-                                {% endfor %}
-                                {{ active_positions }} Active trades
-                            {% else %}
-                                0 Active trades
-                            {% endif %}
+                            {% set active_positions = data.positions|selectattr('netQty', '!=', '0')|list|length if data.positions else 0 %}
+                            {{ active_positions }} Active trades
                         </small>
                     </div>
                     <div class="stats-icon">
@@ -92,16 +82,12 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.get('total_holdings', 0) }}</h2>
+                        <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
                         <small class="text-white-50" id="holdingsValue">
                             <i class="fas fa-wallet me-1"></i>
-                            {% if data.get('holdings') %}
-                                {% set holdings_value = 0.0 %}
-                                {% for holding in data.holdings %}
-                                    {% set mkt_value = (holding.get('mktPrice', 0)|float) * (holding.get('holdQty', 0)|float) %}
-                                    {% set holdings_value = holdings_value + mkt_value %}
-                                {% endfor %}
-                                ₹{{ "{:,.2f}"|format(holdings_value) }}
+                            {% if data.holdings %}
+                                {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
+                                ₹{{ "%.2f"|format(holdings_value) }}
                             {% else %}
                                 ₹0.00
                             {% endif %}
@@ -123,20 +109,11 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Today's Orders</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalOrders">{{ data.get('total_orders', 0) }}</h2>
+                        <h2 class="mb-0 fw-bold text-white" id="totalOrders">{{ data.total_orders or 0 }}</h2>
                         <small class="text-white-50">
                             <i class="fas fa-clock me-1"></i>
-                            {% if data.get('recent_orders') %}
-                                {% set pending_orders = 0 %}
-                                {% for order in data.recent_orders %}
-                                    {% if order.get('ordSt', '').lower() in ['open', 'pending'] %}
-                                        {% set pending_orders = pending_orders + 1 %}
-                                    {% endif %}
-                                {% endfor %}
-                                {{ pending_orders }} Pending
-                            {% else %}
-                                0 Pending
-                            {% endif %}
+                            {% set pending_orders = data.recent_orders|selectattr('ordSt', '==', 'open')|list|length if data.recent_orders else 0 %}
+                            {{ pending_orders }} Pending
                         </small>
                     </div>
                     <div class="stats-icon">
@@ -156,22 +133,16 @@
                     <div>
                         <h6 class="card-title text-uppercase text-dark fw-bold mb-2">Available Margin</h6>
                         <h2 class="mb-0 fw-bold text-dark" id="availableMargin">
-                            {% if data.get('limits') %}
-                                {% if data.limits.get('Net') %}
-                                    ₹{{ "{:,.2f}"|format(data.limits.Net|float) }}
-                                {% elif data.limits.get('cash') %}
-                                    ₹{{ "{:,.2f}"|format(data.limits.cash|float) }}
-                                {% else %}
-                                    ₹0.00
-                                {% endif %}
+                            {% if data.limits and data.limits.cash %}
+                                ₹{{ "{:,.2f}"|format(data.limits.cash|float) }}
                             {% else %}
                                 ₹0.00
                             {% endif %}
                         </h2>
                         <small class="text-dark" id="marginUsed">
                             <i class="fas fa-rupee-sign me-1"></i>
-                            {% if data.get('limits') and data.limits.get('MarginUsed') %}
-                                Used: ₹{{ "{:,.2f}"|format(data.limits.MarginUsed|float) }}
+                            {% if data.limits and data.limits.payin %}
+                                Used: ₹{{ "{:,.2f}"|format(data.limits.payin|float) }}
                             {% else %}
                                 Ready to trade
                             {% endif %}
@@ -411,13 +382,13 @@
                                 </td></tr>
                                 {% else %}
                                     {% for position in data.positions[:10] %}
-                                    <tr data-position-symbol="{{ position.get('trdSym', position.get('sym', 'N/A')) }}" class="position-row">
+                                    <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
                                         <td>
-                                            <strong class="text-primary">{{ position.get('trdSym', position.get('sym', 'N/A')) }}</strong>
-                                            <br><small class="text-muted">{{ position.get('exSeg', 'NSE') }}</small>
+                                            <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
+                                            <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
                                         </td>
                                         <td>
-                                            {% set net_qty = (position.get('flBuyQty', 0)|int) - (position.get('flSellQty', 0)|int) %}
+                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
                                             {% if net_qty > 0 %}
                                                 <span class="text-success fw-bold">+{{ net_qty }}</span>
                                                 <br><small class="text-success">LONG</small>
@@ -429,21 +400,19 @@
                                                 <br><small class="text-muted">FLAT</small>
                                             {% endif %}
                                         </td>
-                                        <td class="text-warning">₹{{ "{:,.2f}"|format(position.get('avgPrice', 0)|float) }}</td>
-                                        <td class="price-ltp fw-bold" data-symbol="{{ position.get('trdSym', position.get('sym', 'N/A')) }}">
-                                            ₹{{ "{:,.2f}"|format(position.get('ltp', 0)|float) }}
+                                        <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
+                                        <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
+                                            ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
                                         </td>
                                         <td class="position-pnl">
-                                            {% set pnl = position.get('pnl', position.get('urPnl', 0))|float %}
+                                            {% set pnl = position.pnl|float if position.pnl else 0.0 %}
                                             <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
                                                 ₹{{ "{:,.2f}"|format(pnl) }}
                                             </span>
                                         </td>
                                         <td>
-                                            {% set avg_price = position.get('avgPrice', 0)|float %}
-                                            {% set ltp = position.get('ltp', 0)|float %}
-                                            {% if avg_price > 0 and ltp > 0 %}
-                                                {% set pnl_percent = ((ltp - avg_price) / avg_price * 100) %}
+                                            {% if position.avgPrice and position.ltp %}
+                                                {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
                                                 <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
                                                     {{ "{:+.2f}"|format(pnl_percent) }}%
                                                 </span>
@@ -452,18 +421,18 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <span class="badge {% if position.get('prod') == 'MIS' %}bg-warning{% elif position.get('prod') == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
-                                                {{ position.get('prod', 'CNC') }}
+                                            <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
+                                                {{ position.prod or 'CNC' }}
                                             </span>
                                         </td>
                                         <td>
-                                            {% set net_qty = (position.get('flBuyQty', 0)|int) - (position.get('flSellQty', 0)|int) %}
+                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
                                             {% if net_qty > 0 %}
-                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.get('trdSym', position.get('sym', 'N/A')) }}', {{ net_qty }})">
+                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
                                                     <i class="fas fa-minus"></i> Exit
                                                 </button>
                                             {% elif net_qty < 0 %}
-                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.get('trdSym', position.get('sym', 'N/A')) }}', {{ net_qty|abs }})">
+                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
                                                     <i class="fas fa-plus"></i> Cover
                                                 </button>
                                             {% endif %}
@@ -1317,43 +1286,6 @@ async function loadUserProfile() {
         }
     } catch (error) {
         console.error('Error loading user profile:', error);
-    }
-}
-
-// Portfolio summary refresh function
-async function refreshPortfolioSummary() {
-    try {
-        const response = await fetch('/api/limits');
-        const data = await response.json();
-        
-        if (data.success && data.limits) {
-            const limits = data.limits;
-            
-            // Update portfolio value
-            const portfolioValue = document.querySelector('[data-stat="portfolio-value"]');
-            if (portfolioValue) {
-                portfolioValue.textContent = `₹${parseFloat(limits.Net || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            }
-            
-            // Update available margin
-            const availableMargin = document.querySelector('[data-stat="available-margin"]');
-            if (availableMargin) {
-                const available = parseFloat(limits.Net || 0) - parseFloat(limits.MarginUsed || 0);
-                availableMargin.textContent = `₹${available.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            }
-            
-            // Update P&L
-            const totalPnl = document.querySelector('[data-stat="total-pnl"]');
-            if (totalPnl) {
-                const unrealized = parseFloat(limits.UnrealizedMtomPrsnt || 0);
-                const realized = parseFloat(limits.RealizedMtomPrsnt || 0);
-                const total = unrealized + realized;
-                totalPnl.textContent = `₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-                totalPnl.className = `fw-bold ${total > 0 ? 'text-success' : total < 0 ? 'text-danger' : 'text-muted'}`;
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing portfolio summary:', error);
     }
 }
 
