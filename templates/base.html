@@ -334,6 +334,225 @@
         .dropdown-divider {
             border-color: var(--border-color);
         }
+
+        /* Theme Toggle Styles */
+        .theme-toggle {
+            position: relative;
+            margin-right: 1rem;
+        }
+
+        .theme-toggle-input {
+            display: none;
+        }
+
+        .theme-toggle-label {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 2rem;
+            padding: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 3.5rem;
+            height: 1.75rem;
+        }
+
+        .theme-toggle-label:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .theme-icon-light,
+        .theme-icon-dark {
+            position: absolute;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .theme-icon-light {
+            left: 0.5rem;
+            color: #fbbf24;
+        }
+
+        .theme-icon-dark {
+            right: 0.5rem;
+            color: #6b7280;
+        }
+
+        .theme-toggle-slider {
+            position: absolute;
+            top: 0.125rem;
+            left: 0.125rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            background: var(--primary-color);
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            z-index: 1;
+        }
+
+        .theme-toggle-input:checked + .theme-toggle-label .theme-toggle-slider {
+            transform: translateX(1.5rem);
+        }
+
+        /* Light Theme Variables */
+        :root[data-theme="light"] {
+            --primary-color: #2563eb;
+            --secondary-color: #f8fafc;
+            --accent-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #ffffff;
+            --card-bg: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        /* Light theme specific overrides */
+        :root[data-theme="light"] .main-header {
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :root[data-theme="light"] .sidebar {
+            background: #ffffff;
+            box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :root[data-theme="light"] .card {
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :root[data-theme="light"] .table-dark {
+            --bs-table-bg: #ffffff;
+            --bs-table-color: #1e293b;
+        }
+
+        :root[data-theme="light"] .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        :root[data-theme="light"] .notification-btn:hover {
+            background: #f1f5f9;
+        }
+
+        :root[data-theme="light"] .user-profile:hover {
+            background: #f1f5f9;
+        }
+
+        :root[data-theme="light"] .nav-link:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        :root[data-theme="light"] .theme-toggle-label {
+            background: #f1f5f9;
+            border-color: #d1d5db;
+        }
+
+        :root[data-theme="light"] .theme-icon-light {
+            color: #f59e0b;
+        }
+
+        :root[data-theme="light"] .theme-icon-dark {
+            color: #9ca3af;
+        }
+
+        /* Toaster Styles */
+        .toaster-container {
+            position: fixed;
+            top: calc(var(--header-height) + 1rem);
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 400px;
+        }
+
+        .toaster {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .toaster.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toaster-icon {
+            flex-shrink: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .toaster-icon.success {
+            background: var(--success-color);
+        }
+
+        .toaster-icon.error {
+            background: var(--danger-color);
+        }
+
+        .toaster-icon.warning {
+            background: var(--warning-color);
+        }
+
+        .toaster-icon.info {
+            background: var(--accent-color);
+        }
+
+        .toaster-content {
+            flex: 1;
+        }
+
+        .toaster-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .toaster-message {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .toaster-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .toaster-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--text-primary);
+        }
     </style>
     
     {% block head %}{% endblock %}
@@ -357,6 +576,16 @@
             <div class="status-indicator live">
                 <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
                 <span>Live Market</span>
+            </div>
+            
+            <!-- Theme Toggle Switch -->
+            <div class="theme-toggle">
+                <input type="checkbox" id="themeToggle" class="theme-toggle-input">
+                <label for="themeToggle" class="theme-toggle-label">
+                    <i class="fas fa-sun theme-icon-light"></i>
+                    <i class="fas fa-moon theme-icon-dark"></i>
+                    <span class="theme-toggle-slider"></span>
+                </label>
             </div>
             
             <button class="notification-btn" onclick="showNotifications()">
@@ -437,6 +666,9 @@
         </a>
     </div>
     {% endif %}
+
+    <!-- Toaster Container -->
+    <div class="toaster-container" id="toasterContainer"></div>
     
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -492,7 +724,79 @@
 
         // Show notifications
         function showNotifications() {
-            alert('Live market updates:\n• Portfolio value updated\n• Order status changed\n• Market volatility alert');
+            showToaster('Live Market Updates', 'Portfolio value updated successfully', 'success');
+            setTimeout(() => showToaster('Order Status', 'Order execution completed', 'info'), 500);
+            setTimeout(() => showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'), 1000);
+        }
+
+        // Theme Toggle Functionality
+        function initializeTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'light') {
+                themeToggle.checked = true;
+            }
+
+            themeToggle.addEventListener('change', function() {
+                const newTheme = this.checked ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'info');
+            });
+        }
+
+        // Toaster Functionality
+        function showToaster(title, message, type = 'info') {
+            const container = document.getElementById('toasterContainer');
+            if (!container) return;
+
+            const toaster = document.createElement('div');
+            toaster.className = 'toaster';
+            
+            const iconMap = {
+                success: 'fas fa-check',
+                error: 'fas fa-times',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info'
+            };
+
+            toaster.innerHTML = `
+                <div class="toaster-icon ${type}">
+                    <i class="${iconMap[type]}"></i>
+                </div>
+                <div class="toaster-content">
+                    <div class="toaster-title">${title}</div>
+                    <div class="toaster-message">${message}</div>
+                </div>
+                <button class="toaster-close" onclick="removeToaster(this.parentElement)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            container.appendChild(toaster);
+
+            // Show animation
+            setTimeout(() => {
+                toaster.classList.add('show');
+            }, 100);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                removeToaster(toaster);
+            }, 3000);
+        }
+
+        function removeToaster(toaster) {
+            if (toaster && toaster.parentElement) {
+                toaster.classList.remove('show');
+                setTimeout(() => {
+                    if (toaster.parentElement) {
+                        toaster.parentElement.removeChild(toaster);
+                    }
+                }, 300);
+            }
         }
 
         // Show user profile
@@ -550,8 +854,12 @@
             }, 30000);
         }
 
-        // Highlight active navigation
+        // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme
+            initializeTheme();
+            
+            // Highlight active navigation
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.nav-link');
             
@@ -560,6 +868,15 @@
                 if (href && currentPath === href) {
                     link.classList.add('active');
                 }
+            });
+            
+            // Convert flash messages to toasters
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const message = alert.textContent.trim();
+                const type = alert.classList.contains('alert-success') ? 'success' : 'error';
+                showToaster('System Message', message, type);
+                alert.remove();
             });
         });
     </script>
