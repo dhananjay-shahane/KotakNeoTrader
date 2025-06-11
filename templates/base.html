@@ -252,10 +252,32 @@
             transition: margin-left 0.3s ease;
         }
 
+        /* Mobile Toggle Button */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-color);
+        }
+
         /* Mobile Responsiveness */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
+            .mobile-toggle {
+                display: block;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
             }
 
             .sidebar.show {
@@ -270,23 +292,31 @@
                 margin-left: 0;
             }
 
-            .mobile-toggle {
-                display: block;
-                background: none;
-                border: none;
-                color: var(--text-primary);
-                font-size: 1.25rem;
-                padding: 0.5rem;
-                margin-right: 1rem;
-            }
-
             .user-info {
                 display: none;
             }
+
+            /* Overlay when sidebar is open */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
         }
 
-        .mobile-toggle {
-            display: none;
+        @media (min-width: 993px) {
+            .mobile-toggle {
+                display: none;
+            }
         }
 
         /* Cards and Components */
@@ -668,6 +698,9 @@
         </button>
 
         <div class="header-left">
+            <button class="mobile-toggle me-3" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <a href="{{ url_for('dashboard') }}" class="header-brand">
                 <i class="fas fa-chart-line"></i>
                 <span>Neo Trading</span>
@@ -707,6 +740,9 @@
             </div>
         </div>
     </header>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- Fixed Sidebar -->
     <nav class="sidebar" id="sidebar">
@@ -804,8 +840,45 @@
         // Mobile sidebar toggle
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('show');
+            const overlay = document.getElementById('sidebarOverlay');
+            const isOpen = sidebar.classList.contains('show');
+            
+            if (isOpen) {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
         }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (window.innerWidth <= 992 && 
+                sidebar && sidebar.classList.contains('show') && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                toggleSidebar();
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (window.innerWidth > 992) {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        });
 
         // User menu toggle
         function toggleUserMenu() {
