@@ -21,7 +21,7 @@ except ImportError:
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "kotak-neo-trading-app-secret-key")
+app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Configure for Replit deployment
 from werkzeug.middleware.proxy_fix import ProxyFix
