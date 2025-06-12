@@ -39,25 +39,25 @@
                     {% for holding in holdings %}
                     <tr>
                         <td>
-                            <strong>{{ holding.trdSym or holding.sym or 'N/A' }}</strong>
-                            {% if holding.series %}
-                                <br><small class="text-muted">{{ holding.series }}</small>
+                            <strong>{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
+                            {% if holding.instrumentName %}
+                                <br><small class="text-muted">{{ holding.instrumentName }}</small>
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge bg-info">{{ holding.exSeg or 'N/A' }}</span>
+                            <span class="badge bg-info">{{ holding.exchangeSegment or 'N/A' }}</span>
                         </td>
                         <td class="text-info">
-                            {{ holding.holdQty or holding.qty or '0' }}
+                            {{ holding.quantity or '0' }}
                         </td>
-                        <td>₹{{ "%.2f"|format(holding.avgPrice|float) if holding.avgPrice else '0.00' }}</td>
-                        <td>₹{{ "%.2f"|format(holding.ltp|float) if holding.ltp else '0.00' }}</td>
+                        <td>₹{{ "%.2f"|format(holding.averagePrice|float) if holding.averagePrice else '0.00' }}</td>
+                        <td>₹{{ "%.2f"|format(holding.closingPrice|float) if holding.closingPrice else '0.00' }}</td>
                         <td>
-                            {% set market_value = (holding.ltp|float * holding.holdQty|float) if holding.ltp and holding.holdQty else 0.0 %}
-                            ₹{{ "%.2f"|format(market_value) }}
+                            ₹{{ "%.2f"|format(holding.mktValue|float) if holding.mktValue else '0.00' }}
                         </td>
                         <td>
-                            {% set invested_value = (holding.avgPrice|float * holding.holdQty|float) if holding.avgPrice and holding.holdQty else 0.0 %}
+                            {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+                            {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
                             {% set pnl = market_value - invested_value %}
                             <span class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
                                 ₹{{ "%.2f"|format(pnl) }}
@@ -67,10 +67,10 @@
                             </span>
                         </td>
                         <td>
-                            {% if holding.dayChg %}
-                                {% set day_change = holding.dayChg|float %}
-                                <span class="{% if day_change > 0 %}text-success{% elif day_change < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    {{ "%.2f"|format(day_change) }}%
+                            {% if holding.closingPrice and holding.averagePrice %}
+                                {% set day_change_pct = ((holding.closingPrice|float - holding.averagePrice|float) / holding.averagePrice|float * 100) %}
+                                <span class="{% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ "%.2f"|format(day_change_pct) }}%
                                 </span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
@@ -78,13 +78,13 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-success btn-sm" onclick="buyHolding('{{ holding.trdSym or holding.sym }}')">
+                                <button class="btn btn-success btn-sm" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
                                     <i class="fas fa-plus"></i> Buy
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.trdSym or holding.sym }}', {{ holding.holdQty or holding.qty or 0 }})">
+                                <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', {{ holding.sellableQuantity or holding.quantity or 0 }})">
                                     <i class="fas fa-minus"></i> Sell
                                 </button>
-                                <button class="btn btn-info btn-sm" onclick="getQuote('{{ holding.tok }}', '{{ holding.exSeg }}')">
+                                <button class="btn btn-info btn-sm" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
                                     <i class="fas fa-chart-line"></i>
                                 </button>
                             </div>
@@ -107,7 +107,7 @@
                 <h6 class="text-muted mb-1">Total Invested</h6>
                 {% set total_invested = 0 %}
                 {% for holding in holdings %}
-                    {% set invested = (holding.avgPrice|float * holding.holdQty|float) if holding.avgPrice and holding.holdQty else 0.0 %}
+                    {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
                     {% set total_invested = total_invested + invested %}
                 {% endfor %}
                 <h5 class="mb-0 text-info">₹{{ "%.2f"|format(total_invested) }}</h5>
@@ -116,7 +116,7 @@
                 <h6 class="text-muted mb-1">Current Value</h6>
                 {% set total_current = 0 %}
                 {% for holding in holdings %}
-                    {% set current = (holding.ltp|float * holding.holdQty|float) if holding.ltp and holding.holdQty else 0.0 %}
+                    {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
                     {% set total_current = total_current + current %}
                 {% endfor %}
                 {% set total_pnl = total_current - total_invested %}
