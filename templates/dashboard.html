@@ -289,13 +289,13 @@
             <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-light">
                     <i class="fas fa-chart-pie me-2 text-info"></i>Live Positions
-                    <span class="badge bg-info ms-2">{{ data.total_positions or 0 }}</span>
+                    <span class="badge bg-info ms-2" id="positionsCount">{{ data.total_positions or 0 }}</span>
                 </h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshPositions()">
+                    <button class="btn btn-sm btn-outline-light me-2" id="refreshPositionsBtn" onclick="refreshPositions()">
                         <i class="fas fa-sync me-1"></i>Refresh
                     </button>
-                    <a href="{{ url_for('positions') }}" class="btn btn-sm btn-info">
+                    <a href="{{ url_for('main.positions') }}" class="btn btn-sm btn-info">
                         <i class="fas fa-external-link-alt me-1"></i>View All
                     </a>
                 </div>
@@ -318,7 +318,7 @@
                         <tbody id="positionsTableBody">
                             {% if data.positions %}
                                 {% if data.positions.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
+                                <tr><td colspan="8" class="text-center text-warning">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
                                     {{ data.positions.error }}
                                     <br><small>Please refresh your tokens using the token refresh tool</small>
@@ -401,7 +401,7 @@
             </div>
             {% if data.positions and data.positions|length > 10 %}
             <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
+                <a href="{{ url_for('main.positions') }}" class="btn btn-outline-light">
                     <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
                 </a>
             </div>
@@ -1063,60 +1063,188 @@ function simulateQuoteUpdates() {
 }
 
 async function refreshPositions() {
-    const button = document.querySelector('[onclick="refreshPositions()"]');
+    const button = document.getElementById('refreshPositionsBtn');
     if (button) {
         button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
         button.disabled = true;
     }
 
     try {
+        console.log('Fetching fresh positions data...');
         const response = await fetch('/api/positions');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
+        console.log('Positions API response:', data);
 
-        if (data.success && data.positions) {
-            const positionsTableBody = document.getElementById('positionsTableBody');
-            if (positionsTableBody) {
-                // Update positions with fresh data
-                data.positions.forEach(position => {
-                    const row = document.querySelector(`tr[data-position-symbol="${position.trdSym || position.sym}"]`);
-                    if (row) {
-                        const ltpCell = row.querySelector('.price-ltp');
-                        const pnlCell = row.querySelector('.position-pnl');
-
-                        if (ltpCell && position.ltp) {
-                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            const newPrice = parseFloat(position.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-                            if (newPrice !== oldPrice) {
-                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
-                                setTimeout(() => {
-                                    ltpCell.classList.remove('price-up', 'price-down');
-                                }, 1000);
-                            }
-                        }
-
-                        if (pnlCell && position.pnl !== undefined) {
-                            const pnl = parseFloat(position.pnl);
-                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
-                        }
-                    }
-                });
-
-                console.log('Positions refreshed successfully');
+        if (data.success) {
+            const positions = data.positions || [];
+            console.log(`Received ${positions.length} positions`);
+            
+            updatePositionsTable(positions);
+            
+            // Update positions count badge
+            const positionsCountEl = document.getElementById('positionsCount');
+            if (positionsCountEl) {
+                positionsCountEl.textContent = positions.length;
             }
+            
+            // Show success notification
+            showUpdateNotification(`Positions refreshed: ${positions.length} positions loaded`, 'success');
+            console.log('✅ Positions table updated successfully');
+        } else {
+            const errorMsg = data.message || data.error || 'Unknown error occurred';
+            console.error('API Error:', errorMsg);
+            showUpdateNotification('Failed to refresh positions: ' + errorMsg, 'error');
         }
     } catch (error) {
         console.error('Error refreshing positions:', error);
-        // Fallback to simulated updates
-        simulatePositionUpdates();
+        
+        let errorMessage = 'Network error';
+        if (error.message) {
+            errorMessage += ': ' + error.message;
+        }
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = 'Unable to connect to server. Please check your connection.';
+        }
+        
+        showUpdateNotification(errorMessage, 'error');
+    } finally {
+        if (button) {
+            button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+            button.disabled = false;
+        }
+    }
+}
+
+function updatePositionsTable(positions) {
+    const tableBody = document.getElementById('positionsTableBody');
+    if (!tableBody) return;
+
+    if (!positions || positions.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    <i class="fas fa-chart-pie fa-3x mb-3 d-block"></i>
+                    <h6>No positions found</h6>
+                    <p>Start trading to see your positions here</p>
+                    <button class="btn btn-primary" onclick="openPlaceOrderModal('BUY')">
+                        <i class="fas fa-plus me-1"></i>Place First Order
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
     }
 
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
+    let tableHTML = '';
+    positions.slice(0, 10).forEach((position, index) => {
+        const buyQty = parseFloat(position.flBuyQty || position.buyQty || 0);
+        const sellQty = parseFloat(position.flSellQty || position.sellQty || 0);
+        const netQty = buyQty - sellQty;
+        
+        const avgPrice = parseFloat(position.avgPrice || position.flBuyAvgPrc || position.buyAvgPrc || 0);
+        const ltp = parseFloat(position.ltp || position.mktPrice || position.LastPrice || 0);
+        const pnl = parseFloat(position.pnl || position.urPnl || position.rpnl || position.unrealised || 0);
+        
+        // Calculate percentage
+        let pnlPercentage = '';
+        if (pnl !== 0 && avgPrice > 0 && Math.abs(netQty) > 0) {
+            const investment = avgPrice * Math.abs(netQty);
+            const percentage = (pnl / investment) * 100;
+            pnlPercentage = `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`;
+        } else {
+            pnlPercentage = '0.00%';
+        }
+
+        tableHTML += `
+            <tr data-position-symbol="${position.trdSym || position.sym}" class="position-row">
+                <td>
+                    <strong class="text-primary">${position.trdSym || position.sym || 'N/A'}</strong>
+                    <br><small class="text-muted">${position.exSeg || 'NSE'}</small>
+                </td>
+                <td>
+                    ${netQty > 0 ? 
+                        `<span class="text-success fw-bold">+${netQty}</span><br><small class="text-success">LONG</small>` : 
+                        netQty < 0 ? 
+                        `<span class="text-danger fw-bold">${netQty}</span><br><small class="text-danger">SHORT</small>` : 
+                        `<span class="text-muted">0</span><br><small class="text-muted">FLAT</small>`
+                    }
+                </td>
+                <td class="text-warning">₹${avgPrice.toFixed(2)}</td>
+                <td class="price-ltp fw-bold" data-symbol="${position.trdSym || position.sym}">
+                    ₹${ltp.toFixed(2)}
+                </td>
+                <td class="position-pnl">
+                    <span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">
+                        ₹${pnl.toFixed(2)}
+                    </span>
+                </td>
+                <td>
+                    <span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">
+                        ${pnlPercentage}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${position.prod === 'MIS' ? 'bg-warning' : position.prod === 'CNC' ? 'bg-success' : 'bg-info'}">
+                        ${position.prod || 'CNC'}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        ${netQty > 0 ? 
+                            `<button class="btn btn-danger btn-sm" onclick="openPlaceOrderModal('SELL', '${position.trdSym || position.sym}', ${Math.abs(netQty)})">
+                                <i class="fas fa-minus"></i> Exit
+                            </button>` : 
+                            netQty < 0 ? 
+                            `<button class="btn btn-success btn-sm" onclick="openPlaceOrderModal('BUY', '${position.trdSym || position.sym}', ${Math.abs(netQty)})">
+                                <i class="fas fa-plus"></i> Cover
+                            </button>` : ''
+                        }
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = tableHTML;
+    
+    // Add update animation
+    tableBody.classList.add('data-updated');
+    setTimeout(() => {
+        tableBody.classList.remove('data-updated');
+    }, 1500);
+    
+    console.log(`✅ Updated positions table with ${positions.length} positions`);
+}
+
+function showUpdateNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'warning'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            <div class="flex-grow-1">
+                <small>${message}</small>
+            </div>
+            <button type="button" class="btn-close btn-close-white btn-sm" onclick="this.closest('.alert').remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 4000);
 }
 
 function simulatePositionUpdates() {
@@ -1211,6 +1339,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load user profile data
     loadUserProfile();
+    
+    // Auto-refresh positions table every 30 seconds
+    setTimeout(() => {
+        refreshPositions();
+    }, 5000); // Initial refresh after 5 seconds
 });
 
 // Function to load user profile data
@@ -1235,12 +1368,51 @@ async function loadUserProfile() {
     }
 }
 
-// Auto-refresh specific sections every 15 seconds instead of full page
+// Add CSS for table update animations
+const style = document.createElement('style');
+style.textContent = `
+    .data-updated {
+        animation: tableUpdate 1.5s ease-in-out;
+    }
+    
+    @keyframes tableUpdate {
+        0% { background-color: rgba(40, 167, 69, 0.3); }
+        50% { background-color: rgba(40, 167, 69, 0.1); }
+        100% { background-color: transparent; }
+    }
+    
+    .position-row {
+        transition: background-color 0.3s ease;
+    }
+    
+    .position-row:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .price-up {
+        animation: priceUp 1s ease-in-out;
+    }
+    
+    .price-down {
+        animation: priceDown 1s ease-in-out;
+    }
+    
+    @keyframes priceUp {
+        0% { background-color: rgba(40, 167, 69, 0.3); }
+        100% { background-color: transparent; }
+    }
+    
+    @keyframes priceDown {
+        0% { background-color: rgba(220, 53, 69, 0.3); }
+        100% { background-color: transparent; }
+    }
+`;
+document.head.appendChild(style);
+
+// Auto-refresh positions every 30 seconds instead of full page
 setInterval(() => {
-    refreshQuotes();
     refreshPositions();
-    refreshPortfolioSummary();
-}, 15000);
+}, 30000);
 
 
 
