@@ -1,0 +1,705 @@
+
+{% extends "base.html" %}
+
+{% block title %}Trading Signals - Kotak Neo Trading{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Trading Signals</h1>
+        <p class="text-muted mb-0">Real-time trading signals and market analysis</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshSignals()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+            <i class="fas fa-cog me-1"></i>Columns
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#signalFiltersModal">
+            <i class="fas fa-filter me-1"></i>Filters
+        </button>
+    </div>
+</div>
+
+<!-- Signal Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-success">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Buy Signals</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="buySignalsCount">0</h3>
+                        <small class="text-white-50">Active opportunities</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-arrow-up fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-danger">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Sell Signals</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="sellSignalsCount">0</h3>
+                        <small class="text-white-50">Exit opportunities</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-arrow-down fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-warning">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white fw-bold mb-1">Hold Signals</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="holdSignalsCount">0</h3>
+                        <small class="text-white">Wait & watch</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-minus fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-info">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Total Signals</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="totalSignalsCount">0</h3>
+                        <small class="text-white-50">Last updated: <span id="lastUpdate">--</span></small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-chart-line fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trading Signals Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-signal me-2 text-primary"></i>Trading Signals
+                    <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label text-light" for="autoRefreshToggle">
+                            Auto Refresh
+                        </label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" id="signalsTable">
+                        <thead class="table-dark">
+                            <tr id="tableHeaders">
+                                <!-- Headers will be dynamically generated based on selected columns -->
+                            </tr>
+                        </thead>
+                        <tbody id="signalsTableBody">
+                            <!-- Signal data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+                <div>
+                    <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> signals</small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog me-2"></i>Column Settings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Select which columns to display in the trading signals table:</p>
+                <div class="row" id="columnCheckboxes">
+                    <!-- Column checkboxes will be populated here -->
+                </div>
+                <hr class="border-secondary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Filters Modal -->
+<div class="modal fade" id="signalFiltersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">
+                    <i class="fas fa-filter me-2"></i>Signal Filters
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Signal Type</label>
+                    <select class="form-select bg-secondary text-light" id="signalTypeFilter">
+                        <option value="">All Signals</option>
+                        <option value="BUY">Buy Signals</option>
+                        <option value="SELL">Sell Signals</option>
+                        <option value="HOLD">Hold Signals</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Strength</label>
+                    <select class="form-select bg-secondary text-light" id="strengthFilter">
+                        <option value="">All Strengths</option>
+                        <option value="STRONG">Strong</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="WEAK">Weak</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Sector</label>
+                    <select class="form-select bg-secondary text-light" id="sectorFilter">
+                        <option value="">All Sectors</option>
+                        <option value="Banking">Banking</option>
+                        <option value="IT">IT Services</option>
+                        <option value="Auto">Automobile</option>
+                        <option value="Pharma">Pharmaceuticals</option>
+                        <option value="FMCG">FMCG</option>
+                        <option value="Energy">Energy</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Price Range</label>
+                    <div class="row">
+                        <div class="col-6">
+                            <input type="number" class="form-control bg-secondary text-light" placeholder="Min Price" id="minPriceFilter">
+                        </div>
+                        <div class="col-6">
+                            <input type="number" class="form-control bg-secondary text-light" placeholder="Max Price" id="maxPriceFilter">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Trading Signals Management
+class TradingSignalsManager {
+    constructor() {
+        this.signals = [];
+        this.filteredSignals = [];
+        this.currentPage = 1;
+        this.pageSize = 20;
+        this.autoRefresh = true;
+        this.refreshInterval = null;
+        
+        // Available columns configuration
+        this.availableColumns = {
+            'symbol': { label: 'Symbol', default: true, width: '120px' },
+            'signal': { label: 'Signal', default: true, width: '100px' },
+            'strength': { label: 'Strength', default: true, width: '100px' },
+            'price': { label: 'Price', default: true, width: '100px' },
+            'target': { label: 'Target', default: true, width: '100px' },
+            'stopLoss': { label: 'Stop Loss', default: true, width: '100px' },
+            'timeframe': { label: 'Timeframe', default: true, width: '100px' },
+            'sector': { label: 'Sector', default: false, width: '120px' },
+            'volume': { label: 'Volume', default: false, width: '120px' },
+            'change': { label: 'Change %', default: true, width: '100px' },
+            'rsi': { label: 'RSI', default: false, width: '80px' },
+            'macd': { label: 'MACD', default: false, width: '80px' },
+            'ma50': { label: 'MA50', default: false, width: '80px' },
+            'ma200': { label: 'MA200', default: false, width: '80px' },
+            'support': { label: 'Support', default: false, width: '100px' },
+            'resistance': { label: 'Resistance', default: false, width: '100px' },
+            'timestamp': { label: 'Time', default: true, width: '140px' },
+            'confidence': { label: 'Confidence', default: false, width: '100px' },
+            'action': { label: 'Action', default: true, width: '120px' }
+        };
+        
+        this.selectedColumns = this.getDefaultColumns();
+        this.init();
+    }
+    
+    getDefaultColumns() {
+        return Object.keys(this.availableColumns).filter(col => this.availableColumns[col].default);
+    }
+    
+    init() {
+        this.generateColumnCheckboxes();
+        this.updateTableHeaders();
+        this.loadSignals();
+        this.startAutoRefresh();
+        
+        // Event listeners
+        document.getElementById('autoRefreshToggle').addEventListener('change', (e) => {
+            this.autoRefresh = e.target.checked;
+            if (this.autoRefresh) {
+                this.startAutoRefresh();
+            } else {
+                this.stopAutoRefresh();
+            }
+        });
+    }
+    
+    generateColumnCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        container.innerHTML = '';
+        
+        Object.keys(this.availableColumns).forEach(column => {
+            const colInfo = this.availableColumns[column];
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6 col-lg-4 mb-2';
+            
+            colDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="col_${column}" 
+                           ${this.selectedColumns.includes(column) ? 'checked' : ''}>
+                    <label class="form-check-label" for="col_${column}">
+                        ${colInfo.label}
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(colDiv);
+        });
+    }
+    
+    updateTableHeaders() {
+        const headersRow = document.getElementById('tableHeaders');
+        headersRow.innerHTML = '';
+        
+        this.selectedColumns.forEach(column => {
+            const th = document.createElement('th');
+            const colInfo = this.availableColumns[column];
+            th.style.width = colInfo.width;
+            
+            if (column === 'action') {
+                th.innerHTML = `<i class="fas fa-cog me-1"></i>${colInfo.label}`;
+            } else if (column === 'signal') {
+                th.innerHTML = `<i class="fas fa-signal me-1"></i>${colInfo.label}`;
+            } else if (column === 'price') {
+                th.innerHTML = `<i class="fas fa-rupee-sign me-1"></i>${colInfo.label}`;
+            } else if (column === 'volume') {
+                th.innerHTML = `<i class="fas fa-chart-bar me-1"></i>${colInfo.label}`;
+            } else if (column === 'timestamp') {
+                th.innerHTML = `<i class="fas fa-clock me-1"></i>${colInfo.label}`;
+            } else {
+                th.textContent = colInfo.label;
+            }
+            
+            headersRow.appendChild(th);
+        });
+    }
+    
+    async loadSignals() {
+        try {
+            // Generate sample trading signals data
+            this.signals = this.generateSampleSignals();
+            this.filteredSignals = [...this.signals];
+            this.updateSignalCounts();
+            this.renderSignalsTable();
+            this.updatePagination();
+            
+        } catch (error) {
+            console.error('Error loading signals:', error);
+            this.showError('Failed to load trading signals');
+        }
+    }
+    
+    generateSampleSignals() {
+        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'KOTAKBANK', 'HINDUNILVR', 'BAJFINANCE', 'AXISBANK', 'ASIANPAINT', 'MARUTI', 'NESTLEIND', 'TITAN', 'WIPRO', 'TATAMOTORS', 'HCLTECH'];
+        const signals = ['BUY', 'SELL', 'HOLD'];
+        const strengths = ['STRONG', 'MEDIUM', 'WEAK'];
+        const timeframes = ['1D', '1W', '1M', '3M'];
+        const sectors = ['Banking', 'IT', 'Auto', 'Pharma', 'FMCG', 'Energy'];
+        
+        const generatedSignals = [];
+        
+        for (let i = 0; i < 50; i++) {
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            const signal = signals[Math.floor(Math.random() * signals.length)];
+            const strength = strengths[Math.floor(Math.random() * strengths.length)];
+            const price = Math.random() * 5000 + 100;
+            const targetMultiplier = signal === 'BUY' ? (1 + Math.random() * 0.15) : (1 - Math.random() * 0.15);
+            const slMultiplier = signal === 'BUY' ? (1 - Math.random() * 0.08) : (1 + Math.random() * 0.08);
+            
+            generatedSignals.push({
+                symbol: symbol,
+                signal: signal,
+                strength: strength,
+                price: price.toFixed(2),
+                target: (price * targetMultiplier).toFixed(2),
+                stopLoss: (price * slMultiplier).toFixed(2),
+                timeframe: timeframes[Math.floor(Math.random() * timeframes.length)],
+                sector: sectors[Math.floor(Math.random() * sectors.length)],
+                volume: Math.floor(Math.random() * 1000000) + 50000,
+                change: ((Math.random() - 0.5) * 10).toFixed(2),
+                rsi: (Math.random() * 100).toFixed(1),
+                macd: ((Math.random() - 0.5) * 20).toFixed(2),
+                ma50: (price * (0.95 + Math.random() * 0.1)).toFixed(2),
+                ma200: (price * (0.9 + Math.random() * 0.2)).toFixed(2),
+                support: (price * (0.95 - Math.random() * 0.05)).toFixed(2),
+                resistance: (price * (1.05 + Math.random() * 0.05)).toFixed(2),
+                timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+                confidence: (60 + Math.random() * 40).toFixed(1)
+            });
+        }
+        
+        return generatedSignals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    }
+    
+    updateSignalCounts() {
+        const buyCount = this.filteredSignals.filter(s => s.signal === 'BUY').length;
+        const sellCount = this.filteredSignals.filter(s => s.signal === 'SELL').length;
+        const holdCount = this.filteredSignals.filter(s => s.signal === 'HOLD').length;
+        
+        document.getElementById('buySignalsCount').textContent = buyCount;
+        document.getElementById('sellSignalsCount').textContent = sellCount;
+        document.getElementById('holdSignalsCount').textContent = holdCount;
+        document.getElementById('totalSignalsCount').textContent = this.filteredSignals.length;
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+    }
+    
+    renderSignalsTable() {
+        const tbody = document.getElementById('signalsTableBody');
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const pageSignals = this.filteredSignals.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        if (pageSignals.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                    <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                    <h6 class="text-muted">No signals found</h6>
+                    <p class="text-muted mb-0">Try adjusting your filters</p>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+        
+        pageSignals.forEach(signal => {
+            const row = document.createElement('tr');
+            
+            this.selectedColumns.forEach(column => {
+                const cell = document.createElement('td');
+                
+                switch (column) {
+                    case 'symbol':
+                        cell.innerHTML = `<strong class="text-primary">${signal.symbol}</strong>`;
+                        break;
+                    case 'signal':
+                        const signalClass = signal.signal === 'BUY' ? 'success' : signal.signal === 'SELL' ? 'danger' : 'warning';
+                        const signalIcon = signal.signal === 'BUY' ? 'arrow-up' : signal.signal === 'SELL' ? 'arrow-down' : 'minus';
+                        cell.innerHTML = `<span class="badge bg-${signalClass}"><i class="fas fa-${signalIcon} me-1"></i>${signal.signal}</span>`;
+                        break;
+                    case 'strength':
+                        const strengthClass = signal.strength === 'STRONG' ? 'success' : signal.strength === 'MEDIUM' ? 'warning' : 'secondary';
+                        cell.innerHTML = `<span class="badge bg-${strengthClass}">${signal.strength}</span>`;
+                        break;
+                    case 'price':
+                    case 'target':
+                    case 'stopLoss':
+                    case 'support':
+                    case 'resistance':
+                    case 'ma50':
+                    case 'ma200':
+                        cell.innerHTML = `₹${parseFloat(signal[column]).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                        break;
+                    case 'volume':
+                        cell.textContent = parseInt(signal.volume).toLocaleString('en-IN');
+                        break;
+                    case 'change':
+                        const changeClass = parseFloat(signal.change) >= 0 ? 'text-success' : 'text-danger';
+                        const changeIcon = parseFloat(signal.change) >= 0 ? 'arrow-up' : 'arrow-down';
+                        cell.innerHTML = `<span class="${changeClass}"><i class="fas fa-${changeIcon} me-1"></i>${signal.change}%</span>`;
+                        break;
+                    case 'rsi':
+                        const rsiValue = parseFloat(signal.rsi);
+                        const rsiClass = rsiValue > 70 ? 'text-danger' : rsiValue < 30 ? 'text-success' : 'text-warning';
+                        cell.innerHTML = `<span class="${rsiClass}">${signal.rsi}</span>`;
+                        break;
+                    case 'timestamp':
+                        const date = new Date(signal.timestamp);
+                        cell.innerHTML = `<small>${date.toLocaleDateString()}<br>${date.toLocaleTimeString()}</small>`;
+                        break;
+                    case 'confidence':
+                        const confValue = parseFloat(signal.confidence);
+                        const confClass = confValue > 80 ? 'text-success' : confValue > 60 ? 'text-warning' : 'text-danger';
+                        cell.innerHTML = `<span class="${confClass}">${signal.confidence}%</span>`;
+                        break;
+                    case 'action':
+                        cell.innerHTML = `
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-xs btn-outline-primary" onclick="viewSignalDetails('${signal.symbol}')" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-xs btn-outline-success" onclick="placeOrder('${signal.signal}', '${signal.symbol}', '${signal.price}')" title="Place Order">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="btn btn-xs btn-outline-warning" onclick="addToWatchlist('${signal.symbol}')" title="Add to Watchlist">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </div>
+                        `;
+                        break;
+                    default:
+                        cell.textContent = signal[column] || '-';
+                }
+                
+                row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
+        });
+        
+        document.getElementById('visibleSignalsCount').textContent = this.filteredSignals.length;
+        document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredSignals.length);
+        document.getElementById('totalCount').textContent = this.filteredSignals.length;
+    }
+    
+    updatePagination() {
+        const totalPages = Math.ceil(this.filteredSignals.length / this.pageSize);
+        
+        document.getElementById('currentPage').textContent = this.currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+        document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+    }
+    
+    applyFilters() {
+        const signalType = document.getElementById('signalTypeFilter').value;
+        const strength = document.getElementById('strengthFilter').value;
+        const sector = document.getElementById('sectorFilter').value;
+        const minPrice = parseFloat(document.getElementById('minPriceFilter').value) || 0;
+        const maxPrice = parseFloat(document.getElementById('maxPriceFilter').value) || Infinity;
+        
+        this.filteredSignals = this.signals.filter(signal => {
+            return (!signalType || signal.signal === signalType) &&
+                   (!strength || signal.strength === strength) &&
+                   (!sector || signal.sector === sector) &&
+                   (parseFloat(signal.price) >= minPrice && parseFloat(signal.price) <= maxPrice);
+        });
+        
+        this.currentPage = 1;
+        this.updateSignalCounts();
+        this.renderSignalsTable();
+        this.updatePagination();
+    }
+    
+    clearFilters() {
+        document.getElementById('signalTypeFilter').value = '';
+        document.getElementById('strengthFilter').value = '';
+        document.getElementById('sectorFilter').value = '';
+        document.getElementById('minPriceFilter').value = '';
+        document.getElementById('maxPriceFilter').value = '';
+        
+        this.filteredSignals = [...this.signals];
+        this.currentPage = 1;
+        this.updateSignalCounts();
+        this.renderSignalsTable();
+        this.updatePagination();
+    }
+    
+    applyColumnSettings() {
+        this.selectedColumns = [];
+        
+        Object.keys(this.availableColumns).forEach(column => {
+            const checkbox = document.getElementById(`col_${column}`);
+            if (checkbox && checkbox.checked) {
+                this.selectedColumns.push(column);
+            }
+        });
+        
+        this.updateTableHeaders();
+        this.renderSignalsTable();
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        modal.hide();
+    }
+    
+    startAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+        
+        if (this.autoRefresh) {
+            this.refreshInterval = setInterval(() => {
+                this.loadSignals();
+            }, 30000); // Refresh every 30 seconds
+        }
+    }
+    
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
+    
+    showError(message) {
+        const tbody = document.getElementById('signalsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                    <h6 class="text-danger">${message}</h6>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="signalsManager.loadSignals()">
+                        <i class="fas fa-sync me-1"></i>Retry
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Global functions
+function refreshSignals() {
+    window.signalsManager.loadSignals();
+}
+
+function selectAllColumns() {
+    Object.keys(window.signalsManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+function resetDefaultColumns() {
+    Object.keys(window.signalsManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) {
+            checkbox.checked = window.signalsManager.availableColumns[column].default;
+        }
+    });
+}
+
+function applyColumnSettings() {
+    window.signalsManager.applyColumnSettings();
+}
+
+function applyFilters() {
+    window.signalsManager.applyFilters();
+}
+
+function clearFilters() {
+    window.signalsManager.clearFilters();
+}
+
+function previousPage() {
+    if (window.signalsManager.currentPage > 1) {
+        window.signalsManager.currentPage--;
+        window.signalsManager.renderSignalsTable();
+        window.signalsManager.updatePagination();
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(window.signalsManager.filteredSignals.length / window.signalsManager.pageSize);
+    if (window.signalsManager.currentPage < totalPages) {
+        window.signalsManager.currentPage++;
+        window.signalsManager.renderSignalsTable();
+        window.signalsManager.updatePagination();
+    }
+}
+
+function viewSignalDetails(symbol) {
+    alert(`Viewing details for ${symbol}`);
+}
+
+function placeOrder(signal, symbol, price) {
+    if (window.openPlaceOrderModal) {
+        window.openPlaceOrderModal(signal, symbol);
+    } else {
+        alert(`Placing ${signal} order for ${symbol} at ₹${price}`);
+    }
+}
+
+function addToWatchlist(symbol) {
+    alert(`Added ${symbol} to watchlist`);
+}
+
+function exportSignals() {
+    const data = window.signalsManager.filteredSignals;
+    const csvContent = "data:text/csv;charset=utf-8," + 
+        Object.keys(data[0]).join(",") + "\n" +
+        data.map(row => Object.values(row).join(",")).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `trading_signals_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    window.signalsManager = new TradingSignalsManager();
+});
+</script>
+{% endblock %}

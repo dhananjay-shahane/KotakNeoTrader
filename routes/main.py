@@ -533,3 +533,9 @@ def api_orders():
 def charts():
     """Charts page for trading analysis"""
     return render_template('charts.html')
+
+@main_bp.route('/signals')
+@login_required
+def signals():
+    """Trading signals page"""
+    return render_template('signals.html')
