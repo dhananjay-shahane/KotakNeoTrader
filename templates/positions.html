@@ -293,8 +293,204 @@
 
 {% block scripts %}
 <script>
-function refreshPositions() {
-    window.location.reload();
+async function refreshPositions() {
+    const refreshBtn = document.querySelector('[onclick="refreshPositions()"]');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        refreshBtn.disabled = true;
+    }
+
+    try {
+        const response = await fetch('/api/positions');
+        const data = await response.json();
+
+        if (data.success && data.positions) {
+            updatePositionsTable(data.positions);
+            updatePositionsSummary(data.positions);
+            showUpdateNotification('Positions refreshed successfully', 'success');
+        } else {
+            throw new Error(data.message || 'Failed to fetch positions');
+        }
+    } catch (error) {
+        console.error('Error refreshing positions:', error);
+        showUpdateNotification('Failed to refresh positions: ' + error.message, 'error');
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+function updatePositionsTable(positions) {
+    const tableBody = document.querySelector('tbody');
+    if (!tableBody) return;
+
+    if (positions.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-5">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Positions Found</h4>
+                    <p class="text-muted">You don't have any open positions at the moment.</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let tableHTML = '';
+    positions.forEach(position => {
+        const netQty = (position.flBuyQty || position.buyQty || 0) - (position.flSellQty || position.sellQty || 0);
+        const buyAvg = (position.flBuyQty || position.buyQty || 0) > 0 ? 
+            (position.buyAmt || 0) / (position.flBuyQty || position.buyQty || 1) : 0;
+        const sellAvg = (position.flSellQty || position.sellQty || 0) > 0 ? 
+            (position.sellAmt || 0) / (position.flSellQty || position.sellQty || 1) : 0;
+        const pnl = position.urPnl || position.pnl || position.unrealised || 0;
+        const ltp = position.mktPrice || position.ltp || 0;
+
+        tableHTML += `
+            <tr>
+                <td>
+                    <strong>${position.trdSym || position.sym || position.tradingsymbol || 'N/A'}</strong>
+                    ${position.series ? `<br><small class="text-muted">${position.series}</small>` : ''}
+                    ${position.opTyp && position.opTyp !== 'XX' ? 
+                        `<br><small class="text-warning">${position.opTyp} ${position.stkPrc || position.strike_price || ''}</small>` : ''}
+                </td>
+                <td>
+                    <span class="badge bg-info">${position.exSeg || position.exchange || 'NSE'}</span>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${position.prdCode || position.product || 'CNC'}</span>
+                </td>
+                <td class="text-success">
+                    ${position.flBuyQty || position.buyQty || '0'}
+                </td>
+                <td class="text-danger">
+                    ${position.flSellQty || position.sellQty || '0'}
+                </td>
+                <td>
+                    <span class="${netQty > 0 ? 'text-success' : netQty < 0 ? 'text-danger' : 'text-muted'}">
+                        ${netQty}
+                    </span>
+                </td>
+                <td>
+                    ${buyAvg > 0 ? `₹${buyAvg.toFixed(2)}` : '<span class="text-muted">N/A</span>'}
+                </td>
+                <td>
+                    ${sellAvg > 0 ? `₹${sellAvg.toFixed(2)}` : '<span class="text-muted">N/A</span>'}
+                </td>
+                <td class="price-ltp">₹${parseFloat(ltp).toFixed(2)}</td>
+                <td>
+                    <span class="position-pnl ${parseFloat(pnl) > 0 ? 'text-success' : parseFloat(pnl) < 0 ? 'text-danger' : 'text-muted'}">
+                        ₹${parseFloat(pnl).toFixed(2)}
+                        ${parseFloat(pnl) !== 0 && position.buyAmt && parseFloat(position.buyAmt) > 0 ? 
+                            `<br><small>(${((parseFloat(pnl) / parseFloat(position.buyAmt)) * 100).toFixed(2)}%)</small>` : ''}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        ${netQty > 0 ? 
+                            `<button class="btn btn-danger btn-sm" onclick="sellPosition('${position.trdSym || position.sym}', ${Math.abs(netQty)})">
+                                <i class="fas fa-minus"></i> Sell
+                            </button>` : 
+                            netQty < 0 ? 
+                            `<button class="btn btn-success btn-sm" onclick="buyPosition('${position.trdSym || position.sym}', ${Math.abs(netQty)})">
+                                <i class="fas fa-plus"></i> Buy
+                            </button>` : ''
+                        }
+                        <button class="btn btn-info btn-sm" onclick="getQuote('${position.tok}', '${position.exSeg}')">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = tableHTML;
+    
+    // Add update animation
+    tableBody.classList.add('data-updated');
+    setTimeout(() => {
+        tableBody.classList.remove('data-updated');
+    }, 1500);
+}
+
+function updatePositionsSummary(positions) {
+    // Update summary cards
+    const totalPositionsEl = document.querySelector('.card.bg-primary h4');
+    if (totalPositionsEl) {
+        totalPositionsEl.textContent = positions.length;
+    }
+
+    // Calculate totals
+    let totalPnl = 0;
+    let realizedPnl = 0;
+    let unrealizedPnl = 0;
+    let longPositions = 0;
+    let shortPositions = 0;
+
+    positions.forEach(position => {
+        const pnl = parseFloat(position.urPnl || position.pnl || 0);
+        const rPnl = parseFloat(position.rlPnl || position.realised_pnl || 0);
+        const uPnl = parseFloat(position.urPnl || position.unrealised || 0);
+        const netQty = (position.flBuyQty || 0) - (position.flSellQty || 0);
+
+        totalPnl += pnl;
+        realizedPnl += rPnl;
+        unrealizedPnl += uPnl;
+
+        if (netQty > 0) longPositions++;
+        else if (netQty < 0) shortPositions++;
+    });
+
+    // Update summary cards
+    const totalPnlEl = document.querySelector('.card.bg-success h4');
+    if (totalPnlEl) {
+        totalPnlEl.textContent = `₹${totalPnl.toFixed(2)}`;
+    }
+
+    const realizedPnlEl = document.querySelector('.card.bg-info h4');
+    if (realizedPnlEl) {
+        realizedPnlEl.textContent = `₹${realizedPnl.toFixed(2)}`;
+    }
+
+    const unrealizedPnlEl = document.querySelector('.card.bg-warning h4');
+    if (unrealizedPnlEl) {
+        unrealizedPnlEl.textContent = `₹${unrealizedPnl.toFixed(2)}`;
+    }
+
+    // Update footer summary
+    const footerElements = document.querySelectorAll('.card-footer h5');
+    if (footerElements.length >= 4) {
+        footerElements[0].textContent = positions.length;
+        footerElements[1].textContent = `₹${totalPnl.toFixed(2)}`;
+        footerElements[1].className = `mb-0 ${totalPnl > 0 ? 'text-success' : totalPnl < 0 ? 'text-danger' : 'text-muted'}`;
+        footerElements[2].textContent = longPositions;
+        footerElements[3].textContent = shortPositions;
+    }
+}
+
+function showUpdateNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'warning'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
 }
 
 function sellPosition(symbol, quantity) {
@@ -373,7 +569,50 @@ function getQuote(token, exchange) {
     });
 }
 
-// Auto-refresh positions every 10 seconds
-setInterval(refreshPositions, 10000);
+// Auto-refresh positions every 30 seconds (reduced frequency for better UX)
+setInterval(refreshPositions, 30000);
+
+// Add CSS for update animations
+const style = document.createElement('style');
+style.textContent = `
+    .data-updated {
+        animation: dataUpdate 1.5s ease-in-out;
+    }
+    
+    @keyframes dataUpdate {
+        0% { background-color: rgba(40, 167, 69, 0.3); }
+        50% { background-color: rgba(40, 167, 69, 0.1); }
+        100% { background-color: transparent; }
+    }
+    
+    .price-ltp {
+        transition: all 0.3s ease;
+    }
+    
+    .position-pnl {
+        transition: all 0.3s ease;
+    }
+    
+    .price-up {
+        background-color: rgba(40, 167, 69, 0.2);
+        animation: priceUp 1s ease-in-out;
+    }
+    
+    .price-down {
+        background-color: rgba(220, 53, 69, 0.2);
+        animation: priceDown 1s ease-in-out;
+    }
+    
+    @keyframes priceUp {
+        0% { background-color: rgba(40, 167, 69, 0.4); }
+        100% { background-color: transparent; }
+    }
+    
+    @keyframes priceDown {
+        0% { background-color: rgba(220, 53, 69, 0.4); }
+        100% { background-color: transparent; }
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

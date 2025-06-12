@@ -1,5 +1,5 @@
 """Main application routes"""
-from flask import Blueprint, render_template, session, flash, redirect, url_for
+from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify
 import logging
 
 from utils.auth import login_required, validate_current_session
@@ -47,7 +47,7 @@ def dashboard():
         dashboard_data = {}
         try:
             raw_dashboard_data = trading_functions.get_dashboard_data(client)
-            
+
             # Ensure dashboard_data is always a dictionary
             if isinstance(raw_dashboard_data, dict):
                 dashboard_data = raw_dashboard_data
@@ -82,13 +82,13 @@ def dashboard():
                     'total_holdings': 0,
                     'total_orders': 0
                 }
-                
+
             # Ensure all required keys exist with default values and validate data types
             dashboard_data.setdefault('positions', [])
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
-            
+
             # Convert any non-list items to empty lists for safety
             if not isinstance(dashboard_data['positions'], list):
                 dashboard_data['positions'] = []
@@ -96,11 +96,11 @@ def dashboard():
                 dashboard_data['holdings'] = []
             if not isinstance(dashboard_data['recent_orders'], list):
                 dashboard_data['recent_orders'] = []
-                
+
             dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
             dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
             dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
-            
+
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
             # Check if it's a 2FA error specifically
@@ -152,6 +152,29 @@ def positions():
         logging.error(f"Positions error: {str(e)}")
         flash(f'Error loading positions: {str(e)}', 'error')
         return render_template('positions.html', positions=[])
+
+@main_bp.route('/api/positions')
+@login_required
+def api_positions():
+    """API endpoint for positions data (for AJAX refresh)"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+
+        positions_data = trading_functions.get_positions(client)
+        return jsonify({
+            'success': True,
+            'positions': positions_data,
+            'total_positions': len(positions_data) if positions_data else 0
+        })
+    except Exception as e:
+        logging.error(f"API positions error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'positions': []
+        }), 500
 
 @main_bp.route('/holdings')
 @login_required
