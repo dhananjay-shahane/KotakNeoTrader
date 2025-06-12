@@ -1,12 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from datetime import datetime
-import os
+from app import db
 
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -29,8 +22,8 @@ class User(db.Model):
     rid = db.Column(db.String(100), nullable=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     last_login = db.Column(db.DateTime, nullable=True)
     session_expires_at = db.Column(db.DateTime, nullable=True)
     
@@ -52,11 +45,12 @@ class User(db.Model):
             'account_type': self.account_type,
             'branch_code': self.branch_code,
             'is_trial_account': self.is_trial_account,
+            'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None,
-            'is_active': self.is_active
+            'last_login': self.last_login.isoformat() if self.last_login else None
         }
+
 
 class UserSession(db.Model):
     __tablename__ = 'user_sessions'
@@ -65,15 +59,15 @@ class UserSession(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     session_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
     
-    # Kotak Neo session data
+    # Session tokens
     access_token = db.Column(db.Text, nullable=True)
     session_token = db.Column(db.Text, nullable=True)
     sid = db.Column(db.String(100), nullable=True)
     rid = db.Column(db.String(100), nullable=True)
     
-    # Session metadata
+    # Store complete login response
     login_response = db.Column(db.Text, nullable=True)  # Store full login response as JSON
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     expires_at = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     
@@ -82,6 +76,7 @@ class UserSession(db.Model):
     
     def __repr__(self):
         return f'<UserSession {self.session_id}>'
+
 
 class UserPreferences(db.Model):
     __tablename__ = 'user_preferences'
@@ -94,7 +89,7 @@ class UserPreferences(db.Model):
     default_product_type = db.Column(db.String(20), nullable=True)
     default_order_type = db.Column(db.String(20), nullable=True)
     
-    # Dashboard preferences
+    # UI preferences
     auto_refresh_interval = db.Column(db.Integer, default=30)  # seconds
     show_notifications = db.Column(db.Boolean, default=True)
     theme = db.Column(db.String(20), default='dark')
@@ -103,11 +98,12 @@ class UserPreferences(db.Model):
     email_alerts = db.Column(db.Boolean, default=False)
     sms_alerts = db.Column(db.Boolean, default=False)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
     # Relationship
     user = db.relationship('User', backref=db.backref('preferences', uselist=False))
     
     def __repr__(self):
-        return f'<UserPreferences {self.user_id}>'
+        return f'<UserPreferences for User {self.user_id}>'
