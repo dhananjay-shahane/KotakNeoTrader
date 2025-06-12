@@ -779,24 +779,35 @@
                         </thead>
                         <tbody id="holdingsTableBody">
                             {% if data.holdings %}
-                                {% if data.holdings.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
+                                {% if data.holdings is mapping and data.holdings.get('error') %}
+                                <tr><td colspan="8" class="text-center text-warning">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
                                     {{ data.holdings.error }}
                                     <br><small>Please refresh your tokens using the token refresh tool</small>
                                 </td></tr>
-                                {% else %}
+                                {% elif data.holdings is iterable and data.holdings is not string %}
                                     {% for holding in data.holdings[:5] %}
+                                    {% if holding is mapping %}
                                     <tr>
-                                        <td>{{ holding.get('tradingsymbol', 'N/A') }}</td>
-                                        <td>{{ holding.get('quantity', 0) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</td>
-                                        <td class="{% if holding.get('pnl', 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            ₹{{ "%.2f"|format(holding.get('pnl', 0)) }}
+                                        <td>{{ holding.get('tradingsymbol', holding.get('sym', 'N/A')) }}</td>
+                                        <td>{{ holding.get('exSeg', 'NSE') }}</td>
+                                        <td class="text-center">{{ holding.get('quantity', holding.get('holdingQty', 0)) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', holding.get('avgPrice', 0))|float) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('ltp', holding.get('LastPrice', 0))|float) }}</td>
+                                        <td>₹{{ "%.2f"|format((holding.get('ltp', holding.get('LastPrice', 0))|float * holding.get('quantity', holding.get('holdingQty', 0))|float)) }}</td>
+                                        <td class="{% if holding.get('pnl', holding.get('unrealizedPL', 0))|float >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            ₹{{ "%.2f"|format(holding.get('pnl', holding.get('unrealizedPL', 0))|float) }}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">Active</span>
                                         </td>
                                     </tr>
+                                    {% endif %}
                                     {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="8" class="text-center text-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Invalid holdings data format
+                                    </td></tr>
                                 {% endif %}
                             {% else %}
                                 <tr><td colspan="8" class="text-center py-3">
