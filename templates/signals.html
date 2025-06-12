@@ -674,7 +674,14 @@ function placeOrder(signal, symbol, price) {
     if (window.openPlaceOrderModal) {
         window.openPlaceOrderModal(signal, symbol);
     } else {
-        alert(`Placing ${signal} order for ${symbol} at ₹${price}`);
+        // Simulate placing order and redirect to deals page
+        const confirmed = confirm(`Place ${signal} order for ${symbol} at ₹${price}?`);
+        if (confirmed) {
+            // In a real implementation, this would make an API call to place the order
+            alert(`Order placed successfully for ${symbol}. Check the Deals page to track this order.`);
+            // Optionally redirect to deals page
+            // window.location.href = '/deals';
+        }
     }
 }
 

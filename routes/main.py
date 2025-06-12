@@ -539,3 +539,9 @@ def charts():
 def signals():
     """Trading signals page"""
     return render_template('signals.html')
+
+@main_bp.route('/deals')
+@login_required
+def deals():
+    """Deals page for placed orders from signals"""
+    return render_template('deals.html')

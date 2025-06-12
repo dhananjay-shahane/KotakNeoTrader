@@ -1,0 +1,512 @@
+
+{% extends "base.html" %}
+
+{% block title %}Deals - Kotak Neo Trading{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Deals</h1>
+        <p class="text-muted mb-0">Orders placed from trading signals</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshDeals()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <button class="btn btn-outline-primary" onclick="exportDeals()">
+            <i class="fas fa-download me-1"></i>Export
+        </button>
+    </div>
+</div>
+
+<!-- Deal Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-primary">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Total Deals</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="totalDealsCount">0</h3>
+                        <small class="text-white-50">All placed orders</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-handshake fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-success">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Profitable</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="profitableDealsCount">0</h3>
+                        <small class="text-white-50">In profit</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-arrow-up fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-danger">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Loss Making</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="lossDealsCount">0</h3>
+                        <small class="text-white-50">In loss</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-arrow-down fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-0 shadow-sm bg-gradient-warning">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white fw-bold mb-1">Net P&L</h6>
+                        <h3 class="mb-0 fw-bold text-white" id="netPnl">₹0</h3>
+                        <small class="text-white">From signals</small>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-chart-line fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deals Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-handshake me-2 text-primary"></i>Signal-Based Deals
+                    <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm bg-secondary text-light border-secondary" id="statusFilter" onchange="applyFilters()">
+                        <option value="">All Status</option>
+                        <option value="EXECUTED">Executed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="CANCELLED">Cancelled</option>
+                        <option value="REJECTED">Rejected</option>
+                    </select>
+                    <select class="form-select form-select-sm bg-secondary text-light border-secondary" id="signalTypeFilter" onchange="applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="BUY">Buy Orders</option>
+                        <option value="SELL">Sell Orders</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" id="dealsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 140px;">
+                                    <i class="fas fa-clock me-1"></i>Order Time
+                                </th>
+                                <th style="width: 120px;">
+                                    <i class="fas fa-tag me-1"></i>Order ID
+                                </th>
+                                <th style="width: 120px;">Symbol</th>
+                                <th style="width: 100px;">
+                                    <i class="fas fa-signal me-1"></i>Signal
+                                </th>
+                                <th style="width: 100px;">Type</th>
+                                <th style="width: 100px;">Quantity</th>
+                                <th style="width: 100px;">
+                                    <i class="fas fa-rupee-sign me-1"></i>Entry Price
+                                </th>
+                                <th style="width: 100px;">Current Price</th>
+                                <th style="width: 100px;">P&L</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 120px;">
+                                    <i class="fas fa-cog me-1"></i>Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="dealsTableBody">
+                            <!-- Deal data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+                <div>
+                    <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> deals</small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deal Details Modal -->
+<div class="modal fade" id="dealDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Deal Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="dealDetailsContent">
+                <!-- Deal details will be populated here -->
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Deals Management
+class DealsManager {
+    constructor() {
+        this.deals = [];
+        this.filteredDeals = [];
+        this.currentPage = 1;
+        this.pageSize = 20;
+        this.init();
+    }
+    
+    init() {
+        this.loadDeals();
+        setInterval(() => {
+            this.loadDeals();
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    async loadDeals() {
+        try {
+            // In a real implementation, this would fetch actual deal data from the API
+            // For now, we'll simulate deals based on placed orders from signals
+            this.deals = this.generateSampleDeals();
+            this.filteredDeals = [...this.deals];
+            this.updateDealCounts();
+            this.renderDealsTable();
+            this.updatePagination();
+            
+        } catch (error) {
+            console.error('Error loading deals:', error);
+            this.showError('Failed to load deals data');
+        }
+    }
+    
+    generateSampleDeals() {
+        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'KOTAKBANK'];
+        const signals = ['BUY', 'SELL'];
+        const statuses = ['EXECUTED', 'PENDING', 'CANCELLED', 'REJECTED'];
+        const deals = [];
+        
+        for (let i = 0; i < 25; i++) {
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            const signal = signals[Math.floor(Math.random() * signals.length)];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const entryPrice = Math.random() * 5000 + 100;
+            const currentPrice = entryPrice * (0.9 + Math.random() * 0.2); // ±10% variation
+            const quantity = Math.floor(Math.random() * 100) + 1;
+            
+            const pnl = signal === 'BUY' 
+                ? (currentPrice - entryPrice) * quantity 
+                : (entryPrice - currentPrice) * quantity;
+            
+            deals.push({
+                orderId: 'SIG' + (1000000 + i).toString(),
+                symbol: symbol,
+                signal: signal,
+                orderType: signal,
+                quantity: quantity,
+                entryPrice: entryPrice.toFixed(2),
+                currentPrice: currentPrice.toFixed(2),
+                pnl: pnl.toFixed(2),
+                status: status,
+                orderTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+                signalSource: 'Trading Signals',
+                product: 'CNC',
+                exchange: 'NSE'
+            });
+        }
+        
+        return deals.sort((a, b) => new Date(b.orderTime) - new Date(a.orderTime));
+    }
+    
+    updateDealCounts() {
+        const totalDeals = this.filteredDeals.length;
+        const profitableDeals = this.filteredDeals.filter(d => parseFloat(d.pnl) > 0).length;
+        const lossDeals = this.filteredDeals.filter(d => parseFloat(d.pnl) < 0).length;
+        const netPnl = this.filteredDeals.reduce((sum, d) => sum + parseFloat(d.pnl), 0);
+        
+        document.getElementById('totalDealsCount').textContent = totalDeals;
+        document.getElementById('profitableDealsCount').textContent = profitableDeals;
+        document.getElementById('lossDealsCount').textContent = lossDeals;
+        document.getElementById('netPnl').textContent = `₹${netPnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    }
+    
+    renderDealsTable() {
+        const tbody = document.getElementById('dealsTableBody');
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const pageDeals = this.filteredDeals.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        if (pageDeals.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                    <h6 class="text-muted">No deals found</h6>
+                    <p class="text-muted mb-0">Place orders from trading signals to see deals here</p>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+        
+        pageDeals.forEach(deal => {
+            const row = document.createElement('tr');
+            
+            const orderDate = new Date(deal.orderTime);
+            const pnlValue = parseFloat(deal.pnl);
+            const pnlClass = pnlValue >= 0 ? 'text-success' : 'text-danger';
+            const pnlIcon = pnlValue >= 0 ? 'arrow-up' : 'arrow-down';
+            
+            const statusClass = {
+                'EXECUTED': 'success',
+                'PENDING': 'warning',
+                'CANCELLED': 'secondary',
+                'REJECTED': 'danger'
+            }[deal.status] || 'secondary';
+            
+            const signalClass = deal.signal === 'BUY' ? 'success' : 'danger';
+            const signalIcon = deal.signal === 'BUY' ? 'arrow-up' : 'arrow-down';
+            
+            row.innerHTML = `
+                <td>
+                    <small>${orderDate.toLocaleDateString()}<br>${orderDate.toLocaleTimeString()}</small>
+                </td>
+                <td>
+                    <span class="badge bg-primary">${deal.orderId}</span>
+                </td>
+                <td>
+                    <strong class="text-primary">${deal.symbol}</strong>
+                </td>
+                <td>
+                    <span class="badge bg-${signalClass}">
+                        <i class="fas fa-${signalIcon} me-1"></i>${deal.signal}
+                    </span>
+                </td>
+                <td>${deal.orderType}</td>
+                <td>${deal.quantity}</td>
+                <td>₹${parseFloat(deal.entryPrice).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td>₹${parseFloat(deal.currentPrice).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <span class="${pnlClass}">
+                        <i class="fas fa-${pnlIcon} me-1"></i>₹${Math.abs(pnlValue).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-${statusClass}">${deal.status}</span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-xs btn-outline-primary" onclick="viewDealDetails('${deal.orderId}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${deal.status === 'PENDING' ? `
+                        <button class="btn btn-xs btn-outline-warning" onclick="modifyOrder('${deal.orderId}')" title="Modify Order">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-xs btn-outline-danger" onclick="cancelOrder('${deal.orderId}')" title="Cancel Order">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        document.getElementById('visibleDealsCount').textContent = this.filteredDeals.length;
+        document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredDeals.length);
+        document.getElementById('totalCount').textContent = this.filteredDeals.length;
+    }
+    
+    applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const signalTypeFilter = document.getElementById('signalTypeFilter').value;
+        
+        this.filteredDeals = this.deals.filter(deal => {
+            return (!statusFilter || deal.status === statusFilter) &&
+                   (!signalTypeFilter || deal.signal === signalTypeFilter);
+        });
+        
+        this.currentPage = 1;
+        this.updateDealCounts();
+        this.renderDealsTable();
+        this.updatePagination();
+    }
+    
+    updatePagination() {
+        const totalPages = Math.ceil(this.filteredDeals.length / this.pageSize);
+        
+        document.getElementById('currentPage').textContent = this.currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+        document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+    }
+    
+    showError(message) {
+        const tbody = document.getElementById('dealsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                    <h6 class="text-danger">${message}</h6>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="dealsManager.loadDeals()">
+                        <i class="fas fa-sync me-1"></i>Retry
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Global functions
+function refreshDeals() {
+    window.dealsManager.loadDeals();
+}
+
+function applyFilters() {
+    window.dealsManager.applyFilters();
+}
+
+function previousPage() {
+    if (window.dealsManager.currentPage > 1) {
+        window.dealsManager.currentPage--;
+        window.dealsManager.renderDealsTable();
+        window.dealsManager.updatePagination();
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(window.dealsManager.filteredDeals.length / window.dealsManager.pageSize);
+    if (window.dealsManager.currentPage < totalPages) {
+        window.dealsManager.currentPage++;
+        window.dealsManager.renderDealsTable();
+        window.dealsManager.updatePagination();
+    }
+}
+
+function viewDealDetails(orderId) {
+    const deal = window.dealsManager.deals.find(d => d.orderId === orderId);
+    if (!deal) return;
+    
+    const modalContent = document.getElementById('dealDetailsContent');
+    modalContent.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3">Order Information</h6>
+                <table class="table table-dark table-sm">
+                    <tr><td>Order ID:</td><td>${deal.orderId}</td></tr>
+                    <tr><td>Symbol:</td><td>${deal.symbol}</td></tr>
+                    <tr><td>Signal Type:</td><td><span class="badge bg-${deal.signal === 'BUY' ? 'success' : 'danger'}">${deal.signal}</span></td></tr>
+                    <tr><td>Quantity:</td><td>${deal.quantity}</td></tr>
+                    <tr><td>Entry Price:</td><td>₹${parseFloat(deal.entryPrice).toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Order Time:</td><td>${new Date(deal.orderTime).toLocaleString()}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3">Performance</h6>
+                <table class="table table-dark table-sm">
+                    <tr><td>Current Price:</td><td>₹${parseFloat(deal.currentPrice).toLocaleString('en-IN')}</td></tr>
+                    <tr><td>P&L:</td><td class="${parseFloat(deal.pnl) >= 0 ? 'text-success' : 'text-danger'}">₹${parseFloat(deal.pnl).toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Status:</td><td><span class="badge bg-${deal.status === 'EXECUTED' ? 'success' : deal.status === 'PENDING' ? 'warning' : 'danger'}">${deal.status}</span></td></tr>
+                    <tr><td>Signal Source:</td><td>${deal.signalSource}</td></tr>
+                    <tr><td>Product:</td><td>${deal.product}</td></tr>
+                    <tr><td>Exchange:</td><td>${deal.exchange}</td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('dealDetailsModal'));
+    modal.show();
+}
+
+function modifyOrder(orderId) {
+    alert(`Modify order functionality for ${orderId} - to be implemented`);
+}
+
+function cancelOrder(orderId) {
+    if (confirm(`Are you sure you want to cancel order ${orderId}?`)) {
+        alert(`Cancel order functionality for ${orderId} - to be implemented`);
+    }
+}
+
+function exportDeals() {
+    const data = window.dealsManager.filteredDeals;
+    const csvContent = "data:text/csv;charset=utf-8," + 
+        "Order ID,Symbol,Signal,Type,Quantity,Entry Price,Current Price,P&L,Status,Order Time\n" +
+        data.map(row => [
+            row.orderId,
+            row.symbol,
+            row.signal,
+            row.orderType,
+            row.quantity,
+            row.entryPrice,
+            row.currentPrice,
+            row.pnl,
+            row.status,
+            row.orderTime
+        ].join(",")).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `deals_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    window.dealsManager = new DealsManager();
+});
+</script>
+{% endblock %}

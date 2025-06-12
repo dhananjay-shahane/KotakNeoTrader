@@ -784,6 +784,12 @@
                 </a>
             </div>
             <div class="nav-item">
+                <a href="{{ url_for('main.deals') }}" class="nav-link {% if request.endpoint == 'main.deals' %}active{% endif %}">
+                    <i class="fas fa-handshake nav-icon"></i>
+                    <span>Deals</span>
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="{{ url_for('charts') }}" class="nav-link {% if request.endpoint == 'charts' %}active{% endif %}">
                     <i class="fas fa-chart-area nav-icon"></i>
                     <span>Charts</span>
