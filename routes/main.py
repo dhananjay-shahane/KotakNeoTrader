@@ -148,6 +148,8 @@ def positions():
             return redirect(url_for('auth.login'))
 
         positions_data = trading_functions.get_positions(client)
+        if positions_data:
+            logging.info(f"First position data structure: {positions_data[0] if positions_data else 'No positions'}")
         return render_template('positions.html', positions=positions_data)
     except Exception as e:
         logging.error(f"Positions error: {str(e)}")

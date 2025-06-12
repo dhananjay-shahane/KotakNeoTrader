@@ -172,19 +172,19 @@
                             </td>
                             <td>
                                 {% if (position.flBuyQty or position.buyQty or 0)|int > 0 %}
-                                    ₹{{ "%.2f"|format((position.buyAmt or 0)|float / (position.flBuyQty or position.buyQty or 1)|float) }}
+                                    ₹{{ "%.2f"|format((position.flBuyAvgPrc or position.buyAvgPrc or position.avgBuyPrice or 0)|float) }}
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if (position.flSellQty or position.sellQty or 0)|int > 0 %}
-                                    ₹{{ "%.2f"|format((position.sellAmt or 0)|float / (position.flSellQty or position.sellQty or 1)|float) }}
+                                    ₹{{ "%.2f"|format((position.flSellAvgPrc or position.sellAvgPrc or position.avgSellPrice or 0)|float) }}
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td class="price-ltp">₹{{ "%.2f"|format(position.mktPrice or position.ltp or 0) }}</td>
+                            <td class="price-ltp">₹{{ "%.2f"|format((position.mktPrice or position.ltp or position.LastPrice or 0)|float) }}</td>
                             <td>
                                 {% set pnl = 0.0 %}
                                 {% if position.urPnl %}
@@ -447,18 +447,17 @@ function updatePositionsTable(positions) {
         const sellQty = parseFloat(position.flSellQty || position.sellQty || 0);
         const netQty = buyQty - sellQty;
         
-        const buyAmt = parseFloat(position.buyAmt || 0);
-        const sellAmt = parseFloat(position.sellAmt || 0);
-        const buyAvg = buyQty > 0 ? buyAmt / buyQty : 0;
-        const sellAvg = sellQty > 0 ? sellAmt / sellQty : 0;
+        const buyAvg = parseFloat(position.flBuyAvgPrc || position.buyAvgPrc || position.avgBuyPrice || 0);
+        const sellAvg = parseFloat(position.flSellAvgPrc || position.sellAvgPrc || position.avgSellPrice || 0);
         
         const pnl = parseFloat(position.urPnl || position.pnl || position.rpnl || position.unrealised || 0);
-        const ltp = parseFloat(position.mktPrice || position.ltp || 0);
+        const ltp = parseFloat(position.mktPrice || position.ltp || position.LastPrice || 0);
         
         // Calculate percentage if investment exists
         let pnlPercentage = '';
-        if (pnl !== 0 && buyAmt > 0) {
-            const percentage = (pnl / buyAmt) * 100;
+        if (pnl !== 0 && buyAvg > 0 && buyQty > 0) {
+            const investment = buyAvg * buyQty;
+            const percentage = (pnl / investment) * 100;
             pnlPercentage = `<br><small>(${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%)</small>`;
         }
 
