@@ -415,13 +415,25 @@ async function refreshPositions() {
                 showUpdateNotification('No positions found in your account', 'info');
             }
         } else {
-            const errorMsg = data.message || 'Unknown error occurred';
+            const errorMsg = data.message || data.error || 'Unknown error occurred';
             console.error('API Error:', errorMsg);
+            console.error('Full response:', data);
             showUpdateNotification('Failed to refresh positions: ' + errorMsg, 'error');
         }
     } catch (error) {
         console.error('Error refreshing positions:', error);
-        showUpdateNotification('Network error: ' + error.message, 'error');
+        console.error('Error type:', error.name);
+        console.error('Error details:', error);
+        
+        let errorMessage = 'Network error';
+        if (error.message) {
+            errorMessage += ': ' + error.message;
+        }
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = 'Unable to connect to server. Please check your connection.';
+        }
+        
+        showUpdateNotification(errorMessage, 'error');
     } finally {
         if (refreshBtn) {
             refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';

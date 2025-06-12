@@ -174,13 +174,19 @@ class TradingFunctions:
         except Exception as e:
             error_msg = str(e).lower()
             self.logger.error(f"❌ Error fetching positions: {str(e)}")
-            self.logger.error(f"Exception type: {type(e)}")
+            self.logger.error(f"Exception type: {type(e).__name__}")
             
             if '2fa' in error_msg or 'complete' in error_msg or 'invalid jwt' in error_msg:
                 self.logger.error(f"❌ Authentication issue: {str(e)}")
-                return {'error': str(e)}
+                return {'error': f"Authentication required: {str(e)}"}
+            elif 'timeout' in error_msg:
+                return {'error': f"Request timeout: {str(e)}"}
+            elif 'connection' in error_msg:
+                return {'error': f"Connection error: {str(e)}"}
+            elif 'ssl' in error_msg:
+                return {'error': f"SSL certificate error: {str(e)}"}
             else:
-                return []
+                return {'error': f"API error: {str(e)}"}
 
     def get_holdings(self, client):
         """Get current holdings"""

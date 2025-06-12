@@ -187,9 +187,12 @@ def api_positions():
         
         # Handle error responses
         if isinstance(positions_data, dict) and 'error' in positions_data:
+            error_message = positions_data['error']
+            logging.error(f"Positions API returned error: {error_message}")
             return jsonify({
                 'success': False,
-                'message': positions_data['error'],
+                'message': error_message,
+                'error': error_message,
                 'positions': []
             }), 400
         
@@ -247,10 +250,22 @@ def api_positions():
             'timestamp': int(time.time())
         })
     except Exception as e:
-        logging.error(f"API positions error: {str(e)}")
+        error_message = str(e)
+        logging.error(f"API positions error: {error_message}")
+        logging.error(f"Error type: {type(e).__name__}")
+        
+        # Check for specific error types
+        if 'timeout' in error_message.lower():
+            error_message = "Request timeout - please try again"
+        elif 'connection' in error_message.lower():
+            error_message = "Connection error - please check your internet connection"
+        elif '2fa' in error_message.lower():
+            error_message = "Authentication required - please login again"
+        
         return jsonify({
             'success': False,
-            'message': str(e),
+            'message': error_message,
+            'error': str(e),
             'positions': []
         }), 500
 
