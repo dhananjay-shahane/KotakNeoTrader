@@ -1070,9 +1070,9 @@
             setInterval(function() {
                 if (!document.hidden) {
                     const currentPage = window.location.pathname;
-                    if (currentPage === '/dashboard') {
-                        // Refresh dashboard data without full page reload
-                        location.reload();
+                    if (currentPage === '/dashboard' && window.realTimeDashboard) {
+                        // Use AJAX refresh instead of page reload
+                        window.realTimeDashboard.refreshData();
                     }
                 }
             }, 30000);
@@ -1187,6 +1187,7 @@
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/real-time-dashboard.js') }}"></script>
     {% endif %}
 
     {% block scripts %}{% endblock %}
