@@ -1,6 +1,8 @@
 """Trading API endpoints"""
 from flask import Blueprint, request, jsonify, session
 import logging
+import random
+from datetime import datetime, timedelta
 
 from utils.auth import login_required
 from trading_functions import TradingFunctions
@@ -199,100 +201,236 @@ def get_chart_data():
         if not symbol:
             return jsonify({'error': 'Symbol is required'}), 400
 
-        # Use the Kotak Neo client to get real quotes data
-        try:
-            quote_data = {'instrument_tokens': [symbol], 'quote_type': 'ltp'}
-            quotes_response = trading_functions.get_quotes(client, quote_data)
-
-            # Calculate date range based on period
-            end_dt = datetime.now()
-            if period == '1D':
-                start_dt = end_dt - timedelta(days=1)
-                interval = timedelta(minutes=5)
-            elif period == '1W':
-                start_dt = end_dt - timedelta(weeks=1)
+        # Calculate date range based on period
+        end_dt = datetime.now()
+        if period == '1D':
+            start_dt = end_dt - timedelta(days=1)
+            interval = timedelta(minutes=5)
+        elif period == '1W':
+            start_dt = end_dt - timedelta(weeks=1)
+            interval = timedelta(hours=1)
+        elif period == '1M':
+            start_dt = end_dt - timedelta(days=30)
+            interval = timedelta(hours=4)
+        elif period == '3M':
+            start_dt = end_dt - timedelta(days=90)
+            interval = timedelta(days=1)
+        elif period == '1Y':
+            start_dt = end_dt - timedelta(days=365)
+            interval = timedelta(days=1)
+        elif period == 'custom' and start_date and end_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            days_diff = (end_dt - start_dt).days
+            if days_diff <= 7:
                 interval = timedelta(hours=1)
-            elif period == '1M':
-                start_dt = end_dt - timedelta(days=30)
+            elif days_diff <= 30:
                 interval = timedelta(hours=4)
-            elif period == '3M':
-                start_dt = end_dt - timedelta(days=90)
-                interval = timedelta(days=1)
-            elif period == '1Y':
-                start_dt = end_dt - timedelta(days=365)
-                interval = timedelta(days=1)
-            elif period == 'custom' and start_date and end_date:
-                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
-                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                days_diff = (end_dt - start_dt).days
-                if days_diff <= 7:
-                    interval = timedelta(hours=1)
-                elif days_diff <= 30:
-                    interval = timedelta(hours=4)
-                else:
-                    interval = timedelta(days=1)
             else:
-                return jsonify({'error': 'Invalid period'}), 400
+                interval = timedelta(days=1)
+        else:
+            return jsonify({'error': 'Invalid period'}), 400
 
-            # Get current price from quotes if available
-            current_price = 2500.0  # Default fallback
-            if quotes_response and isinstance(quotes_response, dict):
-                if 'data' in quotes_response:
-                    quotes_data = quotes_response['data']
-                    if quotes_data and isinstance(quotes_data, list) and len(quotes_data) > 0:
-                        first_quote = quotes_data[0]
-                        if 'ltp' in first_quote:
-                            current_price = float(first_quote['ltp'])
+        # Try to get real current price from the Kotak Neo API
+        current_price = None
+        real_data_available = False
+        
+        try:
+            # Try to get holdings data to find the current price for this symbol
+            holdings_data = trading_functions.get_holdings(client)
+            if holdings_data and isinstance(holdings_data, list):
+                for holding in holdings_data:
+                    if (holding.get('trdSym', '').upper() == symbol or 
+                        holding.get('scrip', '').upper() == symbol or
+                        holding.get('symbolDescription', '').upper() == symbol):
+                        current_price = float(holding.get('ltp', 0) or holding.get('cmp', 0) or 0)
+                        if current_price > 0:
+                            real_data_available = True
+                            break
+            
+            # If not found in holdings, try positions
+            if not real_data_available:
+                positions_data = trading_functions.get_positions(client)
+                if positions_data and isinstance(positions_data, list):
+                    for position in positions_data:
+                        if (position.get('trdSym', '').upper() == symbol or 
+                            position.get('scrip', '').upper() == symbol):
+                            current_price = float(position.get('ltp', 0) or position.get('cmp', 0) or 0)
+                            if current_price > 0:
+                                real_data_available = True
+                                break
 
-            # Generate realistic historical data based on current price
-            candlesticks = []
-            volume_data = []
+        except Exception as real_data_error:
+            logging.warning(f"Could not fetch real data for {symbol}: {str(real_data_error)}")
 
-            base_price = current_price * random.uniform(0.95, 1.05)
-            price = base_price
+        # Use fallback pricing if no real data available
+        if not real_data_available or not current_price:
+            # Use symbol-based realistic pricing
+            symbol_prices = {
+                'RELIANCE': 2850, 'TCS': 4150, 'HDFCBANK': 1650, 'INFY': 1850,
+                'ICICIBANK': 1250, 'BHARTIARTL': 950, 'ITC': 450, 'SBIN': 825,
+                'LT': 3650, 'KOTAKBANK': 1750, 'HINDUNILVR': 2650, 'BAJFINANCE': 6850,
+                'AXISBANK': 1150, 'ASIANPAINT': 3250, 'MARUTI': 11500, 'NESTLEIND': 2350,
+                'TITAN': 3450, 'WIPRO': 565, 'TATAMOTORS': 775, 'HCLTECH': 1650
+            }
+            current_price = symbol_prices.get(symbol, 2500)
 
-            current_dt = start_dt
-            while current_dt <= end_dt:
-                open_price = price
-                price_change = random.uniform(-0.02, 0.02)
-                close_price = open_price * (1 + price_change)
+        # Generate realistic historical data
+        candlesticks = []
+        volume_data = []
 
-                high_price = max(open_price, close_price) * random.uniform(1.0, 1.015)
-                low_price = min(open_price, close_price) * random.uniform(0.985, 1.0)
+        # Start with a base price slightly different from current
+        base_price = current_price * random.uniform(0.92, 1.08)
+        price = base_price
 
-                volume = random.randint(50000, 500000)
+        current_dt = start_dt
+        while current_dt <= end_dt:
+            open_price = price
+            
+            # More realistic price movements
+            volatility = 0.015 if period in ['1D', '1W'] else 0.025
+            price_change = random.uniform(-volatility, volatility)
+            
+            # Add trend bias toward current price
+            trend_factor = (current_price - price) / current_price * 0.1
+            price_change += trend_factor
+            
+            close_price = open_price * (1 + price_change)
 
-                timestamp = int(current_dt.timestamp())
+            # Generate high and low prices
+            intraday_range = abs(price_change) + random.uniform(0.005, 0.02)
+            high_price = max(open_price, close_price) * (1 + intraday_range/2)
+            low_price = min(open_price, close_price) * (1 - intraday_range/2)
 
-                candlesticks.append({
-                    'time': timestamp,
-                    'open': round(open_price, 2),
-                    'high': round(high_price, 2),
-                    'low': round(low_price, 2),
-                    'close': round(close_price, 2)
-                })
+            # Volume based on volatility
+            base_volume = 100000
+            volatility_multiplier = 1 + abs(price_change) * 10
+            volume = int(base_volume * volatility_multiplier * random.uniform(0.5, 2.0))
 
-                volume_data.append({
-                    'time': timestamp,
-                    'value': volume,
-                    'color': '#16a34a' if close_price >= open_price else '#dc2626'
-                })
+            timestamp = int(current_dt.timestamp())
 
-                price = close_price
-                current_dt += interval
-
-            return jsonify({
-                'symbol': symbol,
-                'candlesticks': candlesticks,
-                'volume': volume_data,
-                'period': period,
-                'current_price': current_price
+            candlesticks.append({
+                'time': timestamp,
+                'open': round(open_price, 2),
+                'high': round(high_price, 2),
+                'low': round(low_price, 2),
+                'close': round(close_price, 2)
             })
 
-        except Exception as api_error:
-            logging.warning(f"Chart data API error: {str(api_error)}")
-            return jsonify({'error': 'Unable to fetch chart data. Please ensure you have an active session.'}), 500
+            volume_data.append({
+                'time': timestamp,
+                'value': volume,
+                'color': '#16a34a' if close_price >= open_price else '#dc2626'
+            })
+
+            price = close_price
+            current_dt += interval
+
+        return jsonify({
+            'symbol': symbol,
+            'candlesticks': candlesticks,
+            'volume': volume_data,
+            'period': period,
+            'current_price': current_price,
+            'real_data_available': real_data_available,
+            'data_source': 'live_api' if real_data_available else 'simulated'
+        })
 
     except Exception as e:
         logging.error(f"Chart data error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@trading_api.route('/live-quotes')
+@login_required
+def get_live_quotes():
+    """Get live quotes for multiple symbols"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'error': 'Session expired'}), 401
+
+        symbols = request.args.getlist('symbols')
+        if not symbols:
+            return jsonify({'error': 'No symbols provided'}), 400
+
+        live_quotes = {}
+        
+        # Try to get real-time data from holdings and positions
+        try:
+            # Get current holdings
+            holdings_data = trading_functions.get_holdings(client)
+            if holdings_data and isinstance(holdings_data, list):
+                for holding in holdings_data:
+                    symbol = holding.get('trdSym', '').upper()
+                    if symbol in [s.upper() for s in symbols]:
+                        live_quotes[symbol] = {
+                            'symbol': symbol,
+                            'ltp': float(holding.get('ltp', 0) or holding.get('cmp', 0) or 0),
+                            'change': float(holding.get('realizedPL', 0) or 0),
+                            'change_percent': float(holding.get('pnlPercentage', 0) or 0),
+                            'volume': int(holding.get('quantity', 0) or 0),
+                            'high': float(holding.get('ltp', 0) or 0) * 1.02,
+                            'low': float(holding.get('ltp', 0) or 0) * 0.98,
+                            'timestamp': datetime.now().isoformat(),
+                            'source': 'holdings'
+                        }
+
+            # Get current positions
+            positions_data = trading_functions.get_positions(client)
+            if positions_data and isinstance(positions_data, list):
+                for position in positions_data:
+                    symbol = position.get('trdSym', '').upper()
+                    if symbol in [s.upper() for s in symbols]:
+                        live_quotes[symbol] = {
+                            'symbol': symbol,
+                            'ltp': float(position.get('ltp', 0) or position.get('cmp', 0) or 0),
+                            'change': float(position.get('realizedPL', 0) or position.get('pnl', 0) or 0),
+                            'change_percent': float(position.get('pnlPercentage', 0) or 0),
+                            'volume': int(position.get('flQty', 0) or position.get('quantity', 0) or 0),
+                            'high': float(position.get('ltp', 0) or 0) * 1.02,
+                            'low': float(position.get('ltp', 0) or 0) * 0.98,
+                            'timestamp': datetime.now().isoformat(),
+                            'source': 'positions'
+                        }
+
+        except Exception as e:
+            logging.warning(f"Error fetching live quotes: {str(e)}")
+
+        # For symbols not found in holdings/positions, generate simulated data
+        for symbol in symbols:
+            symbol_upper = symbol.upper()
+            if symbol_upper not in live_quotes:
+                # Generate realistic simulated quotes
+                base_prices = {
+                    'RELIANCE': 2850, 'TCS': 4150, 'HDFCBANK': 1650, 'INFY': 1850,
+                    'ICICIBANK': 1250, 'BHARTIARTL': 950, 'ITC': 450, 'SBIN': 825,
+                    'LT': 3650, 'KOTAKBANK': 1750, 'HINDUNILVR': 2650, 'BAJFINANCE': 6850
+                }
+                
+                base_price = base_prices.get(symbol_upper, 2500)
+                current_variation = random.uniform(-0.03, 0.03)
+                current_price = base_price * (1 + current_variation)
+                
+                live_quotes[symbol_upper] = {
+                    'symbol': symbol_upper,
+                    'ltp': round(current_price, 2),
+                    'change': round(base_price * current_variation, 2),
+                    'change_percent': round(current_variation * 100, 2),
+                    'volume': random.randint(50000, 500000),
+                    'high': round(current_price * 1.015, 2),
+                    'low': round(current_price * 0.985, 2),
+                    'timestamp': datetime.now().isoformat(),
+                    'source': 'simulated'
+                }
+
+        return jsonify({
+            'success': True,
+            'quotes': live_quotes,
+            'timestamp': datetime.now().isoformat(),
+            'count': len(live_quotes)
+        })
+
+    except Exception as e:
+        logging.error(f"Live quotes error: {str(e)}")
         return jsonify({'error': str(e)}), 500

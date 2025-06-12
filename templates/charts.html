@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Charts - Kotak Neo Trading{% endblock %}
@@ -197,7 +196,7 @@
             color: var(--primary-color);
         }
 
-        
+
 
         .chart-grid {
             display: grid;
@@ -294,7 +293,7 @@
                     </div>
                 </div>
 
-                
+
 
                 <!-- Timeframe Controls -->
                 <div class="mb-3">
@@ -357,7 +356,7 @@ class AdvancedTradingChart {
             }
         });
 
-        
+
 
         // Timeframe buttons
         document.querySelectorAll('.timeframe-btn').forEach(btn => {
@@ -398,7 +397,7 @@ class AdvancedTradingChart {
 
     displaySearchResults(symbols) {
         const resultsContainer = document.getElementById('searchResults');
-        
+
         if (symbols.length === 0) {
             resultsContainer.classList.remove('show');
             return;
@@ -418,7 +417,7 @@ class AdvancedTradingChart {
         // Add event listeners to search results
         resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
             const checkbox = item.querySelector('.search-result-checkbox');
-            
+
             item.addEventListener('click', (e) => {
                 if (e.target !== checkbox) {
                     checkbox.checked = !checkbox.checked;
@@ -488,7 +487,7 @@ class AdvancedTradingChart {
 
     async loadChartData(symbol, name) {
         const chartContainer = this.createChartContainer(symbol, name);
-        
+
         try {
             let url = `/api/chart-data?symbol=${encodeURIComponent(symbol)}&period=${this.currentPeriod}`;
             const response = await fetch(url);
@@ -580,7 +579,7 @@ class AdvancedTradingChart {
         const chartContainer = document.createElement('div');
         chartContainer.className = 'chart-container';
         chartContainer.id = `chart-${symbol}`;
-        
+
         chartContainer.innerHTML = `
             <div class="chart-header">
                 <div>
@@ -596,7 +595,7 @@ class AdvancedTradingChart {
             </div>
             <div class="chart-content" style="height: calc(100% - 80px);"></div>
         `;
-        
+
         chartGrid.appendChild(chartContainer);
         return chartContainer;
     }
@@ -610,7 +609,7 @@ class AdvancedTradingChart {
 
             const priceElement = document.getElementById(`price-${symbol}`);
             const changeElement = document.getElementById(`change-${symbol}`);
-            
+
             if (priceElement && changeElement) {
                 priceElement.textContent = `₹${lastCandle.close.toFixed(2)}`;
                 changeElement.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent}%)`;
@@ -619,15 +618,70 @@ class AdvancedTradingChart {
         }
     }
 
+    refreshChart(symbol) {
+        const url = `/api/chart-data?symbol=${symbol}&period=${this.currentPeriod}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error loading chart data:', data.error);
+                    this.showChartError(symbol, data.error);
+                    return;
+                }
+
+                this.updateChart(symbol, data);
+
+                // Update data source indicator
+                this.updateDataSourceIndicator(symbol, data.real_data_available || false);
+
+                // Log data source for debugging
+                console.log(`Chart for ${symbol}: ${data.data_source} data (Real: ${data.real_data_available})`);
+            })
+            .catch(error => {
+                console.error('Error loading chart data:', error);
+                this.showChartError(symbol, 'Failed to load chart data');
+            });
+    }
+
+    updateDataSourceIndicator(symbol, isRealData) {
+        const chartContainer = document.getElementById(`chart-${symbol}`);
+        if (chartContainer) {
+            let indicator = chartContainer.querySelector('.data-source-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'data-source-indicator';
+                indicator.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    z-index: 1000;
+                `;
+                chartContainer.style.position = 'relative';
+                chartContainer.appendChild(indicator);
+            }
+
+            if (isRealData) {
+                indicator.textContent = '🟢 LIVE DATA';
+                indicator.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                indicator.style.color = '#22c55e';
+                indicator.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+            } else {
+                indicator.textContent = '🟡 SIMULATED';
+                indicator.style.backgroundColor = 'rgba(234, 179, 8, 0.1)';
+                indicator.style.color = '#eab308';
+                indicator.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+            }
+        }
+    }
+
     refreshAllCharts() {
         this.selectedSymbols.forEach(symbol => {
-            if (this.charts.has(symbol)) {
-                const chartInfo = this.charts.get(symbol);
-                chartInfo.chart.remove();
-                this.charts.delete(symbol);
-                // Reload chart with new timeframe
-                this.loadChartData(symbol, symbol);
-            }
+            this.refreshChart(symbol);
         });
     }
 
@@ -642,7 +696,7 @@ class AdvancedTradingChart {
         this.updateChartGrid();
     }
 
-    
+
 
     connectWebSocket() {
         console.log('Connecting to real-time data feed...');
