@@ -295,7 +295,7 @@
                     <button class="btn btn-sm btn-outline-light me-2" onclick="refreshPositions()">
                         <i class="fas fa-sync me-1"></i>Refresh
                     </button>
-                    <a href="{{ url_for('main.positions') }}" class="btn btn-sm btn-info">
+                    <a href="{{ url_for('positions') }}" class="btn btn-sm btn-info">
                         <i class="fas fa-external-link-alt me-1"></i>View All
                     </a>
                 </div>
@@ -401,7 +401,7 @@
             </div>
             {% if data.positions and data.positions|length > 10 %}
             <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('main.positions') }}" class="btn btn-outline-light">
+                <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
                     <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
                 </a>
             </div>
@@ -421,7 +421,7 @@
                 <h5 class="mb-0">
                     <i class="fas fa-list-alt me-2"></i>Recent Orders
                 </h5>
-                <a href="{{ url_for('main.orders') }}" class="btn btn-sm btn-outline-light">View All</a>
+                <a href="{{ url_for('orders') }}" class="btn btn-sm btn-outline-light">View All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
