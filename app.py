@@ -115,10 +115,14 @@ def health_check():
 @app.route('/')
 def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
-    # Only check current session, no auto-authentication bypass
-    if validate_current_session():
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    try:
+        # Only check current session, no auto-authentication bypass
+        if validate_current_session():
+            return redirect(url_for('dashboard'))
+        return redirect(url_for('login'))
+    except Exception as e:
+        # If there's any error, just redirect to login
+        return redirect(url_for('login'))
 
 @app.route('/debug-session')
 def debug_session():
