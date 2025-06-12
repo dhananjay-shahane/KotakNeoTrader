@@ -19,11 +19,11 @@
 
 {% if positions %}
 <!-- Positions Summary -->
-<div class="row mb-4">
+<div class="row mb-4" id="positionsSummary">
     <div class="col-md-3">
         <div class="card bg-primary">
             <div class="card-body text-center">
-                <h4 class="mb-1">{{ positions|length }}</h4>
+                <h4 class="mb-1" id="totalPositionsCount">{{ positions|length }}</h4>
                 <p class="mb-0"><i class="fas fa-chart-pie me-1"></i>Total Positions</p>
             </div>
         </div>
@@ -34,11 +34,20 @@
                 {% set total_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set pnl = (position.urPnl or position.pnl or 0)|float %}
+                        {% set pnl = (position.urPnl or position.pnl or position.rpnl or position.cfBuyQty or 0)|float %}
+                        {% if position.urPnl %}
+                            {% set pnl = position.urPnl|float %}
+                        {% elif position.pnl %}
+                            {% set pnl = position.pnl|float %}
+                        {% elif position.rpnl %}
+                            {% set pnl = position.rpnl|float %}
+                        {% else %}
+                            {% set pnl = 0.0 %}
+                        {% endif %}
                         {% set total_pnl = total_pnl + pnl %}
                     {% endfor %}
                 {% endif %}
-                <h4 class="mb-1">₹{{ "%.2f"|format(total_pnl) }}</h4>
+                <h4 class="mb-1 {% if total_pnl > 0 %}text-light{% elif total_pnl < 0 %}text-light{% else %}text-light{% endif %}" id="totalPnl">₹{{ "%.2f"|format(total_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-chart-line me-1"></i>Total P&L</p>
             </div>
         </div>
@@ -49,11 +58,22 @@
                 {% set realized_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set rpnl = (position.rlPnl or position.realised_pnl or 0)|float %}
+                        {% set rpnl = 0.0 %}
+                        {% if position.rlPnl %}
+                            {% set rpnl = position.rlPnl|float %}
+                        {% elif position.realised_pnl %}
+                            {% set rpnl = position.realised_pnl|float %}
+                        {% elif position.rpnl %}
+                            {% set rpnl = position.rpnl|float %}
+                        {% elif position.cfBuyQty and position.cfSellQty %}
+                            {% set buy_val = (position.cfBuyQty|float * position.cfBuyAvgPrc|float) if position.cfBuyAvgPrc else 0 %}
+                            {% set sell_val = (position.cfSellQty|float * position.cfSellAvgPrc|float) if position.cfSellAvgPrc else 0 %}
+                            {% set rpnl = sell_val - buy_val %}
+                        {% endif %}
                         {% set realized_pnl = realized_pnl + rpnl %}
                     {% endfor %}
                 {% endif %}
-                <h4 class="mb-1">₹{{ "%.2f"|format(realized_pnl) }}</h4>
+                <h4 class="mb-1" id="realizedPnl">₹{{ "%.2f"|format(realized_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-money-bill me-1"></i>Realized P&L</p>
             </div>
         </div>
@@ -64,11 +84,31 @@
                 {% set unrealized_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set upnl = (position.urPnl or position.unrealised or 0)|float %}
+                        {% set upnl = 0.0 %}
+                        {% if position.urPnl %}
+                            {% set upnl = position.urPnl|float %}
+                        {% elif position.unrealised %}
+                            {% set upnl = position.unrealised|float %}
+                        {% elif position.pnl %}
+                            {% set upnl = position.pnl|float %}
+                        {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
+                            {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
+                            {% if net_qty != 0 %}
+                                {% set avg_price = 0 %}
+                                {% if net_qty > 0 and position.flBuyAvgPrc %}
+                                    {% set avg_price = position.flBuyAvgPrc|float %}
+                                {% elif net_qty < 0 and position.flSellAvgPrc %}
+                                    {% set avg_price = position.flSellAvgPrc|float %}
+                                {% endif %}
+                                {% if avg_price > 0 %}
+                                    {% set upnl = (position.mktPrice|float - avg_price) * net_qty %}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
                         {% set unrealized_pnl = unrealized_pnl + upnl %}
                     {% endfor %}
                 {% endif %}
-                <h4 class="mb-1">₹{{ "%.2f"|format(unrealized_pnl) }}</h4>
+                <h4 class="mb-1" id="unrealizedPnl">₹{{ "%.2f"|format(unrealized_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-clock me-1"></i>Unrealized P&L</p>
             </div>
         </div>
@@ -145,11 +185,42 @@
                         </td>
                         <td>₹{{ "%.2f"|format(position.mktPrice or position.ltp or 0) }}</td>
                         <td>
-                            {% set pnl = position.urPnl or position.pnl or position.unrealised or 0.0 %}
-                            <span class="{% if pnl|float > 0 %}text-success{% elif pnl|float < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                ₹{{ "%.2f"|format(pnl|float) }}
-                                {% if pnl|float != 0 and position.buyAmt and position.buyAmt|float > 0 %}
-                                    <br><small>({{ "%.2f"|format((pnl|float/position.buyAmt|float)*100) }}%)</small>
+                            {% set pnl = 0.0 %}
+                            {% if position.urPnl %}
+                                {% set pnl = position.urPnl|float %}
+                            {% elif position.pnl %}
+                                {% set pnl = position.pnl|float %}
+                            {% elif position.rpnl %}
+                                {% set pnl = position.rpnl|float %}
+                            {% elif position.unrealised %}
+                                {% set pnl = position.unrealised|float %}
+                            {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
+                                {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
+                                {% if net_qty != 0 %}
+                                    {% set avg_price = 0 %}
+                                    {% if net_qty > 0 and position.flBuyAvgPrc %}
+                                        {% set avg_price = position.flBuyAvgPrc|float %}
+                                    {% elif net_qty < 0 and position.flSellAvgPrc %}
+                                        {% set avg_price = position.flSellAvgPrc|float %}
+                                    {% endif %}
+                                    {% if avg_price > 0 %}
+                                        {% set pnl = (position.mktPrice|float - avg_price) * net_qty %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            <span class="position-pnl {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                ₹{{ "%.2f"|format(pnl) }}
+                                {% if pnl != 0 %}
+                                    {% set investment = 0 %}
+                                    {% if position.buyAmt %}
+                                        {% set investment = position.buyAmt|float %}
+                                    {% elif position.flBuyQty and position.flBuyAvgPrc %}
+                                        {% set investment = position.flBuyQty|float * position.flBuyAvgPrc|float %}
+                                    {% endif %}
+                                    {% if investment > 0 %}
+                                        <br><small>({{ "%.2f"|format((pnl/investment)*100) }}%)</small>
+                                    {% endif %}
                                 {% endif %}
                             </span>
                         </td>
@@ -177,22 +248,29 @@
     </div>
     
     <!-- Summary Footer -->
-    <div class="card-footer bg-dark">
+    <div class="card-footer bg-dark" id="positionsFooterSummary">
         <div class="row text-center">
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Total Positions</h6>
-                <h5 class="mb-0">{{ positions|length }}</h5>
+                <h5 class="mb-0" id="footerTotalPositions">{{ positions|length }}</h5>
             </div>
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Total P&L</h6>
                 {% set total_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set pnl = (position.urPnl or position.pnl or 0)|float %}
+                        {% set pnl = 0.0 %}
+                        {% if position.urPnl %}
+                            {% set pnl = position.urPnl|float %}
+                        {% elif position.pnl %}
+                            {% set pnl = position.pnl|float %}
+                        {% elif position.rpnl %}
+                            {% set pnl = position.rpnl|float %}
+                        {% endif %}
                         {% set total_pnl = total_pnl + pnl %}
                     {% endfor %}
                 {% endif %}
-                <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}" id="footerTotalPnl">
                     ₹{{ "%.2f"|format(total_pnl) }}
                 </h5>
             </div>
@@ -201,26 +279,26 @@
                 {% set long_positions = 0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set net_qty = (position.flBuyQty or 0)|int - (position.flSellQty or 0)|int %}
+                        {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
                         {% if net_qty > 0 %}
                             {% set long_positions = long_positions + 1 %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
-                <h5 class="mb-0 text-success">{{ long_positions }}</h5>
+                <h5 class="mb-0 text-success" id="footerLongPositions">{{ long_positions }}</h5>
             </div>
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Short Positions</h6>
                 {% set short_positions = 0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set net_qty = (position.flBuyQty or 0)|int - (position.flSellQty or 0)|int %}
+                        {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
                         {% if net_qty < 0 %}
                             {% set short_positions = short_positions + 1 %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
-                <h5 class="mb-0 text-danger">{{ short_positions }}</h5>
+                <h5 class="mb-0 text-danger" id="footerShortPositions">{{ short_positions }}</h5>
             </div>
         </div>
     </div>
@@ -418,13 +496,13 @@ function updatePositionsTable(positions) {
 }
 
 function updatePositionsSummary(positions) {
-    // Update summary cards
-    const totalPositionsEl = document.querySelector('.card.bg-primary h4');
+    // Update total positions count
+    const totalPositionsEl = document.getElementById('totalPositionsCount');
     if (totalPositionsEl) {
         totalPositionsEl.textContent = positions.length;
     }
 
-    // Calculate totals
+    // Calculate totals with better field mapping
     let totalPnl = 0;
     let realizedPnl = 0;
     let unrealizedPnl = 0;
@@ -432,10 +510,40 @@ function updatePositionsSummary(positions) {
     let shortPositions = 0;
 
     positions.forEach(position => {
-        const pnl = parseFloat(position.urPnl || position.pnl || 0);
-        const rPnl = parseFloat(position.rlPnl || position.realised_pnl || 0);
-        const uPnl = parseFloat(position.urPnl || position.unrealised || 0);
-        const netQty = (position.flBuyQty || 0) - (position.flSellQty || 0);
+        // Calculate P&L with multiple field fallbacks
+        let pnl = 0;
+        if (position.urPnl !== undefined) {
+            pnl = parseFloat(position.urPnl) || 0;
+        } else if (position.pnl !== undefined) {
+            pnl = parseFloat(position.pnl) || 0;
+        } else if (position.rpnl !== undefined) {
+            pnl = parseFloat(position.rpnl) || 0;
+        }
+        
+        // Calculate realized P&L
+        let rPnl = 0;
+        if (position.rlPnl !== undefined) {
+            rPnl = parseFloat(position.rlPnl) || 0;
+        } else if (position.realised_pnl !== undefined) {
+            rPnl = parseFloat(position.realised_pnl) || 0;
+        } else if (position.rpnl !== undefined) {
+            rPnl = parseFloat(position.rpnl) || 0;
+        }
+        
+        // Calculate unrealized P&L
+        let uPnl = 0;
+        if (position.urPnl !== undefined) {
+            uPnl = parseFloat(position.urPnl) || 0;
+        } else if (position.unrealised !== undefined) {
+            uPnl = parseFloat(position.unrealised) || 0;
+        } else if (pnl !== 0) {
+            uPnl = pnl; // Use total PnL as unrealized if no specific field
+        }
+
+        // Calculate net position
+        const buyQty = parseFloat(position.flBuyQty || position.buyQty || 0);
+        const sellQty = parseFloat(position.flSellQty || position.sellQty || 0);
+        const netQty = buyQty - sellQty;
 
         totalPnl += pnl;
         realizedPnl += rPnl;
@@ -445,31 +553,53 @@ function updatePositionsSummary(positions) {
         else if (netQty < 0) shortPositions++;
     });
 
-    // Update summary cards
-    const totalPnlEl = document.querySelector('.card.bg-success h4');
+    // Update summary cards with proper IDs
+    const totalPnlEl = document.getElementById('totalPnl');
     if (totalPnlEl) {
         totalPnlEl.textContent = `₹${totalPnl.toFixed(2)}`;
+        totalPnlEl.className = `mb-1 ${totalPnl > 0 ? 'text-light' : totalPnl < 0 ? 'text-light' : 'text-light'}`;
     }
 
-    const realizedPnlEl = document.querySelector('.card.bg-info h4');
+    const realizedPnlEl = document.getElementById('realizedPnl');
     if (realizedPnlEl) {
         realizedPnlEl.textContent = `₹${realizedPnl.toFixed(2)}`;
     }
 
-    const unrealizedPnlEl = document.querySelector('.card.bg-warning h4');
+    const unrealizedPnlEl = document.getElementById('unrealizedPnl');
     if (unrealizedPnlEl) {
         unrealizedPnlEl.textContent = `₹${unrealizedPnl.toFixed(2)}`;
     }
 
-    // Update footer summary
-    const footerElements = document.querySelectorAll('.card-footer h5');
-    if (footerElements.length >= 4) {
-        footerElements[0].textContent = positions.length;
-        footerElements[1].textContent = `₹${totalPnl.toFixed(2)}`;
-        footerElements[1].className = `mb-0 ${totalPnl > 0 ? 'text-success' : totalPnl < 0 ? 'text-danger' : 'text-muted'}`;
-        footerElements[2].textContent = longPositions;
-        footerElements[3].textContent = shortPositions;
+    // Update footer summary with proper IDs
+    const footerTotalPositions = document.getElementById('footerTotalPositions');
+    if (footerTotalPositions) {
+        footerTotalPositions.textContent = positions.length;
     }
+    
+    const footerTotalPnl = document.getElementById('footerTotalPnl');
+    if (footerTotalPnl) {
+        footerTotalPnl.textContent = `₹${totalPnl.toFixed(2)}`;
+        footerTotalPnl.className = `mb-0 ${totalPnl > 0 ? 'text-success' : totalPnl < 0 ? 'text-danger' : 'text-muted'}`;
+    }
+    
+    const footerLongPositions = document.getElementById('footerLongPositions');
+    if (footerLongPositions) {
+        footerLongPositions.textContent = longPositions;
+    }
+    
+    const footerShortPositions = document.getElementById('footerShortPositions');
+    if (footerShortPositions) {
+        footerShortPositions.textContent = shortPositions;
+    }
+
+    console.log('Position Summary Updated:', {
+        totalPositions: positions.length,
+        totalPnl: totalPnl.toFixed(2),
+        realizedPnl: realizedPnl.toFixed(2),
+        unrealizedPnl: unrealizedPnl.toFixed(2),
+        longPositions,
+        shortPositions
+    });
 }
 
 function showUpdateNotification(message, type = 'info') {
