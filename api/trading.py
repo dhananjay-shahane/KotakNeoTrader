@@ -100,37 +100,83 @@ def search_symbols():
         if not query or len(query) < 2:
             return jsonify([])
 
-        # Popular Indian stocks for demonstration
-        popular_symbols = [
-            {'symbol': 'RELIANCE', 'name': 'Reliance Industries Limited'},
-            {'symbol': 'TCS', 'name': 'Tata Consultancy Services Limited'},
-            {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Limited'},
-            {'symbol': 'INFY', 'name': 'Infosys Limited'},
-            {'symbol': 'ICICIBANK', 'name': 'ICICI Bank Limited'},
-            {'symbol': 'BHARTIARTL', 'name': 'Bharti Airtel Limited'},
-            {'symbol': 'ITC', 'name': 'ITC Limited'},
-            {'symbol': 'SBIN', 'name': 'State Bank of India'},
-            {'symbol': 'LT', 'name': 'Larsen & Toubro Limited'},
-            {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank Limited'},
-            {'symbol': 'HINDUNILVR', 'name': 'Hindustan Unilever Limited'},
-            {'symbol': 'BAJFINANCE', 'name': 'Bajaj Finance Limited'},
-            {'symbol': 'AXISBANK', 'name': 'Axis Bank Limited'},
-            {'symbol': 'ASIANPAINT', 'name': 'Asian Paints Limited'},
-            {'symbol': 'MARUTI', 'name': 'Maruti Suzuki India Limited'},
-            {'symbol': 'NESTLEIND', 'name': 'Nestle India Limited'},
-            {'symbol': 'TITAN', 'name': 'Titan Company Limited'},
-            {'symbol': 'WIPRO', 'name': 'Wipro Limited'},
-            {'symbol': 'TATAMOTORS', 'name': 'Tata Motors Limited'},
-            {'symbol': 'HCLTECH', 'name': 'HCL Technologies Limited'}
+        # Expanded Indian stocks database for better search results
+        all_symbols = [
+            {'symbol': 'RELIANCE', 'name': 'Reliance Industries Limited', 'sector': 'Oil & Gas'},
+            {'symbol': 'TCS', 'name': 'Tata Consultancy Services Limited', 'sector': 'IT Services'},
+            {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Limited', 'sector': 'Banking'},
+            {'symbol': 'INFY', 'name': 'Infosys Limited', 'sector': 'IT Services'},
+            {'symbol': 'ICICIBANK', 'name': 'ICICI Bank Limited', 'sector': 'Banking'},
+            {'symbol': 'BHARTIARTL', 'name': 'Bharti Airtel Limited', 'sector': 'Telecom'},
+            {'symbol': 'ITC', 'name': 'ITC Limited', 'sector': 'FMCG'},
+            {'symbol': 'SBIN', 'name': 'State Bank of India', 'sector': 'Banking'},
+            {'symbol': 'LT', 'name': 'Larsen & Toubro Limited', 'sector': 'Engineering'},
+            {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank Limited', 'sector': 'Banking'},
+            {'symbol': 'HINDUNILVR', 'name': 'Hindustan Unilever Limited', 'sector': 'FMCG'},
+            {'symbol': 'BAJFINANCE', 'name': 'Bajaj Finance Limited', 'sector': 'Financial Services'},
+            {'symbol': 'AXISBANK', 'name': 'Axis Bank Limited', 'sector': 'Banking'},
+            {'symbol': 'ASIANPAINT', 'name': 'Asian Paints Limited', 'sector': 'Paints'},
+            {'symbol': 'MARUTI', 'name': 'Maruti Suzuki India Limited', 'sector': 'Auto'},
+            {'symbol': 'NESTLEIND', 'name': 'Nestle India Limited', 'sector': 'FMCG'},
+            {'symbol': 'TITAN', 'name': 'Titan Company Limited', 'sector': 'Jewellery'},
+            {'symbol': 'WIPRO', 'name': 'Wipro Limited', 'sector': 'IT Services'},
+            {'symbol': 'TATAMOTORS', 'name': 'Tata Motors Limited', 'sector': 'Auto'},
+            {'symbol': 'HCLTECH', 'name': 'HCL Technologies Limited', 'sector': 'IT Services'},
+            {'symbol': 'TECHM', 'name': 'Tech Mahindra Limited', 'sector': 'IT Services'},
+            {'symbol': 'ULTRACEMCO', 'name': 'UltraTech Cement Limited', 'sector': 'Cement'},
+            {'symbol': 'POWERGRID', 'name': 'Power Grid Corporation of India Limited', 'sector': 'Power'},
+            {'symbol': 'NTPC', 'name': 'NTPC Limited', 'sector': 'Power'},
+            {'symbol': 'ONGC', 'name': 'Oil and Natural Gas Corporation Limited', 'sector': 'Oil & Gas'},
+            {'symbol': 'JSWSTEEL', 'name': 'JSW Steel Limited', 'sector': 'Steel'},
+            {'symbol': 'TATASTEEL', 'name': 'Tata Steel Limited', 'sector': 'Steel'},
+            {'symbol': 'GRASIM', 'name': 'Grasim Industries Limited', 'sector': 'Textiles'},
+            {'symbol': 'INDUSINDBK', 'name': 'IndusInd Bank Limited', 'sector': 'Banking'},
+            {'symbol': 'ADANIPORTS', 'name': 'Adani Ports and Special Economic Zone Limited', 'sector': 'Infrastructure'},
+            {'symbol': 'COALINDIA', 'name': 'Coal India Limited', 'sector': 'Mining'},
+            {'symbol': 'BAJAJFINSV', 'name': 'Bajaj Finserv Limited', 'sector': 'Financial Services'},
+            {'symbol': 'DIVISLAB', 'name': 'Divi\'s Laboratories Limited', 'sector': 'Pharma'},
+            {'symbol': 'DRREDDY', 'name': 'Dr. Reddy\'s Laboratories Limited', 'sector': 'Pharma'},
+            {'symbol': 'SUNPHARMA', 'name': 'Sun Pharmaceutical Industries Limited', 'sector': 'Pharma'},
+            {'symbol': 'CIPLA', 'name': 'Cipla Limited', 'sector': 'Pharma'},
+            {'symbol': 'EICHERMOT', 'name': 'Eicher Motors Limited', 'sector': 'Auto'},
+            {'symbol': 'HEROMOTOCO', 'name': 'Hero MotoCorp Limited', 'sector': 'Auto'},
+            {'symbol': 'BAJAJ-AUTO', 'name': 'Bajaj Auto Limited', 'sector': 'Auto'},
+            {'symbol': 'M&M', 'name': 'Mahindra & Mahindra Limited', 'sector': 'Auto'},
+            {'symbol': 'BRITANNIA', 'name': 'Britannia Industries Limited', 'sector': 'FMCG'},
+            {'symbol': 'GODREJCP', 'name': 'Godrej Consumer Products Limited', 'sector': 'FMCG'},
+            {'symbol': 'DABUR', 'name': 'Dabur India Limited', 'sector': 'FMCG'},
+            {'symbol': 'MARICO', 'name': 'Marico Limited', 'sector': 'FMCG'},
+            {'symbol': 'PIDILITIND', 'name': 'Pidilite Industries Limited', 'sector': 'Chemicals'},
+            {'symbol': 'BPCL', 'name': 'Bharat Petroleum Corporation Limited', 'sector': 'Oil & Gas'},
+            {'symbol': 'IOC', 'name': 'Indian Oil Corporation Limited', 'sector': 'Oil & Gas'},
+            {'symbol': 'HDFCLIFE', 'name': 'HDFC Life Insurance Company Limited', 'sector': 'Insurance'},
+            {'symbol': 'SBILIFE', 'name': 'SBI Life Insurance Company Limited', 'sector': 'Insurance'},
+            {'symbol': 'ICICIPRULI', 'name': 'ICICI Prudential Life Insurance Company Limited', 'sector': 'Insurance'},
+            {'symbol': 'ADANIENT', 'name': 'Adani Enterprises Limited', 'sector': 'Diversified'},
         ]
 
-        # Filter symbols based on query
-        matching_symbols = [
-            symbol for symbol in popular_symbols
-            if query in symbol['symbol'] or query in symbol['name'].upper()
-        ]
+        # Filter symbols based on query - search in symbol, name, and sector
+        matching_symbols = []
+        for symbol in all_symbols:
+            if (query in symbol['symbol'] or 
+                query in symbol['name'].upper() or 
+                query in symbol.get('sector', '').upper()):
+                matching_symbols.append(symbol)
 
-        return jsonify(matching_symbols[:10])
+        # Sort by relevance - exact symbol matches first, then name matches
+        def sort_relevance(item):
+            if item['symbol'].startswith(query):
+                return 0  # Highest priority for symbol starting with query
+            elif query in item['symbol']:
+                return 1  # Second priority for symbol containing query
+            elif query in item['name'].upper():
+                return 2  # Third priority for name containing query
+            else:
+                return 3  # Lowest priority for sector matches
+
+        matching_symbols.sort(key=sort_relevance)
+        
+        return jsonify(matching_symbols[:15])  # Return top 15 matches
 
     except Exception as e:
         logging.error(f"Symbol search error: {str(e)}")
