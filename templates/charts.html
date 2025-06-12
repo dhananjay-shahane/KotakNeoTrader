@@ -197,48 +197,12 @@
             color: var(--primary-color);
         }
 
-        .popular-symbols {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .popular-symbol {
-            background-color: var(--background-dark);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 0.375rem 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .popular-symbol:hover {
-            border-color: var(--primary-color);
-            color: var(--text-primary);
-        }
+        
 
         .chart-grid {
             display: grid;
-            gap: 1rem;
-        }
-
-        .chart-grid.single {
             grid-template-columns: 1fr;
-        }
-
-        .chart-grid.double {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .chart-grid.triple {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .chart-grid.quad {
-            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
         }
 
         .chart-header {
@@ -272,23 +236,8 @@
 
         /* Responsive design */
         @media (max-width: 768px) {
-            .chart-grid.double,
-            .chart-grid.triple,
-            .chart-grid.quad {
-                grid-template-columns: 1fr;
-            }
-
             .chart-container {
                 height: 300px;
-            }
-
-            .popular-symbols {
-                gap: 0.25rem;
-            }
-
-            .popular-symbol {
-                padding: 0.25rem 0.5rem;
-                font-size: 0.75rem;
             }
         }
 
@@ -345,18 +294,7 @@
                     </div>
                 </div>
 
-                <!-- Popular Symbols -->
-                <div class="mb-3">
-                    <h6 class="text-uppercase text-secondary mb-2" style="font-size: 0.75rem;">Popular</h6>
-                    <div class="popular-symbols">
-                        <span class="popular-symbol" data-symbol="RELIANCE" data-name="Reliance Industries Limited">RELIANCE</span>
-                        <span class="popular-symbol" data-symbol="TCS" data-name="Tata Consultancy Services Limited">TCS</span>
-                        <span class="popular-symbol" data-symbol="HDFCBANK" data-name="HDFC Bank Limited">HDFCBANK</span>
-                        <span class="popular-symbol" data-symbol="INFY" data-name="Infosys Limited">INFY</span>
-                        <span class="popular-symbol" data-symbol="ICICIBANK" data-name="ICICI Bank Limited">ICICIBANK</span>
-                        <span class="popular-symbol" data-symbol="BHARTIARTL" data-name="Bharti Airtel Limited">BHARTIARTL</span>
-                    </div>
-                </div>
+                
 
                 <!-- Timeframe Controls -->
                 <div class="mb-3">
@@ -400,7 +338,6 @@ class AdvancedTradingChart {
         this.currentSearchResults = [];
 
         this.initializeEventListeners();
-        this.loadPopularSymbols();
     }
 
     initializeEventListeners() {
@@ -420,12 +357,7 @@ class AdvancedTradingChart {
             }
         });
 
-        // Popular symbols
-        document.querySelectorAll('.popular-symbol').forEach(element => {
-            element.addEventListener('click', () => {
-                this.toggleSymbol(element.dataset.symbol, element.dataset.name);
-            });
-        });
+        
 
         // Timeframe buttons
         document.querySelectorAll('.timeframe-btn').forEach(btn => {
@@ -513,6 +445,8 @@ class AdvancedTradingChart {
     }
 
     addSymbol(symbol, name) {
+        // Clear any existing charts first to maintain single chart display
+        this.clearAllCharts();
         this.selectedSymbols.add(symbol);
         this.loadChartData(symbol, name);
     }
@@ -549,18 +483,7 @@ class AdvancedTradingChart {
 
         noChartsMessage.style.display = 'none';
         chartGrid.style.display = 'grid';
-
-        // Update grid layout based on number of charts
         chartGrid.className = 'chart-grid';
-        if (symbolCount === 1) {
-            chartGrid.classList.add('single');
-        } else if (symbolCount === 2) {
-            chartGrid.classList.add('double');
-        } else if (symbolCount === 3) {
-            chartGrid.classList.add('triple');
-        } else {
-            chartGrid.classList.add('quad');
-        }
     }
 
     async loadChartData(symbol, name) {
@@ -719,17 +642,7 @@ class AdvancedTradingChart {
         this.updateChartGrid();
     }
 
-    loadPopularSymbols() {
-        // Load popular symbols into search cache for faster access
-        this.popularSymbols = [
-            { symbol: 'RELIANCE', name: 'Reliance Industries Limited' },
-            { symbol: 'TCS', name: 'Tata Consultancy Services Limited' },
-            { symbol: 'HDFCBANK', name: 'HDFC Bank Limited' },
-            { symbol: 'INFY', name: 'Infosys Limited' },
-            { symbol: 'ICICIBANK', name: 'ICICI Bank Limited' },
-            { symbol: 'BHARTIARTL', name: 'Bharti Airtel Limited' }
-        ];
-    }
+    
 
     connectWebSocket() {
         console.log('Connecting to real-time data feed...');
