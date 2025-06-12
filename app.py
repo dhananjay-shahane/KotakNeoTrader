@@ -329,7 +329,34 @@ def positions():
     if not validate_current_session():
         return redirect(url_for('login'))
 
-    return render_template('positions.html')
+    try:
+        client = session.get('client')
+        if not client:
+            flash('Session expired. Please login again.', 'error')
+            return redirect(url_for('login'))
+
+        # Fetch positions data
+        positions_data = trading_functions.get_positions(client)
+        
+        # Ensure positions_data is a list
+        if isinstance(positions_data, dict):
+            if 'data' in positions_data:
+                positions_list = positions_data['data']
+            elif 'positions' in positions_data:
+                positions_list = positions_data['positions']
+            else:
+                positions_list = []
+        elif isinstance(positions_data, list):
+            positions_list = positions_data
+        else:
+            positions_list = []
+            
+        return render_template('positions.html', positions=positions_list)
+        
+    except Exception as e:
+        logging.error(f"Positions page error: {e}")
+        flash(f'Error loading positions: {str(e)}', 'error')
+        return render_template('positions.html', positions=[])
 
 @app.route('/holdings')
 def holdings():
@@ -337,7 +364,34 @@ def holdings():
     if not validate_current_session():
         return redirect(url_for('login'))
 
-    return render_template('holdings.html')
+    try:
+        client = session.get('client')
+        if not client:
+            flash('Session expired. Please login again.', 'error')
+            return redirect(url_for('login'))
+
+        # Fetch holdings data
+        holdings_data = trading_functions.get_holdings(client)
+        
+        # Ensure holdings_data is a list
+        if isinstance(holdings_data, dict):
+            if 'data' in holdings_data:
+                holdings_list = holdings_data['data']
+            elif 'holdings' in holdings_data:
+                holdings_list = holdings_data['holdings']
+            else:
+                holdings_list = []
+        elif isinstance(holdings_data, list):
+            holdings_list = holdings_data
+        else:
+            holdings_list = []
+            
+        return render_template('holdings.html', holdings=holdings_list)
+        
+    except Exception as e:
+        logging.error(f"Holdings page error: {e}")
+        flash(f'Error loading holdings: {str(e)}', 'error')
+        return render_template('holdings.html', holdings=[])
 
 @app.route('/orders')
 def orders():
@@ -345,7 +399,34 @@ def orders():
     if not validate_current_session():
         return redirect(url_for('login'))
 
-    return render_template('orders.html')
+    try:
+        client = session.get('client')
+        if not client:
+            flash('Session expired. Please login again.', 'error')
+            return redirect(url_for('login'))
+
+        # Fetch orders data
+        orders_data = trading_functions.get_orders(client)
+        
+        # Ensure orders_data is a list
+        if isinstance(orders_data, dict):
+            if 'data' in orders_data:
+                orders_list = orders_data['data']
+            elif 'orders' in orders_data:
+                orders_list = orders_data['orders']
+            else:
+                orders_list = []
+        elif isinstance(orders_data, list):
+            orders_list = orders_data
+        else:
+            orders_list = []
+            
+        return render_template('orders.html', orders=orders_list)
+        
+    except Exception as e:
+        logging.error(f"Orders page error: {e}")
+        flash(f'Error loading orders: {str(e)}', 'error')
+        return render_template('orders.html', orders=[])
 
 @app.route('/charts')
 def charts():

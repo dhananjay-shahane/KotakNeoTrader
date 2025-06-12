@@ -200,6 +200,15 @@ class TradingFunctions:
                     if 'data' in response:
                         holdings = response['data']
                         self.logger.info(f"✅ Found {len(holdings)} holdings")
+                        
+                        # Log sample holding structure for debugging
+                        if holdings and len(holdings) > 0:
+                            sample_holding = holdings[0]
+                            self.logger.info(f"Sample holding fields: {list(sample_holding.keys())}")
+                            # Log a few key fields to understand the structure
+                            for key, value in list(sample_holding.items())[:10]:
+                                self.logger.info(f"  {key}: {value}")
+                        
                         return holdings
                     elif 'message' in response:
                         message = str(response.get('message', '')).lower()
