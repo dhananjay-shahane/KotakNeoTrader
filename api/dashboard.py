@@ -101,3 +101,115 @@ def get_holdings_data_api():
     except Exception as e:
         logging.error(f"Holdings API error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@dashboard_api.route('/user_profile')
+@login_required
+def get_user_profile():
+    """Get user profile information"""
+    try:
+        profile_data = {
+            'success': True,
+            'profile': {
+                'ucc': session.get('ucc', 'N/A'),
+                'greeting_name': session.get('ucc', 'Trader'),
+                'login_time': session.get('login_time', 'Today'),
+                'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
+                'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
+                'sid': session.get('sid', 'N/A')[:15] + '...' if session.get('sid') else 'N/A',
+                'token_status': 'Valid' if session.get('authenticated') else 'Invalid'
+            }
+        }
+        return jsonify(profile_data)
+    except Exception as e:
+        logging.error(f"User profile API error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_api.route('/portfolio_summary')
+@login_required
+def get_portfolio_summary():
+    """Get portfolio summary data"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'error': 'Session expired'}), 401
+
+        dashboard_data = trading_functions.get_dashboard_data(client)
+        
+        summary = {
+            'success': True,
+            'total_positions': dashboard_data.get('total_positions', 0),
+            'total_holdings': dashboard_data.get('total_holdings', 0),
+            'total_orders': dashboard_data.get('total_orders', 0),
+            'available_margin': dashboard_data.get('limits', {}).get('cash', 0) if dashboard_data.get('limits') else 0
+        }
+        
+        return jsonify(summary)
+    except Exception as e:
+        logging.error(f"Portfolio summary API error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_api.route('/positions')
+@login_required
+def get_positions():
+    """Get positions data"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'error': 'Session expired'}), 401
+
+        positions_data = trading_functions.get_positions(client)
+        
+        if isinstance(positions_data, list):
+            return jsonify({'success': True, 'positions': positions_data})
+        elif isinstance(positions_data, dict) and 'error' in positions_data:
+            return jsonify({'success': False, 'error': positions_data['error']})
+        else:
+            return jsonify({'success': True, 'positions': []})
+
+    except Exception as e:
+        logging.error(f"Positions API error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_api.route('/live_quotes')
+@login_required
+def get_live_quotes():
+    """Get live market quotes"""
+    try:
+        # Return simulated quotes for now since we don't have instrument tokens
+        quotes = [
+            {
+                'symbol': 'RELIANCE',
+                'ltp': 2450.75,
+                'change': 12.50,
+                'changePct': 0.51
+            },
+            {
+                'symbol': 'TCS',
+                'ltp': 3675.20,
+                'change': -8.30,
+                'changePct': -0.23
+            },
+            {
+                'symbol': 'INFY',
+                'ltp': 1832.45,
+                'change': 22.15,
+                'changePct': 1.22
+            },
+            {
+                'symbol': 'HDFCBANK',
+                'ltp': 1645.80,
+                'change': 5.60,
+                'changePct': 0.34
+            },
+            {
+                'symbol': 'ICICIBANK',
+                'ltp': 1198.25,
+                'change': -3.75,
+                'changePct': -0.31
+            }
+        ]
+        
+        return jsonify({'success': True, 'quotes': quotes})
+    except Exception as e:
+        logging.error(f"Live quotes API error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500

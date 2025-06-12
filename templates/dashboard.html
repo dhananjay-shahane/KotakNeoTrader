@@ -85,8 +85,15 @@
                         <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
                         <small class="text-white-50" id="holdingsValue">
                             <i class="fas fa-wallet me-1"></i>
-                            {% if data.holdings %}
-                                {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
+                            {% if data.holdings and data.holdings is iterable and data.holdings is not string %}
+                                {% set holdings_value = 0.0 %}
+                                {% for holding in data.holdings %}
+                                    {% if holding is mapping %}
+                                        {% set market_price = (holding.get('ltp', 0) or holding.get('LastPrice', 0) or holding.get('mktPrice', 0) or 0)|float %}
+                                        {% set quantity = (holding.get('quantity', 0) or holding.get('holdingQty', 0) or 0)|float %}
+                                        {% set holdings_value = holdings_value + (market_price * quantity) %}
+                                    {% endif %}
+                                {% endfor %}
                                 ₹{{ "%.2f"|format(holdings_value) }}
                             {% else %}
                                 ₹0.00
