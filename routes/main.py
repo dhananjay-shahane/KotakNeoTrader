@@ -176,6 +176,131 @@ def api_positions():
             'positions': []
         }), 500
 
+@main_bp.route('/api/portfolio_summary')
+@login_required
+def api_portfolio_summary():
+    """API endpoint for portfolio summary data"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+
+        # Get dashboard data
+        dashboard_data = trading_functions.get_dashboard_data(client)
+        
+        # Calculate summary statistics
+        portfolio_summary = {
+            'total_positions': dashboard_data.get('total_positions', 0),
+            'total_holdings': dashboard_data.get('total_holdings', 0),
+            'total_orders': dashboard_data.get('total_orders', 0),
+            'limits_available': dashboard_data.get('limits', {}).get('Net', 0),
+            'total_pnl': 0.0,
+            'total_investment': 0.0
+        }
+        
+        # Calculate P&L from positions
+        positions = dashboard_data.get('positions', [])
+        for position in positions:
+            try:
+                pnl = float(position.get('pnl', 0) or 0)
+                portfolio_summary['total_pnl'] += pnl
+            except (ValueError, TypeError):
+                continue
+        
+        # Calculate investment from holdings
+        holdings = dashboard_data.get('holdings', [])
+        for holding in holdings:
+            try:
+                quantity = float(holding.get('quantity', 0) or 0)
+                avg_price = float(holding.get('avgPrice', 0) or 0)
+                portfolio_summary['total_investment'] += quantity * avg_price
+            except (ValueError, TypeError):
+                continue
+
+        return jsonify({
+            'success': True,
+            **portfolio_summary
+        })
+
+    except Exception as e:
+        logging.error(f"Portfolio summary API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@main_bp.route('/api/portfolio_details')
+@login_required
+def api_portfolio_details():
+    """API endpoint for detailed portfolio data"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+
+        portfolio_data = trading_functions.get_portfolio_summary(client)
+        return jsonify(portfolio_data)
+
+    except Exception as e:
+        logging.error(f"Portfolio details API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@main_bp.route('/api/live_quotes')
+@login_required
+def api_live_quotes():
+    """API endpoint for live quotes"""
+    try:
+        # Return sample quotes for now - you can implement actual quote fetching
+        sample_quotes = [
+            {'symbol': 'RELIANCE', 'ltp': 2890.50, 'changePct': 1.2},
+            {'symbol': 'TCS', 'ltp': 3456.75, 'changePct': -0.8},
+            {'symbol': 'HDFC', 'ltp': 1789.25, 'changePct': 0.5},
+            {'symbol': 'INFY', 'ltp': 1523.80, 'changePct': 2.1}
+        ]
+        
+        return jsonify({
+            'success': True,
+            'quotes': sample_quotes
+        })
+
+    except Exception as e:
+        logging.error(f"Live quotes API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'quotes': []
+        }), 500
+
+@main_bp.route('/api/user_profile')
+@login_required
+def api_user_profile():
+    """API endpoint for user profile"""
+    try:
+        # Return user session info
+        profile_data = {
+            'greeting_name': session.get('user_name', 'User'),
+            'ucc': session.get('user_id', 'N/A'),
+            'login_time': session.get('login_time', 'N/A'),
+            'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
+            'token_status': 'Valid' if session.get('authenticated') else 'Invalid',
+            'needs_reauth': not session.get('authenticated', False)
+        }
+        
+        return jsonify({
+            'success': True,
+            'profile': profile_data
+        })
+
+    except Exception as e:
+        logging.error(f"User profile API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 @main_bp.route('/holdings')
 @login_required
 def holdings():

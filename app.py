@@ -68,21 +68,21 @@ def validate_current_session():
         # Check if user is authenticated
         if not session.get('authenticated'):
             return False
-            
+
         # Check if required session data exists
         required_fields = ['access_token', 'session_token', 'ucc']
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
                 return False
-        
+
         # Get or restore client
         client = session.get('client')
         if not client:
             access_token = session.get('access_token')
             session_token = session.get('session_token')
             sid = session.get('sid')
-            
+
             if access_token and session_token and sid:
                 try:
                     client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
@@ -91,10 +91,10 @@ def validate_current_session():
                 except Exception as init_error:
                     logging.error(f"Failed to initialize client: {init_error}")
                     return False
-        
+
         if not client:
             return False
-            
+
         # Validate session with neo_client
         try:
             if neo_client.validate_session(client):
@@ -106,7 +106,7 @@ def validate_current_session():
             logging.error(f"Session validation failed: {val_error}")
             session.clear()
             return False
-            
+
     except Exception as e:
         logging.error(f"Session validation error: {e}")
         return False
@@ -138,27 +138,27 @@ def login():
             if not all([mobile_number, ucc, totp, mpin]):
                 flash('All fields are required', 'error')
                 return render_template('login.html')
-            
+
             # Validate formats
             if len(mobile_number) != 10 or not mobile_number.isdigit():
                 flash('Mobile number must be 10 digits', 'error')
                 return render_template('login.html')
-                
+
             if len(totp) != 6 or not totp.isdigit():
                 flash('TOTP must be 6 digits', 'error')
                 return render_template('login.html')
-                
+
             if len(mpin) != 6 or not mpin.isdigit():
                 flash('MPIN must be 6 digits', 'error')
                 return render_template('login.html')
-            
+
             # Execute TOTP login
             result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
-            
+
             if result and result.get('success'):
                 client = result.get('client')
                 session_data = result.get('session_data', {})
-                
+
                 # Store in session
                 session['authenticated'] = True
                 session['access_token'] = session_data.get('access_token')
@@ -169,13 +169,13 @@ def login():
                 session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 session['greeting_name'] = session_data.get('greetingName', ucc)
                 session.permanent = True
-                
+
                 # Store additional user data
                 session['rid'] = session_data.get('rid')
                 session['user_id'] = session_data.get('user_id')
                 session['client_code'] = session_data.get('client_code')
                 session['is_trial_account'] = session_data.get('is_trial_account')
-                
+
                 # Store user data in database
                 try:
                     login_response = {
@@ -196,28 +196,28 @@ def login():
                             'rid': session_data.get('rid')
                         }
                     }
-                    
+
                     db_user = user_manager.create_or_update_user(login_response)
                     user_session = user_manager.create_user_session(db_user.id, login_response)
-                    
+
                     session['db_user_id'] = db_user.id
                     session['db_session_id'] = user_session.session_id
-                    
+
                     logging.info(f"User data stored in database for UCC: {ucc}")
-                    
+
                 except Exception as db_error:
                     logging.error(f"Failed to store user data in database: {db_error}")
-                
+
                 flash('Successfully authenticated with TOTP!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 error_msg = result.get('message', 'Authentication failed') if result else 'Login failed'
                 flash(f'TOTP login failed: {error_msg}', 'error')
-                
+
         except Exception as e:
             logging.error(f"Login error: {str(e)}")
             flash(f'Login failed: {str(e)}', 'error')
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -232,7 +232,7 @@ def dashboard():
     """Main dashboard with portfolio overview"""
     if not validate_current_session():
         return redirect(url_for('login'))
-    
+
     try:
         client = session.get('client')
         if not client:
@@ -324,7 +324,7 @@ def positions():
     """Positions page"""
     if not validate_current_session():
         return redirect(url_for('login'))
-    
+
     return render_template('positions.html')
 
 @app.route('/holdings')
@@ -332,7 +332,7 @@ def holdings():
     """Holdings page"""
     if not validate_current_session():
         return redirect(url_for('login'))
-    
+
     return render_template('holdings.html')
 
 @app.route('/orders')
@@ -340,7 +340,7 @@ def orders():
     """Orders page"""
     if not validate_current_session():
         return redirect(url_for('login'))
-    
+
     return render_template('orders.html')
 
 @app.route('/charts')
@@ -348,7 +348,7 @@ def charts():
     """Charts page for trading analysis"""
     if not validate_current_session():
         return redirect(url_for('login'))
-    
+
     return render_template('charts.html')
 
 # API endpoints
@@ -357,14 +357,14 @@ def get_dashboard_data_api():
     """AJAX endpoint for dashboard data without page refresh"""
     if not validate_current_session():
         return jsonify({'error': 'Not authenticated'}), 401
-    
+
     try:
 
-            
+
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
-            
+
         dashboard_data = trading_functions.get_dashboard_data(client)
         return jsonify(dashboard_data)
     except Exception as e:
@@ -376,12 +376,12 @@ def get_positions_api():
     """API endpoint to get current positions"""
     if not validate_current_session():
         return jsonify({'error': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
-            
+
         positions = trading_functions.get_positions(client)
         return jsonify(positions)
     except Exception as e:
@@ -393,14 +393,23 @@ def get_holdings_api():
     """API endpoint to get holdings"""
     if not validate_current_session():
         return jsonify({'error': 'Not authenticated'}), 401
-    
+
     try:
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
-            
+
         holdings = trading_functions.get_holdings(client)
         return jsonify(holdings)
     except Exception as e:
         logging.error(f"Holdings API error: {e}")
         return jsonify({'error': str(e)}), 500
+
+from routes.auth import auth_bp
+from routes.main import main_bp
+from api.dashboard import dashboard_api
+
+# Register blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(main_bp)
+app.register_blueprint(dashboard_api)

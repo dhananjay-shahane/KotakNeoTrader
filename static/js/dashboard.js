@@ -189,11 +189,15 @@ class TradingDashboard {
                 }
             } else {
                 console.error('Failed to refresh portfolio:', data.message);
-                this.showNotification('Failed to update portfolio', 'error');
+                if (window.location.search.includes('debug=true')) {
+                    this.showNotification('Failed to update portfolio', 'error');
+                }
             }
         } catch (error) {
             console.error('Error refreshing portfolio:', error);
-            this.showNotification('Error updating portfolio', 'error');
+            if (window.location.search.includes('debug=true')) {
+                this.showNotification('Error updating portfolio', 'error');
+            }
         }
     }
 

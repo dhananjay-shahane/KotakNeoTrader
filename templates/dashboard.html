@@ -719,24 +719,41 @@
                                     <br><small>Please refresh your tokens using the token refresh tool</small>
                                 </td></tr>
                                 {% elif data.holdings is iterable and data.holdings is not string %}
-                                    {% for holding in data.holdings[:5] %}
+                                    {% for holding in data.holdings %}
                                     {% if holding is mapping %}
                                     <tr>
-                                        <td>{{ holding.get('tradingsymbol', holding.get('sym', 'N/A')) }}</td>
-                                        <td>{{ holding.get('exSeg', 'NSE') }}</td>
-                                        <td class="text-center">{{ holding.get('quantity', holding.get('holdingQty', 0)) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', holding.get('avgPrice', 0))|float) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('ltp', holding.get('LastPrice', 0))|float) }}</td>
-                                        <td>₹{{ "%.2f"|format((holding.get('ltp', holding.get('LastPrice', 0))|float * holding.get('quantity', holding.get('holdingQty', 0))|float)) }}</td>
-                                        <td class="{% if holding.get('pnl', holding.get('unrealizedPL', 0))|float >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            ₹{{ "%.2f"|format(holding.get('pnl', holding.get('unrealizedPL', 0))|float) }}
+                                        <td>
+                                            <strong>{{ holding.trdSym or holding.sym or holding.get('tradingSymbol', 'N/A') }}</strong>
+                                            <br><small class="text-muted">{{ holding.series or holding.get('series', '') }}</small>
                                         </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-success">Active</span>
+                                        <td><span class="badge bg-info">{{ holding.exSeg or holding.get('exchange', 'N/A') }}</span></td>
+                                        <td class="text-center">{{ holding.quantity or holding.get('qty', 0) }}</td>
+                                        <td class="text-end">₹{{ "%.2f"|format(holding.avgPrice or holding.get('averagePrice', 0) or 0) }}</td>
+                                        <td class="text-end">₹{{ "%.2f"|format(holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0) }}</td>
+                                        <td class="text-end">
+                                            {% set qty = holding.quantity or holding.get('qty', 0) or 0 %}
+                                            {% set ltp = holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0 %}
+                                            ₹{{ "%.2f"|format(qty * ltp) }}
                                         </td>
-                                    </tr>
-                                    {% endif %}
-                                    {% endfor %}
+                                        <td class="text-end">
+                                            {% set qty = holding.quantity or holding.get('qty', 0) or 0 %}
+                                            {% set ltp = holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0 %}
+                                            {% set avg_price = holding.avgPrice or holding.get('averagePrice', 0) or 0 %}
+                                            {% set market_value = qty * ltp %}
+                                            {% set invested_value = qty * avg_price %}
+                                            {% set pnl = market_value - invested_value %}
+                                            <span class="{{ 'text-success' if pnl >= 0 else 'text-danger' }}">
+                                            ₹{{ "%.2f"|format(pnl) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge {{ 'bg-success' if holding.get('sqrFlg') == 'Y' or holding.get('status') == 'Active' else 'bg-warning' }}">
+                                            {{ 'Active' if holding.get('sqrFlg') == 'Y' or holding.get('status') == 'Active' else 'Inactive' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
                                 {% else %}
                                     <tr><td colspan="8" class="text-center text-warning">
                                         <i class="fas fa-exclamation-triangle me-2"></i>Invalid holdings data format
