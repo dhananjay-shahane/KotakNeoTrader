@@ -116,23 +116,7 @@ def login():
             ucc = request.form.get('ucc')
             totp = request.form.get('totp')
             mpin = request.form.get('mpin')
-            demo_mode = request.form.get('demo_mode')
-            
-            # Demo mode for testing
-            if demo_mode == 'true':
-                session['authenticated'] = True
-                session['demo_mode'] = True
-                session['access_token'] = 'demo_token'
-                session['session_token'] = 'demo_session'
-                session['sid'] = 'demo_sid'
-                session['user_data'] = {
-                    'ucc': 'DEMO123',
-                    'greetingName': 'Demo User',
-                    'isTrialAccount': True
-                }
-                flash('Demo mode activated!', 'info')
-                return redirect(url_for('dashboard'))
-            
+
             if not all([mobile_number, ucc, totp, mpin]):
                 flash('All fields are required', 'error')
                 return render_template('login.html')
@@ -233,17 +217,7 @@ def get_dashboard_data_api():
         return jsonify({'error': 'Not authenticated'}), 401
     
     try:
-        # Handle demo mode
-        if session.get('demo_mode'):
-            return jsonify({
-                'portfolio_value': 125000.50,
-                'day_pnl': 2350.25,
-                'total_pnl': 15420.75,
-                'available_margin': 45000.00,
-                'positions': [],
-                'holdings': [],
-                'orders': []
-            })
+
             
         client = session.get('client')
         if not client:
@@ -262,10 +236,6 @@ def get_positions_api():
         return jsonify({'error': 'Not authenticated'}), 401
     
     try:
-        # Handle demo mode
-        if session.get('demo_mode'):
-            return jsonify([])
-            
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
@@ -283,10 +253,6 @@ def get_holdings_api():
         return jsonify({'error': 'Not authenticated'}), 401
     
     try:
-        # Handle demo mode
-        if session.get('demo_mode'):
-            return jsonify([])
-            
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
