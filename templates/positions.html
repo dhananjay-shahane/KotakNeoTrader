@@ -31,7 +31,13 @@
     <div class="col-md-3">
         <div class="card bg-success">
             <div class="card-body text-center">
-                {% set total_pnl = positions|sum(attribute='pnl') %}
+                {% set total_pnl = 0.0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set pnl = (position.urPnl or position.pnl or 0)|float %}
+                        {% set total_pnl = total_pnl + pnl %}
+                    {% endfor %}
+                {% endif %}
                 <h4 class="mb-1">₹{{ "%.2f"|format(total_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-chart-line me-1"></i>Total P&L</p>
             </div>
@@ -40,7 +46,13 @@
     <div class="col-md-3">
         <div class="card bg-info">
             <div class="card-body text-center">
-                {% set realized_pnl = positions|sum(attribute='realised_pnl') %}
+                {% set realized_pnl = 0.0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set rpnl = (position.rlPnl or position.realised_pnl or 0)|float %}
+                        {% set realized_pnl = realized_pnl + rpnl %}
+                    {% endfor %}
+                {% endif %}
                 <h4 class="mb-1">₹{{ "%.2f"|format(realized_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-money-bill me-1"></i>Realized P&L</p>
             </div>
@@ -49,7 +61,13 @@
     <div class="col-md-3">
         <div class="card bg-warning">
             <div class="card-body text-center">
-                {% set unrealized_pnl = positions|sum(attribute='unrealised') %}
+                {% set unrealized_pnl = 0.0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set upnl = (position.urPnl or position.unrealised or 0)|float %}
+                        {% set unrealized_pnl = unrealized_pnl + upnl %}
+                    {% endfor %}
+                {% endif %}
                 <h4 class="mb-1">₹{{ "%.2f"|format(unrealized_pnl) }}</h4>
                 <p class="mb-0"><i class="fas fa-clock me-1"></i>Unrealized P&L</p>
             </div>
@@ -85,53 +103,53 @@
                     {% for position in positions %}
                     <tr>
                         <td>
-                            <strong>{{ position.tradingsymbol or position.symbol or 'N/A' }}</strong>
+                            <strong>{{ position.trdSym or position.sym or position.tradingsymbol or 'N/A' }}</strong>
                             {% if position.series %}
                                 <br><small class="text-muted">{{ position.series }}</small>
                             {% endif %}
-                            {% if position.option_type and position.option_type != 'XX' %}
-                                <br><small class="text-warning">{{ position.option_type }} {{ position.strike_price }}</small>
+                            {% if position.opTyp and position.opTyp != 'XX' %}
+                                <br><small class="text-warning">{{ position.opTyp }} {{ position.stkPrc or position.strike_price or '' }}</small>
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge bg-info">{{ position.exchange or 'N/A' }}</span>
+                            <span class="badge bg-info">{{ position.exSeg or position.exchange or 'NSE' }}</span>
                         </td>
                         <td>
-                            <span class="badge bg-secondary">{{ position.product or 'N/A' }}</span>
+                            <span class="badge bg-secondary">{{ position.prdCode or position.product or 'CNC' }}</span>
                         </td>
                         <td class="text-success">
-                            {{ position.buy_quantity or '0' }}
+                            {{ position.flBuyQty or position.buyQty or '0' }}
                         </td>
                         <td class="text-danger">
-                            {{ position.sell_quantity or '0' }}
+                            {{ position.flSellQty or position.sellQty or '0' }}
                         </td>
                         <td>
-                            {% set net_qty = position.quantity or 0 %}
+                            {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
                             <span class="{% if net_qty > 0 %}text-success{% elif net_qty < 0 %}text-danger{% else %}text-muted{% endif %}">
                                 {{ net_qty }}
                             </span>
                         </td>
                         <td>
-                            {% if position.averageprice and position.buy_quantity and position.buy_quantity > 0 %}
-                                ₹{{ "%.2f"|format(position.averageprice) }}
+                            {% if (position.flBuyQty or position.buyQty or 0)|int > 0 %}
+                                ₹{{ "%.2f"|format((position.buyAmt or 0)|float / (position.flBuyQty or position.buyQty or 1)|float) }}
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if position.averageprice and position.sell_quantity and position.sell_quantity > 0 %}
-                                ₹{{ "%.2f"|format(position.averageprice) }}
+                            {% if (position.flSellQty or position.sellQty or 0)|int > 0 %}
+                                ₹{{ "%.2f"|format((position.sellAmt or 0)|float / (position.flSellQty or position.sellQty or 1)|float) }}
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
-                        <td>₹{{ "%.2f"|format(position.ltp) if position.ltp else '0.00' }}</td>
+                        <td>₹{{ "%.2f"|format(position.mktPrice or position.ltp or 0) }}</td>
                         <td>
-                            {% set pnl = position.pnl or position.unrealised or 0.0 %}
-                            <span class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                ₹{{ "%.2f"|format(pnl) }}
-                                {% if pnl != 0 and position.buy_amount and position.buy_amount > 0 %}
-                                    <br><small>({{ "%.2f"|format((pnl/position.buy_amount)*100) }}%)</small>
+                            {% set pnl = position.urPnl or position.pnl or position.unrealised or 0.0 %}
+                            <span class="{% if pnl|float > 0 %}text-success{% elif pnl|float < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                ₹{{ "%.2f"|format(pnl|float) }}
+                                {% if pnl|float != 0 and position.buyAmt and position.buyAmt|float > 0 %}
+                                    <br><small>({{ "%.2f"|format((pnl|float/position.buyAmt|float)*100) }}%)</small>
                                 {% endif %}
                             </span>
                         </td>
@@ -167,19 +185,41 @@
             </div>
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Total P&L</h6>
-                {% set total_pnl = positions|sum(attribute='pnl')|float if positions else 0.0 %}
+                {% set total_pnl = 0.0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set pnl = (position.urPnl or position.pnl or 0)|float %}
+                        {% set total_pnl = total_pnl + pnl %}
+                    {% endfor %}
+                {% endif %}
                 <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
                     ₹{{ "%.2f"|format(total_pnl) }}
                 </h5>
             </div>
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Long Positions</h6>
-                {% set long_positions = positions|selectattr('flBuyQty', 'greaterthan', positions|map(attribute='flSellQty')|list)|list|length %}
+                {% set long_positions = 0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set net_qty = (position.flBuyQty or 0)|int - (position.flSellQty or 0)|int %}
+                        {% if net_qty > 0 %}
+                            {% set long_positions = long_positions + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
                 <h5 class="mb-0 text-success">{{ long_positions }}</h5>
             </div>
             <div class="col-md-3">
                 <h6 class="text-muted mb-1">Short Positions</h6>
-                {% set short_positions = positions|selectattr('flSellQty', 'greaterthan', positions|map(attribute='flBuyQty')|list)|list|length %}
+                {% set short_positions = 0 %}
+                {% if positions %}
+                    {% for position in positions %}
+                        {% set net_qty = (position.flBuyQty or 0)|int - (position.flSellQty or 0)|int %}
+                        {% if net_qty < 0 %}
+                            {% set short_positions = short_positions + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
                 <h5 class="mb-0 text-danger">{{ short_positions }}</h5>
             </div>
         </div>
