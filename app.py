@@ -297,17 +297,35 @@ def dashboard():
         try:
             raw_dashboard_data = trading_functions.get_dashboard_data(client)
             
-            # Ensure dashboard_data is a dictionary
+            # Ensure dashboard_data is always a dictionary
             if isinstance(raw_dashboard_data, dict):
                 dashboard_data = raw_dashboard_data
-            else:
-                # If it's not a dict, create a proper structure
+                # Validate that positions and holdings are lists
+                if not isinstance(dashboard_data.get('positions'), list):
+                    dashboard_data['positions'] = []
+                if not isinstance(dashboard_data.get('holdings'), list):
+                    dashboard_data['holdings'] = []
+                if not isinstance(dashboard_data.get('limits'), dict):
+                    dashboard_data['limits'] = {}
+            elif isinstance(raw_dashboard_data, list):
+                # If API returns a list directly, wrap it properly
                 dashboard_data = {
-                    'positions': raw_dashboard_data if isinstance(raw_dashboard_data, list) else [],
+                    'positions': raw_dashboard_data,
                     'holdings': [],
                     'limits': {},
                     'recent_orders': [],
-                    'total_positions': len(raw_dashboard_data) if isinstance(raw_dashboard_data, list) else 0,
+                    'total_positions': len(raw_dashboard_data),
+                    'total_holdings': 0,
+                    'total_orders': 0
+                }
+            else:
+                # Fallback empty structure
+                dashboard_data = {
+                    'positions': [],
+                    'holdings': [],
+                    'limits': {},
+                    'recent_orders': [],
+                    'total_positions': 0,
                     'total_holdings': 0,
                     'total_orders': 0
                 }
@@ -317,9 +335,9 @@ def dashboard():
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions', 0)
-            dashboard_data.setdefault('total_holdings', 0)
-            dashboard_data.setdefault('total_orders', 0)
+            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
+            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
+            dashboard_data.setdefault('total_orders', len(dashboard_data.get('recent_orders', [])))
             
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
