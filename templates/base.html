@@ -331,11 +331,11 @@
             .header-brand span {
                 display: none;
             }
-            
+
             .status-indicator span {
                 display: none;
             }
-            
+
             .theme-toggle {
                 margin-right: 0.5rem;
             }
@@ -866,7 +866,7 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             const isOpen = sidebar.classList.contains('show');
-            
+
             if (isOpen) {
                 sidebar.classList.remove('show');
                 overlay.classList.remove('show');
@@ -883,7 +883,7 @@
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.mobile-toggle');
             const overlay = document.getElementById('sidebarOverlay');
-            
+
             if (window.innerWidth <= 992 && 
                 sidebar && sidebar.classList.contains('show') && 
                 !sidebar.contains(event.target) && 
@@ -896,7 +896,7 @@
         window.addEventListener('resize', function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            
+
             if (window.innerWidth > 992) {
                 sidebar.classList.remove('show');
                 overlay.classList.remove('show');
@@ -1068,16 +1068,35 @@
         const isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
             setInterval(function() {
-                // Only refresh if page is visible
                 if (!document.hidden) {
                     const currentPage = window.location.pathname;
                     if (currentPage === '/dashboard') {
-                        // Use relative URL for refresh
-                        window.location.href = '/dashboard';
+                        // Refresh dashboard data without full page reload
+                        location.reload();
                     }
                 }
             }, 30000);
         }
+
+        // Toggle sidebar function
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            if (sidebar) {
+                sidebar.classList.toggle('active');
+                if (mainContent) mainContent.classList.toggle('sidebar-active');
+                if (overlay) overlay.classList.toggle('active');
+            }
+        }
+
+        // Close sidebar when clicking overlay
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('sidebar-overlay')) {
+                toggleSidebar();
+            }
+        });
 
         // Debug function to check theme toggle
         function debugThemeToggle() {
