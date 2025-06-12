@@ -189,11 +189,14 @@ def api_portfolio_summary():
         dashboard_data = trading_functions.get_dashboard_data(client)
         
         # Calculate summary statistics
+        limits_data = dashboard_data.get('limits', {})
         portfolio_summary = {
             'total_positions': dashboard_data.get('total_positions', 0),
             'total_holdings': dashboard_data.get('total_holdings', 0),
             'total_orders': dashboard_data.get('total_orders', 0),
-            'limits_available': dashboard_data.get('limits', {}).get('Net', 0),
+            'limits_available': float(limits_data.get('Net', 0) or 0),
+            'margin_used': float(limits_data.get('MarginUsed', 0) or 0),
+            'collateral_value': float(limits_data.get('CollateralValue', 0) or 0),
             'total_pnl': 0.0,
             'total_investment': 0.0
         }

@@ -227,6 +227,13 @@ class TradingDashboard {
             availableMarginEl.textContent = `₹${margin.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
         }
 
+        // Update margin used
+        const marginUsedEl = document.getElementById('marginUsed');
+        if (marginUsedEl && data.margin_used !== undefined) {
+            const marginUsed = parseFloat(data.margin_used) || 0;
+            marginUsedEl.innerHTML = `<i class="fas fa-rupee-sign me-1"></i>Used: ₹${marginUsed.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+
         // Update P&L in account summary modal if visible
         const portfolioPnlEl = document.querySelector('.portfolio-pnl');
         if (portfolioPnlEl && data.total_pnl !== undefined) {
