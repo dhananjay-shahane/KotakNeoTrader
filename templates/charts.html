@@ -21,12 +21,19 @@
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
-            height: 400px;
+            height: 500px;
             position: relative;
+            min-height: 400px;
         }
 
         .chart-container.large {
             height: 600px;
+        }
+
+        .chart-content {
+            width: 100%;
+            height: calc(100% - 80px);
+            min-height: 300px;
         }
 
         .symbol-search {
@@ -453,10 +460,31 @@ class AdvancedTradingChart {
     removeSymbol(symbol) {
         this.selectedSymbols.delete(symbol);
         if (this.charts.has(symbol)) {
-            this.charts.get(symbol).chart.remove();
+            const chartInfo = this.charts.get(symbol);
+            chartInfo.chart.remove();
+            
+            // Clean up resize handler
+            if (chartInfo.resizeHandler) {
+                window.removeEventListener('resize', chartInfo.resizeHandler);
+            }
+            
             this.charts.delete(symbol);
         }
+        
+        // Remove chart container from DOM
+        const chartContainer = document.getElementById(`chart-${symbol}`);
+        if (chartContainer) {
+            chartContainer.remove();
+        }
+        
+        this.updateSelectedSymbolsDisplay();
         this.updateChartGrid();
+    }
+
+    retryLoadChart(symbol, name) {
+        console.log(`Retrying chart load for ${symbol}`);
+        this.removeSymbol(symbol);
+        this.addSymbol(symbol, name);
     }
 
     updateSelectedSymbolsDisplay() {
@@ -487,20 +515,50 @@ class AdvancedTradingChart {
 
     async loadChartData(symbol, name) {
         const chartContainer = this.createChartContainer(symbol, name);
+        const chartContent = chartContainer.querySelector('.chart-content');
 
         try {
+            // Show loading state
+            chartContent.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading ${symbol} chart...</p>
+                    </div>
+                </div>
+            `;
+
             let url = `/api/chart-data?symbol=${encodeURIComponent(symbol)}&period=${this.currentPeriod}`;
+            console.log('Fetching chart data from:', url);
+            
             const response = await fetch(url);
             const data = await response.json();
+
+            console.log('Chart data response:', data);
 
             if (data.error) {
                 throw new Error(data.error);
             }
 
-            // Create chart
-            const chart = LightweightCharts.createChart(chartContainer.querySelector('.chart-content'), {
-                width: chartContainer.querySelector('.chart-content').clientWidth,
-                height: chartContainer.querySelector('.chart-content').clientHeight,
+            if (!data.candlesticks || data.candlesticks.length === 0) {
+                throw new Error('No chart data available');
+            }
+
+            // Clear loading content
+            chartContent.innerHTML = '';
+
+            // Wait for container to be visible
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const containerWidth = chartContent.clientWidth || 800;
+            const containerHeight = chartContent.clientHeight || 400;
+
+            console.log('Chart container dimensions:', containerWidth, 'x', containerHeight);
+
+            // Create chart with explicit dimensions
+            const chart = LightweightCharts.createChart(chartContent, {
+                width: containerWidth,
+                height: containerHeight,
                 layout: {
                     backgroundColor: '#1e293b',
                     textColor: '#f8fafc',
@@ -540,6 +598,9 @@ class AdvancedTradingChart {
                 scaleMargins: { top: 0.8, bottom: 0 },
             });
 
+            console.log('Setting candlestick data:', data.candlesticks.length, 'points');
+            console.log('Setting volume data:', data.volume.length, 'points');
+
             // Set data
             candlestickSeries.setData(data.candlesticks);
             volumeSeries.setData(data.volume);
@@ -555,20 +616,40 @@ class AdvancedTradingChart {
             // Update price info
             this.updatePriceInfo(symbol, data);
 
+            // Update data source indicator
+            this.updateDataSourceIndicator(symbol, data.real_data_available || false);
+
+            console.log(`Chart created successfully for ${symbol}`);
+
             // Handle resize
-            window.addEventListener('resize', () => {
-                chart.applyOptions({
-                    width: chartContainer.querySelector('.chart-content').clientWidth,
-                    height: chartContainer.querySelector('.chart-content').clientHeight,
-                });
-            });
+            const resizeHandler = () => {
+                const newWidth = chartContent.clientWidth;
+                const newHeight = chartContent.clientHeight;
+                if (newWidth > 0 && newHeight > 0) {
+                    chart.applyOptions({
+                        width: newWidth,
+                        height: newHeight,
+                    });
+                }
+            };
+
+            window.addEventListener('resize', resizeHandler);
+            
+            // Store resize handler for cleanup
+            this.charts.get(symbol).resizeHandler = resizeHandler;
 
         } catch (error) {
             console.error(`Error loading chart data for ${symbol}:`, error);
-            chartContainer.querySelector('.chart-content').innerHTML = `
-                <div class="text-center text-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p class="mt-2">Error loading chart data</p>
+            chartContent.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <h6>Error Loading Chart</h6>
+                        <p class="mb-2">${error.message}</p>
+                        <button class="btn btn-outline-light btn-sm" onclick="advancedChart.retryLoadChart('${symbol}', '${name}')">
+                            <i class="fas fa-redo me-1"></i>Retry
+                        </button>
+                    </div>
                 </div>
             `;
         }
@@ -642,6 +723,45 @@ class AdvancedTradingChart {
                 console.error('Error loading chart data:', error);
                 this.showChartError(symbol, 'Failed to load chart data');
             });
+    }
+
+    updateChart(symbol, data) {
+        const chartInfo = this.charts.get(symbol);
+        if (!chartInfo) return;
+
+        try {
+            // Update chart data
+            chartInfo.candlestickSeries.setData(data.candlesticks);
+            chartInfo.volumeSeries.setData(data.volume);
+
+            // Update price info
+            this.updatePriceInfo(symbol, data);
+
+            console.log(`Chart updated successfully for ${symbol}`);
+        } catch (error) {
+            console.error(`Error updating chart for ${symbol}:`, error);
+        }
+    }
+
+    showChartError(symbol, message) {
+        const chartContainer = document.getElementById(`chart-${symbol}`);
+        if (chartContainer) {
+            const chartContent = chartContainer.querySelector('.chart-content');
+            if (chartContent) {
+                chartContent.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <h6>Chart Error</h6>
+                            <p class="mb-2">${message}</p>
+                            <button class="btn btn-outline-light btn-sm" onclick="advancedChart.refreshChart('${symbol}')">
+                                <i class="fas fa-redo me-1"></i>Retry
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     }
 
     updateDataSourceIndicator(symbol, isRealData) {
