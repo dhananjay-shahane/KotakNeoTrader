@@ -27,6 +27,10 @@ body {
     color: #fff !important;
 }
 
+.bg-gradient-warning .text-white {
+    color: #fff !important;
+}
+
 /* Price animation effects */
 @keyframes priceUp {
     0% { background-color: rgba(40, 167, 69, 0.3); }
