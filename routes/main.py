@@ -414,6 +414,80 @@ def holdings():
         flash(f'Error loading holdings: {str(e)}', 'error')
         return render_template('holdings.html', holdings=[])
 
+@main_bp.route('/api/holdings')
+@login_required
+def api_holdings():
+    """API endpoint for holdings data (for AJAX refresh)"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+
+        # Get fresh holdings data
+        holdings_data = trading_functions.get_holdings(client)
+        
+        # Handle error responses
+        if isinstance(holdings_data, dict) and 'error' in holdings_data:
+            error_message = holdings_data['error']
+            logging.error(f"Holdings API returned error: {error_message}")
+            return jsonify({
+                'success': False,
+                'message': error_message,
+                'error': error_message,
+                'holdings': []
+            }), 400
+        
+        # Ensure holdings_data is a list
+        if not isinstance(holdings_data, list):
+            holdings_data = []
+        
+        # Calculate summary statistics
+        total_invested = 0.0
+        current_value = 0.0
+        total_holdings = len(holdings_data)
+        
+        if holdings_data:
+            for holding in holdings_data:
+                # Calculate invested value
+                invested = float(holding.get('holdingCost', 0) or 0)
+                total_invested += invested
+                
+                # Calculate current market value
+                market_val = float(holding.get('mktValue', 0) or 0)
+                current_value += market_val
+
+        return jsonify({
+            'success': True,
+            'holdings': holdings_data,
+            'summary': {
+                'total_holdings': total_holdings,
+                'total_invested': total_invested,
+                'current_value': current_value,
+                'total_pnl': current_value - total_invested
+            },
+            'timestamp': int(time.time())
+        })
+        
+    except Exception as e:
+        error_message = str(e)
+        logging.error(f"API holdings error: {error_message}")
+        logging.error(f"Error type: {type(e).__name__}")
+        
+        # Check for specific error types
+        if 'timeout' in error_message.lower():
+            error_message = "Request timeout - please try again"
+        elif 'connection' in error_message.lower():
+            error_message = "Connection error - please check your internet connection"
+        elif '2fa' in error_message.lower():
+            error_message = "Authentication required - please login again"
+        
+        return jsonify({
+            'success': False,
+            'message': error_message,
+            'error': str(e),
+            'holdings': []
+        }), 500
+
 @main_bp.route('/orders')
 @login_required
 def orders():
