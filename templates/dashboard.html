@@ -778,11 +778,31 @@
                             </tr>
                         </thead>
                         <tbody id="holdingsTableBody">
-                            <tr>
-                                <td colspan="8" class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading holdings...
-                                </td>
-                            </tr>
+                            {% if data.holdings %}
+                                {% if data.holdings.get('error') %}
+                                <tr><td colspan="5" class="text-center text-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    {{ data.holdings.error }}
+                                    <br><small>Please refresh your tokens using the token refresh tool</small>
+                                </td></tr>
+                                {% else %}
+                                    {% for holding in data.holdings[:5] %}
+                                    <tr>
+                                        <td>{{ holding.get('tradingsymbol', 'N/A') }}</td>
+                                        <td>{{ holding.get('quantity', 0) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</td>
+                                        <td>₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</td>
+                                        <td class="{% if holding.get('pnl', 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            ₹{{ "%.2f"|format(holding.get('pnl', 0)) }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            {% else %}
+                                <tr><td colspan="8" class="text-center py-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>No holdings found
+                                </td></tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

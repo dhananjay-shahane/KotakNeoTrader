@@ -58,6 +58,8 @@ def dashboard():
                     dashboard_data['holdings'] = []
                 if not isinstance(dashboard_data.get('limits'), dict):
                     dashboard_data['limits'] = {}
+                if not isinstance(dashboard_data.get('recent_orders'), list):
+                    dashboard_data['recent_orders'] = []
             elif isinstance(raw_dashboard_data, list):
                 # If API returns a list directly, wrap it properly
                 dashboard_data = {
@@ -81,14 +83,23 @@ def dashboard():
                     'total_orders': 0
                 }
                 
-            # Ensure all required keys exist with default values
+            # Ensure all required keys exist with default values and validate data types
             dashboard_data.setdefault('positions', [])
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
+            
+            # Convert any non-list items to empty lists for safety
+            if not isinstance(dashboard_data['positions'], list):
+                dashboard_data['positions'] = []
+            if not isinstance(dashboard_data['holdings'], list):
+                dashboard_data['holdings'] = []
+            if not isinstance(dashboard_data['recent_orders'], list):
+                dashboard_data['recent_orders'] = []
+                
             dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
             dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data.get('recent_orders', [])))
+            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
             
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")

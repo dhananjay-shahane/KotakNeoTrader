@@ -161,8 +161,22 @@ class RealTimeDashboard {
         // Update holdings value
         if (data.holdings && Array.isArray(data.holdings)) {
             const totalValue = data.holdings.reduce((sum, holding) => {
-                const value = parseFloat(holding.mktPrice || holding.marketValue || holding.ltp || 0);
-                const qty = parseFloat(holding.holdingQty || holding.quantity || 0);
+                // Handle different API response formats for holdings
+                const value = parseFloat(
+                    holding.LastPrice || 
+                    holding.ltp || 
+                    holding.marketPrice || 
+                    holding.mktPrice || 
+                    holding.marketValue || 
+                    0
+                );
+                const qty = parseFloat(
+                    holding.Quantity || 
+                    holding.quantity || 
+                    holding.holdingQty || 
+                    holding.NetQuantity || 
+                    0
+                );
                 return sum + (value * qty);
             }, 0);
             
