@@ -125,25 +125,47 @@ class TradingFunctions:
         try:
             self.logger.info("📊 Fetching positions data...")
             response = client.positions()
+            
+            # Log the raw response for debugging
+            self.logger.info(f"Raw positions response type: {type(response)}")
+            if response:
+                if isinstance(response, dict):
+                    self.logger.info(f"Response keys: {list(response.keys())}")
+                elif isinstance(response, list):
+                    self.logger.info(f"Response length: {len(response)}")
 
             # Handle different response formats
             if response:
                 if isinstance(response, dict):
                     if 'data' in response:
                         positions = response['data']
-                        self.logger.info(f"✅ Found {len(positions)} positions")
+                        self.logger.info(f"✅ Found {len(positions)} positions from 'data' key")
+                        
+                        # Log sample position structure
+                        if positions and len(positions) > 0:
+                            sample_pos = positions[0]
+                            self.logger.info(f"Sample position fields: {list(sample_pos.keys())}")
+                            
                         return positions
                     elif 'message' in response:
                         message = str(response.get('message', '')).lower()
-                        if '2fa' in message:
+                        if '2fa' in message or 'complete' in message:
                             self.logger.error(f"❌ 2FA required: {response.get('message')}")
                             return {'error': response.get('message')}
                         else:
                             self.logger.warning(f"⚠️ API message: {response.get('message')}")
                             return []
+                    elif 'stat' in response and response.get('stat') == 'Ok':
+                        # Some APIs return data directly without 'data' wrapper
+                        positions = [response] if not isinstance(response, list) else response
+                        self.logger.info(f"✅ Found {len(positions)} positions (direct format)")
+                        return positions
+                    else:
+                        self.logger.warning(f"⚠️ Unexpected response format: {response}")
+                        return []
                 elif isinstance(response, list):
                     # Direct list response
-                    self.logger.info(f"✅ Found {len(response)} positions")
+                    self.logger.info(f"✅ Found {len(response)} positions (list format)")
                     return response
 
             self.logger.info("📊 No positions found in account")
@@ -151,11 +173,13 @@ class TradingFunctions:
 
         except Exception as e:
             error_msg = str(e).lower()
-            if '2fa' in error_msg or 'complete' in error_msg:
-                self.logger.error(f"❌ 2FA required: {str(e)}")
+            self.logger.error(f"❌ Error fetching positions: {str(e)}")
+            self.logger.error(f"Exception type: {type(e)}")
+            
+            if '2fa' in error_msg or 'complete' in error_msg or 'invalid jwt' in error_msg:
+                self.logger.error(f"❌ Authentication issue: {str(e)}")
                 return {'error': str(e)}
             else:
-                self.logger.error(f"❌ Error fetching positions: {str(e)}")
                 return []
 
     def get_holdings(self, client):

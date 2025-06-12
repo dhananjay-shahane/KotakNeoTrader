@@ -148,8 +148,25 @@ def positions():
             return redirect(url_for('auth.login'))
 
         positions_data = trading_functions.get_positions(client)
+        
+        # Log the actual data structure for debugging
         if positions_data:
-            logging.info(f"First position data structure: {positions_data[0] if positions_data else 'No positions'}")
+            if isinstance(positions_data, list) and len(positions_data) > 0:
+                logging.info(f"Positions data type: {type(positions_data)}, count: {len(positions_data)}")
+                logging.info(f"First position keys: {list(positions_data[0].keys()) if positions_data[0] else 'Empty position'}")
+                logging.info(f"Sample position data: {positions_data[0] if positions_data[0] else 'Empty'}")
+            elif isinstance(positions_data, dict):
+                logging.info(f"Positions returned as dict: {positions_data}")
+                if 'error' in positions_data:
+                    flash(f'Error loading positions: {positions_data["error"]}', 'error')
+                    return render_template('positions.html', positions=[])
+        else:
+            logging.info("No positions data returned")
+        
+        # Ensure positions_data is always a list
+        if not isinstance(positions_data, list):
+            positions_data = []
+            
         return render_template('positions.html', positions=positions_data)
     except Exception as e:
         logging.error(f"Positions error: {str(e)}")
@@ -167,6 +184,18 @@ def api_positions():
 
         # Get fresh positions data
         positions_data = trading_functions.get_positions(client)
+        
+        # Handle error responses
+        if isinstance(positions_data, dict) and 'error' in positions_data:
+            return jsonify({
+                'success': False,
+                'message': positions_data['error'],
+                'positions': []
+            }), 400
+        
+        # Ensure positions_data is a list
+        if not isinstance(positions_data, list):
+            positions_data = []
         
         # Calculate summary statistics
         total_pnl = 0.0
