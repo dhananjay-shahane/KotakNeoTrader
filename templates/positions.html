@@ -18,75 +18,58 @@
 </div>
 
 {% if positions %}
-<!-- Real-time Position Tracking and P&L Analysis -->
-<div class="mb-3">
-    <p class="text-muted mb-3"><i class="fas fa-chart-line me-2"></i>Real-time position tracking and P&L analysis</p>
-</div>
-
-<!-- Enhanced Positions Summary Cards -->
-<div class="row mb-4" id="positionSummaryCards">
-    <div class="col-md-3 mb-3">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 15px;">
-            <div class="card-body text-center text-white py-4">
-                <div class="d-flex align-items-center justify-content-center mb-2">
-                    <i class="fas fa-chart-pie fs-4 me-2"></i>
-                </div>
-                <h2 class="mb-1 fw-bold" id="totalPositionsCount">{{ positions|length if positions else 0 }}</h2>
-                <p class="mb-0 opacity-90">Total Positions</p>
+<!-- Positions Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ positions|length }}</h4>
+                <p class="mb-0"><i class="fas fa-chart-pie me-1"></i>Total Positions</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-radius: 15px;">
-            <div class="card-body text-center text-white py-4">
-                <div class="d-flex align-items-center justify-content-center mb-2">
-                    <i class="fas fa-chart-line fs-4 me-2"></i>
-                </div>
+    <div class="col-md-3">
+        <div class="card bg-success">
+            <div class="card-body text-center">
                 {% set total_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set pnl = (position.urPnl or position.pnl or position.dayPnl or 0)|float %}
+                        {% set pnl = (position.urPnl or position.pnl or 0)|float %}
                         {% set total_pnl = total_pnl + pnl %}
                     {% endfor %}
                 {% endif %}
-                <h2 class="mb-1 fw-bold" id="totalPnlAmount">₹{{ "%.2f"|format(total_pnl) }}</h2>
-                <p class="mb-0 opacity-90">Total P&L</p>
+                <h4 class="mb-1">₹{{ "%.2f"|format(total_pnl) }}</h4>
+                <p class="mb-0"><i class="fas fa-chart-line me-1"></i>Total P&L</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 15px;">
-            <div class="card-body text-center text-white py-4">
-                <div class="d-flex align-items-center justify-content-center mb-2">
-                    <i class="fas fa-money-bill-wave fs-4 me-2"></i>
-                </div>
+    <div class="col-md-3">
+        <div class="card bg-info">
+            <div class="card-body text-center">
                 {% set realized_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set rpnl = (position.rlPnl or position.realised_pnl or position.realizedPnl or 0)|float %}
+                        {% set rpnl = (position.rlPnl or position.realised_pnl or 0)|float %}
                         {% set realized_pnl = realized_pnl + rpnl %}
                     {% endfor %}
                 {% endif %}
-                <h2 class="mb-1 fw-bold" id="realizedPnlAmount">₹{{ "%.2f"|format(realized_pnl) }}</h2>
-                <p class="mb-0 opacity-90">Realized P&L</p>
+                <h4 class="mb-1">₹{{ "%.2f"|format(realized_pnl) }}</h4>
+                <p class="mb-0"><i class="fas fa-money-bill me-1"></i>Realized P&L</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 15px;">
-            <div class="card-body text-center text-white py-4">
-                <div class="d-flex align-items-center justify-content-center mb-2">
-                    <i class="fas fa-clock fs-4 me-2"></i>
-                </div>
+    <div class="col-md-3">
+        <div class="card bg-warning">
+            <div class="card-body text-center">
                 {% set unrealized_pnl = 0.0 %}
                 {% if positions %}
                     {% for position in positions %}
-                        {% set upnl = (position.urPnl or position.unrealised or position.unrealizedPnl or (position.urPnl or position.pnl or position.dayPnl or 0)|float - (position.rlPnl or position.realised_pnl or position.realizedPnl or 0)|float)|float %}
+                        {% set upnl = (position.urPnl or position.unrealised or 0)|float %}
                         {% set unrealized_pnl = unrealized_pnl + upnl %}
                     {% endfor %}
                 {% endif %}
-                <h2 class="mb-1 fw-bold" id="unrealizedPnlAmount">₹{{ "%.2f"|format(unrealized_pnl) }}</h2>
-                <p class="mb-0 opacity-90">Unrealized P&L</p>
+                <h4 class="mb-1">₹{{ "%.2f"|format(unrealized_pnl) }}</h4>
+                <p class="mb-0"><i class="fas fa-clock me-1"></i>Unrealized P&L</p>
             </div>
         </div>
     </div>
@@ -435,7 +418,13 @@ function updatePositionsTable(positions) {
 }
 
 function updatePositionsSummary(positions) {
-    // Calculate all totals
+    // Update summary cards
+    const totalPositionsEl = document.querySelector('.card.bg-primary h4');
+    if (totalPositionsEl) {
+        totalPositionsEl.textContent = positions.length;
+    }
+
+    // Calculate totals
     let totalPnl = 0;
     let realizedPnl = 0;
     let unrealizedPnl = 0;
@@ -443,10 +432,10 @@ function updatePositionsSummary(positions) {
     let shortPositions = 0;
 
     positions.forEach(position => {
-        const pnl = parseFloat(position.urPnl || position.pnl || position.dayPnl || 0);
-        const rPnl = parseFloat(position.rlPnl || position.realised_pnl || position.realizedPnl || 0);
-        const uPnl = parseFloat(position.urPnl || position.unrealised || position.unrealizedPnl || (pnl - rPnl) || 0);
-        const netQty = (position.flBuyQty || position.buyQty || 0) - (position.flSellQty || position.sellQty || 0);
+        const pnl = parseFloat(position.urPnl || position.pnl || 0);
+        const rPnl = parseFloat(position.rlPnl || position.realised_pnl || 0);
+        const uPnl = parseFloat(position.urPnl || position.unrealised || 0);
+        const netQty = (position.flBuyQty || 0) - (position.flSellQty || 0);
 
         totalPnl += pnl;
         realizedPnl += rPnl;
@@ -456,78 +445,20 @@ function updatePositionsSummary(positions) {
         else if (netQty < 0) shortPositions++;
     });
 
-    // Update enhanced summary cards
-    const totalPositionsEl = document.getElementById('totalPositionsCount');
-    if (totalPositionsEl) {
-        totalPositionsEl.textContent = positions.length;
-        // Add animation effect
-        totalPositionsEl.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            totalPositionsEl.style.transform = 'scale(1)';
-        }, 200);
-    }
-
-    const totalPnlEl = document.getElementById('totalPnlAmount');
+    // Update summary cards
+    const totalPnlEl = document.querySelector('.card.bg-success h4');
     if (totalPnlEl) {
         totalPnlEl.textContent = `₹${totalPnl.toFixed(2)}`;
-        // Update card color based on P&L
-        const totalPnlCard = totalPnlEl.closest('.card');
-        if (totalPnlCard) {
-            if (totalPnl > 0) {
-                totalPnlCard.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
-            } else if (totalPnl < 0) {
-                totalPnlCard.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-            } else {
-                totalPnlCard.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
-            }
-        }
-        // Add animation effect
-        totalPnlEl.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            totalPnlEl.style.transform = 'scale(1)';
-        }, 200);
     }
 
-    const realizedPnlEl = document.getElementById('realizedPnlAmount');
+    const realizedPnlEl = document.querySelector('.card.bg-info h4');
     if (realizedPnlEl) {
         realizedPnlEl.textContent = `₹${realizedPnl.toFixed(2)}`;
-        // Update card color based on realized P&L
-        const realizedPnlCard = realizedPnlEl.closest('.card');
-        if (realizedPnlCard) {
-            if (realizedPnl > 0) {
-                realizedPnlCard.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)';
-            } else if (realizedPnl < 0) {
-                realizedPnlCard.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
-            } else {
-                realizedPnlCard.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)';
-            }
-        }
-        // Add animation effect
-        realizedPnlEl.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            realizedPnlEl.style.transform = 'scale(1)';
-        }, 200);
     }
 
-    const unrealizedPnlEl = document.getElementById('unrealizedPnlAmount');
+    const unrealizedPnlEl = document.querySelector('.card.bg-warning h4');
     if (unrealizedPnlEl) {
         unrealizedPnlEl.textContent = `₹${unrealizedPnl.toFixed(2)}`;
-        // Update card color based on unrealized P&L
-        const unrealizedPnlCard = unrealizedPnlEl.closest('.card');
-        if (unrealizedPnlCard) {
-            if (unrealizedPnl > 0) {
-                unrealizedPnlCard.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-            } else if (unrealizedPnl < 0) {
-                unrealizedPnlCard.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-            } else {
-                unrealizedPnlCard.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-            }
-        }
-        // Add animation effect
-        unrealizedPnlEl.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            unrealizedPnlEl.style.transform = 'scale(1)';
-        }, 200);
     }
 
     // Update footer summary
@@ -641,7 +572,7 @@ function getQuote(token, exchange) {
 // Auto-refresh positions every 30 seconds (reduced frequency for better UX)
 setInterval(refreshPositions, 30000);
 
-// Add CSS for update animations and enhanced cards
+// Add CSS for update animations
 const style = document.createElement('style');
 style.textContent = `
     .data-updated {
@@ -680,35 +611,6 @@ style.textContent = `
     @keyframes priceDown {
         0% { background-color: rgba(220, 53, 69, 0.4); }
         100% { background-color: transparent; }
-    }
-    
-    /* Enhanced summary card styles */
-    #positionSummaryCards .card {
-        transition: all 0.3s ease;
-        transform: translateY(0);
-    }
-    
-    #positionSummaryCards .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
-    }
-    
-    #positionSummaryCards h2 {
-        transition: transform 0.2s ease;
-    }
-    
-    #positionSummaryCards .card-body {
-        transition: all 0.3s ease;
-    }
-    
-    @keyframes cardPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    
-    .card-update-animation {
-        animation: cardPulse 0.6s ease-in-out;
     }
 `;
 document.head.appendChild(style);
