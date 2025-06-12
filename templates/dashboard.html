@@ -410,74 +410,7 @@
     </div>
 </div>
 
-<!-- Live Holdings Table -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-briefcase me-2 text-warning"></i>Live Holdings
-                    <span class="badge bg-warning ms-2">{{ data.total_holdings or 0 }}</span>
-                </h5>
-                <div>
-                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshHoldings()">
-                        <i class="fas fa-sync me-1"></i>Refresh
-                    </button>
-                    <a href="{{ url_for('main.holdings') }}" class="btn btn-sm btn-warning">
-                        <i class="fas fa-external-link-alt me-1"></i>View All
-                    </a>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="holdingsTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
-                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
-                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
-                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
-                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody id="holdingsTableBody">
-                            {% if data.holdings %}
-                                {% if data.holdings.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    {{ data.holdings.error }}
-                                    <br><small>Please refresh your tokens using the token refresh tool</small>
-                                </td></tr>
-                                {% else %}
-                                    {% for holding in data.holdings[:5] %}
-                                    <tr>
-                                        <td>{{ holding.get('tradingsymbol', 'N/A') }}</td>
-                                        <td>{{ holding.get('quantity', 0) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('averageprice', 0)) }}</td>
-                                        <td>₹{{ "%.2f"|format(holding.get('ltp', 0)) }}</td>
-                                        <td class="{% if holding.get('pnl', 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            ₹{{ "%.2f"|format(holding.get('pnl', 0)) }}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% endif %}
-                            {% else %}
-                                <tr><td colspan="5" class="text-center text-muted">No holdings found</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% if data.holdings and data.holdings|length > 5 %}
-            <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('main.holdings') }}" class="btn btn-outline-light">
-                    <i class="fas fa-eye me-1"></i>View All {{ data.total_holdings }} Holdings
-                </a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+
 
 <!-- Recent Orders -->
 {% if data.recent_orders %}
@@ -1270,77 +1203,7 @@ setInterval(() => {
     refreshPortfolioSummary();
 }, 15000);
 
-async function refreshHoldings() {
-    const button = document.querySelector('[onclick="refreshHoldings()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-        button.disabled = true;
-    }
 
-    try {
-        const response = await fetch('/api/holdings');
-        const data = await response.json();
-
-        if (data.success && data.holdings) {
-            const holdingsTableBody = document.getElementById('holdingsTableBody');
-            if (holdingsTableBody) {
-                // Update holdings with fresh data
-                data.holdings.forEach(holding => {
-                    const row = document.querySelector(`tr[data-holding-symbol="${holding.tradingsymbol || holding.symbol}"]`);
-                    if (row) {
-                        const ltpCell = row.querySelector('.price-ltp');
-                        const pnlCell = row.querySelector('.holding-pnl');
-
-                        if (ltpCell && holding.ltp) {
-                            const oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            const newPrice = parseFloat(holding.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-
-                            if (newPrice !== oldPrice) {
-                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
-                                setTimeout(() => {
-                                    ltpCell.classList.remove('price-up', 'price-down');
-                                }, 1000);
-                            }
-                        }
-
-                        if (pnlCell && holding.pnl !== undefined) {
-                            const pnl = parseFloat(holding.pnl);
-                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
-                        }
-                    }
-                });
-
-                console.log('Holdings refreshed successfully');
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing holdings:', error);
-        // Fallback to simulated updates
-        simulateHoldingUpdates();
-    }
-
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
-}
-
-function simulateHoldingUpdates() {
-    const holdings = document.querySelectorAll('#holdingsTable .price-ltp');
-    holdings.forEach(holding => {
-        const currentPrice = parseFloat(holding.textContent.replace(/[₹,]/g, ''));
-        const change = (Math.random() - 0.5) * 10;
-        const newPrice = currentPrice + change;
-
-        holding.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        holding.classList.add(change >= 0 ? 'price-up' : 'price-down');
-        setTimeout(() => {
-            holding.classList.remove('price-up', 'price-down');
-        }, 1000);
-    });
-}
 
 // Update user profile section
         async function updateUserProfile() {
