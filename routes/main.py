@@ -1,6 +1,7 @@
 """Main application routes"""
 from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify
 import logging
+import time
 
 from utils.auth import login_required, validate_current_session
 from trading_functions import TradingFunctions
@@ -162,11 +163,57 @@ def api_positions():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
 
+        # Get fresh positions data
         positions_data = trading_functions.get_positions(client)
+        
+        # Calculate summary statistics
+        total_pnl = 0.0
+        realized_pnl = 0.0
+        unrealized_pnl = 0.0
+        long_positions = 0
+        short_positions = 0
+        
+        if positions_data:
+            for position in positions_data:
+                # Calculate P&L
+                pnl = 0.0
+                if position.get('urPnl'):
+                    pnl = float(position.get('urPnl', 0))
+                elif position.get('pnl'):
+                    pnl = float(position.get('pnl', 0))
+                elif position.get('rpnl'):
+                    pnl = float(position.get('rpnl', 0))
+                
+                total_pnl += pnl
+                
+                # Calculate realized/unrealized P&L
+                if position.get('rlPnl'):
+                    realized_pnl += float(position.get('rlPnl', 0))
+                if position.get('urPnl'):
+                    unrealized_pnl += float(position.get('urPnl', 0))
+                
+                # Count long/short positions
+                buy_qty = float(position.get('flBuyQty', 0) or position.get('buyQty', 0) or 0)
+                sell_qty = float(position.get('flSellQty', 0) or position.get('sellQty', 0) or 0)
+                net_qty = buy_qty - sell_qty
+                
+                if net_qty > 0:
+                    long_positions += 1
+                elif net_qty < 0:
+                    short_positions += 1
+
         return jsonify({
             'success': True,
             'positions': positions_data,
-            'total_positions': len(positions_data) if positions_data else 0
+            'total_positions': len(positions_data) if positions_data else 0,
+            'summary': {
+                'total_pnl': total_pnl,
+                'realized_pnl': realized_pnl,
+                'unrealized_pnl': unrealized_pnl,
+                'long_positions': long_positions,
+                'short_positions': short_positions
+            },
+            'timestamp': int(time.time())
         })
     except Exception as e:
         logging.error(f"API positions error: {str(e)}")

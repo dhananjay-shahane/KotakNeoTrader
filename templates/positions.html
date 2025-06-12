@@ -139,109 +139,122 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for position in positions %}
-                    <tr>
-                        <td>
-                            <strong>{{ position.trdSym or position.sym or position.tradingsymbol or 'N/A' }}</strong>
-                            {% if position.series %}
-                                <br><small class="text-muted">{{ position.series }}</small>
-                            {% endif %}
-                            {% if position.opTyp and position.opTyp != 'XX' %}
-                                <br><small class="text-warning">{{ position.opTyp }} {{ position.stkPrc or position.strike_price or '' }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge bg-info">{{ position.exSeg or position.exchange or 'NSE' }}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">{{ position.prdCode or position.product or 'CNC' }}</span>
-                        </td>
-                        <td class="text-success">
-                            {{ position.flBuyQty or position.buyQty or '0' }}
-                        </td>
-                        <td class="text-danger">
-                            {{ position.flSellQty or position.sellQty or '0' }}
-                        </td>
-                        <td>
-                            {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
-                            <span class="{% if net_qty > 0 %}text-success{% elif net_qty < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                {{ net_qty }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if (position.flBuyQty or position.buyQty or 0)|int > 0 %}
-                                ₹{{ "%.2f"|format((position.buyAmt or 0)|float / (position.flBuyQty or position.buyQty or 1)|float) }}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if (position.flSellQty or position.sellQty or 0)|int > 0 %}
-                                ₹{{ "%.2f"|format((position.sellAmt or 0)|float / (position.flSellQty or position.sellQty or 1)|float) }}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td>₹{{ "%.2f"|format(position.mktPrice or position.ltp or 0) }}</td>
-                        <td>
-                            {% set pnl = 0.0 %}
-                            {% if position.urPnl %}
-                                {% set pnl = position.urPnl|float %}
-                            {% elif position.pnl %}
-                                {% set pnl = position.pnl|float %}
-                            {% elif position.rpnl %}
-                                {% set pnl = position.rpnl|float %}
-                            {% elif position.unrealised %}
-                                {% set pnl = position.unrealised|float %}
-                            {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
-                                {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
-                                {% if net_qty != 0 %}
-                                    {% set avg_price = 0 %}
-                                    {% if net_qty > 0 and position.flBuyAvgPrc %}
-                                        {% set avg_price = position.flBuyAvgPrc|float %}
-                                    {% elif net_qty < 0 and position.flSellAvgPrc %}
-                                        {% set avg_price = position.flSellAvgPrc|float %}
-                                    {% endif %}
-                                    {% if avg_price > 0 %}
-                                        {% set pnl = (position.mktPrice|float - avg_price) * net_qty %}
+                <tbody id="positionsTableBody">
+                    {% if positions %}
+                        {% for position in positions %}
+                        <tr data-position-id="{{ position.tok or loop.index }}">
+                            <td>
+                                <strong>{{ position.trdSym or position.sym or position.tradingsymbol or 'N/A' }}</strong>
+                                {% if position.series %}
+                                    <br><small class="text-muted">{{ position.series }}</small>
+                                {% endif %}
+                                {% if position.opTyp and position.opTyp != 'XX' %}
+                                    <br><small class="text-warning">{{ position.opTyp }} {{ position.stkPrc or position.strike_price or '' }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ position.exSeg or position.exchange or 'NSE' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ position.prdCode or position.product or 'CNC' }}</span>
+                            </td>
+                            <td class="text-success">
+                                {{ position.flBuyQty or position.buyQty or '0' }}
+                            </td>
+                            <td class="text-danger">
+                                {{ position.flSellQty or position.sellQty or '0' }}
+                            </td>
+                            <td>
+                                {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
+                                <span class="{% if net_qty > 0 %}text-success{% elif net_qty < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ net_qty }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if (position.flBuyQty or position.buyQty or 0)|int > 0 %}
+                                    ₹{{ "%.2f"|format((position.buyAmt or 0)|float / (position.flBuyQty or position.buyQty or 1)|float) }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if (position.flSellQty or position.sellQty or 0)|int > 0 %}
+                                    ₹{{ "%.2f"|format((position.sellAmt or 0)|float / (position.flSellQty or position.sellQty or 1)|float) }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="price-ltp">₹{{ "%.2f"|format(position.mktPrice or position.ltp or 0) }}</td>
+                            <td>
+                                {% set pnl = 0.0 %}
+                                {% if position.urPnl %}
+                                    {% set pnl = position.urPnl|float %}
+                                {% elif position.pnl %}
+                                    {% set pnl = position.pnl|float %}
+                                {% elif position.rpnl %}
+                                    {% set pnl = position.rpnl|float %}
+                                {% elif position.unrealised %}
+                                    {% set pnl = position.unrealised|float %}
+                                {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
+                                    {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
+                                    {% if net_qty != 0 %}
+                                        {% set avg_price = 0 %}
+                                        {% if net_qty > 0 and position.flBuyAvgPrc %}
+                                            {% set avg_price = position.flBuyAvgPrc|float %}
+                                        {% elif net_qty < 0 and position.flSellAvgPrc %}
+                                            {% set avg_price = position.flSellAvgPrc|float %}
+                                        {% endif %}
+                                        {% if avg_price > 0 %}
+                                            {% set pnl = (position.mktPrice|float - avg_price) * net_qty %}
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
-                            {% endif %}
-                            
-                            <span class="position-pnl {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                ₹{{ "%.2f"|format(pnl) }}
-                                {% if pnl != 0 %}
-                                    {% set investment = 0 %}
-                                    {% if position.buyAmt %}
-                                        {% set investment = position.buyAmt|float %}
-                                    {% elif position.flBuyQty and position.flBuyAvgPrc %}
-                                        {% set investment = position.flBuyQty|float * position.flBuyAvgPrc|float %}
+                                
+                                <span class="position-pnl {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    ₹{{ "%.2f"|format(pnl) }}
+                                    {% if pnl != 0 %}
+                                        {% set investment = 0 %}
+                                        {% if position.buyAmt %}
+                                            {% set investment = position.buyAmt|float %}
+                                        {% elif position.flBuyQty and position.flBuyAvgPrc %}
+                                            {% set investment = position.flBuyQty|float * position.flBuyAvgPrc|float %}
+                                        {% endif %}
+                                        {% if investment > 0 %}
+                                            <br><small>({{ "%.2f"|format((pnl/investment)*100) }}%)</small>
+                                        {% endif %}
                                     {% endif %}
-                                    {% if investment > 0 %}
-                                        <br><small>({{ "%.2f"|format((pnl/investment)*100) }}%)</small>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if net_qty > 0 %}
+                                        <button class="btn btn-danger btn-sm" onclick="sellPosition('{{ position.trdSym or position.sym }}', {{ net_qty }})">
+                                            <i class="fas fa-minus"></i> Sell
+                                        </button>
+                                    {% elif net_qty < 0 %}
+                                        <button class="btn btn-success btn-sm" onclick="buyPosition('{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
+                                            <i class="fas fa-plus"></i> Buy
+                                        </button>
                                     {% endif %}
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                {% if net_qty > 0 %}
-                                    <button class="btn btn-danger btn-sm" onclick="sellPosition('{{ position.trdSym or position.sym }}', {{ net_qty }})">
-                                        <i class="fas fa-minus"></i> Sell
+                                    <button class="btn btn-info btn-sm" onclick="getQuote('{{ position.tok }}', '{{ position.exSeg }}')">
+                                        <i class="fas fa-chart-line"></i>
                                     </button>
-                                {% elif net_qty < 0 %}
-                                    <button class="btn btn-success btn-sm" onclick="buyPosition('{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
-                                        <i class="fas fa-plus"></i> Buy
-                                    </button>
-                                {% endif %}
-                                <button class="btn btn-info btn-sm" onclick="getQuote('{{ position.tok }}', '{{ position.exSeg }}')">
-                                    <i class="fas fa-chart-line"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center py-5">
+                                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                <h4 class="text-muted">No Positions Found</h4>
+                                <p class="text-muted">You don't have any open positions at the moment.</p>
+                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i>Place Order
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -400,17 +413,28 @@ async function refreshPositions() {
     }
 }
 
+// Auto-refresh positions every 30 seconds
+let positionsRefreshInterval = setInterval(refreshPositions, 30000);
+
+// Refresh positions on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(refreshPositions, 1000); // Initial refresh after 1 second
+});
+
 function updatePositionsTable(positions) {
-    const tableBody = document.querySelector('tbody');
+    const tableBody = document.getElementById('positionsTableBody');
     if (!tableBody) return;
 
-    if (positions.length === 0) {
+    if (!positions || positions.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="11" class="text-center py-5">
                     <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
                     <h4 class="text-muted">No Positions Found</h4>
                     <p class="text-muted">You don't have any open positions at the moment.</p>
+                    <a href="/dashboard" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Place Order
+                    </a>
                 </td>
             </tr>
         `;
@@ -418,17 +442,28 @@ function updatePositionsTable(positions) {
     }
 
     let tableHTML = '';
-    positions.forEach(position => {
-        const netQty = (position.flBuyQty || position.buyQty || 0) - (position.flSellQty || position.sellQty || 0);
-        const buyAvg = (position.flBuyQty || position.buyQty || 0) > 0 ? 
-            (position.buyAmt || 0) / (position.flBuyQty || position.buyQty || 1) : 0;
-        const sellAvg = (position.flSellQty || position.sellQty || 0) > 0 ? 
-            (position.sellAmt || 0) / (position.flSellQty || position.sellQty || 1) : 0;
-        const pnl = position.urPnl || position.pnl || position.unrealised || 0;
-        const ltp = position.mktPrice || position.ltp || 0;
+    positions.forEach((position, index) => {
+        const buyQty = parseFloat(position.flBuyQty || position.buyQty || 0);
+        const sellQty = parseFloat(position.flSellQty || position.sellQty || 0);
+        const netQty = buyQty - sellQty;
+        
+        const buyAmt = parseFloat(position.buyAmt || 0);
+        const sellAmt = parseFloat(position.sellAmt || 0);
+        const buyAvg = buyQty > 0 ? buyAmt / buyQty : 0;
+        const sellAvg = sellQty > 0 ? sellAmt / sellQty : 0;
+        
+        const pnl = parseFloat(position.urPnl || position.pnl || position.rpnl || position.unrealised || 0);
+        const ltp = parseFloat(position.mktPrice || position.ltp || 0);
+        
+        // Calculate percentage if investment exists
+        let pnlPercentage = '';
+        if (pnl !== 0 && buyAmt > 0) {
+            const percentage = (pnl / buyAmt) * 100;
+            pnlPercentage = `<br><small>(${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%)</small>`;
+        }
 
         tableHTML += `
-            <tr>
+            <tr data-position-id="${position.tok || index}">
                 <td>
                     <strong>${position.trdSym || position.sym || position.tradingsymbol || 'N/A'}</strong>
                     ${position.series ? `<br><small class="text-muted">${position.series}</small>` : ''}
@@ -442,14 +477,14 @@ function updatePositionsTable(positions) {
                     <span class="badge bg-secondary">${position.prdCode || position.product || 'CNC'}</span>
                 </td>
                 <td class="text-success">
-                    ${position.flBuyQty || position.buyQty || '0'}
+                    ${buyQty.toFixed(0)}
                 </td>
                 <td class="text-danger">
-                    ${position.flSellQty || position.sellQty || '0'}
+                    ${sellQty.toFixed(0)}
                 </td>
                 <td>
                     <span class="${netQty > 0 ? 'text-success' : netQty < 0 ? 'text-danger' : 'text-muted'}">
-                        ${netQty}
+                        ${netQty.toFixed(0)}
                     </span>
                 </td>
                 <td>
@@ -458,12 +493,11 @@ function updatePositionsTable(positions) {
                 <td>
                     ${sellAvg > 0 ? `₹${sellAvg.toFixed(2)}` : '<span class="text-muted">N/A</span>'}
                 </td>
-                <td class="price-ltp">₹${parseFloat(ltp).toFixed(2)}</td>
+                <td class="price-ltp">₹${ltp.toFixed(2)}</td>
                 <td>
-                    <span class="position-pnl ${parseFloat(pnl) > 0 ? 'text-success' : parseFloat(pnl) < 0 ? 'text-danger' : 'text-muted'}">
-                        ₹${parseFloat(pnl).toFixed(2)}
-                        ${parseFloat(pnl) !== 0 && position.buyAmt && parseFloat(position.buyAmt) > 0 ? 
-                            `<br><small>(${((parseFloat(pnl) / parseFloat(position.buyAmt)) * 100).toFixed(2)}%)</small>` : ''}
+                    <span class="position-pnl ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">
+                        ₹${pnl.toFixed(2)}
+                        ${pnlPercentage}
                     </span>
                 </td>
                 <td>
@@ -477,7 +511,7 @@ function updatePositionsTable(positions) {
                                 <i class="fas fa-plus"></i> Buy
                             </button>` : ''
                         }
-                        <button class="btn btn-info btn-sm" onclick="getQuote('${position.tok}', '${position.exSeg}')">
+                        <button class="btn btn-info btn-sm" onclick="getQuote('${position.tok || ''}', '${position.exSeg || ''}')">
                             <i class="fas fa-chart-line"></i>
                         </button>
                     </div>
@@ -488,11 +522,13 @@ function updatePositionsTable(positions) {
 
     tableBody.innerHTML = tableHTML;
     
-    // Add update animation
+    // Add update animation with visual feedback
     tableBody.classList.add('data-updated');
     setTimeout(() => {
         tableBody.classList.remove('data-updated');
     }, 1500);
+    
+    console.log(`✅ Updated positions table with ${positions.length} positions`);
 }
 
 function updatePositionsSummary(positions) {
