@@ -835,7 +835,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="main-content" style="padding-top: 1rem;">
+            <div style="padding-top: 1rem;">
                 {% for category, message in messages %}
                     {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
                     <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
