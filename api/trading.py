@@ -1,67 +1,75 @@
 """Trading API endpoints"""
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, request, jsonify, session
 import logging
-from datetime import datetime, timedelta
-import random
 
 from utils.auth import login_required
 from trading_functions import TradingFunctions
 
-trading_api = Blueprint('trading_api', __name__, url_prefix='/api')
-
-# Initialize components
+trading_api = Blueprint('trading_api', __name__)
 trading_functions = TradingFunctions()
 
 @trading_api.route('/place_order', methods=['POST'])
 @login_required
 def place_order():
-    """API endpoint to place order"""
+    """Place a new order"""
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'error': 'Session expired'}), 401
+            return jsonify({'success': False, 'message': 'Session expired'}), 401
 
         order_data = request.get_json()
         result = trading_functions.place_order(client, order_data)
-        return jsonify(result)
+
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
 
     except Exception as e:
         logging.error(f"Place order error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @trading_api.route('/modify_order', methods=['POST'])
 @login_required
 def modify_order():
-    """API endpoint to modify order"""
+    """Modify an existing order"""
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'error': 'Session expired'}), 401
+            return jsonify({'success': False, 'message': 'Session expired'}), 401
 
         order_data = request.get_json()
         result = trading_functions.modify_order(client, order_data)
-        return jsonify(result)
+
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
 
     except Exception as e:
         logging.error(f"Modify order error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @trading_api.route('/cancel_order', methods=['POST'])
 @login_required
 def cancel_order():
-    """API endpoint to cancel order"""
+    """Cancel an existing order"""
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'error': 'Session expired'}), 401
+            return jsonify({'success': False, 'message': 'Session expired'}), 401
 
         order_data = request.get_json()
         result = trading_functions.cancel_order(client, order_data)
-        return jsonify(result)
+
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
 
     except Exception as e:
         logging.error(f"Cancel order error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @trading_api.route('/get_quotes')
 @login_required
@@ -123,7 +131,7 @@ def search_symbols():
         ]
 
         return jsonify(matching_symbols[:10])
-            
+
     except Exception as e:
         logging.error(f"Symbol search error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -149,7 +157,7 @@ def get_chart_data():
         try:
             quote_data = {'instrument_tokens': [symbol], 'quote_type': 'ltp'}
             quotes_response = trading_functions.get_quotes(client, quote_data)
-            
+
             # Calculate date range based on period
             end_dt = datetime.now()
             if period == '1D':
@@ -193,23 +201,23 @@ def get_chart_data():
             # Generate realistic historical data based on current price
             candlesticks = []
             volume_data = []
-            
+
             base_price = current_price * random.uniform(0.95, 1.05)
             price = base_price
-            
+
             current_dt = start_dt
             while current_dt <= end_dt:
                 open_price = price
                 price_change = random.uniform(-0.02, 0.02)
                 close_price = open_price * (1 + price_change)
-                
+
                 high_price = max(open_price, close_price) * random.uniform(1.0, 1.015)
                 low_price = min(open_price, close_price) * random.uniform(0.985, 1.0)
-                
+
                 volume = random.randint(50000, 500000)
-                
+
                 timestamp = int(current_dt.timestamp())
-                
+
                 candlesticks.append({
                     'time': timestamp,
                     'open': round(open_price, 2),
@@ -217,13 +225,13 @@ def get_chart_data():
                     'low': round(low_price, 2),
                     'close': round(close_price, 2)
                 })
-                
+
                 volume_data.append({
                     'time': timestamp,
                     'value': volume,
                     'color': '#16a34a' if close_price >= open_price else '#dc2626'
                 })
-                
+
                 price = close_price
                 current_dt += interval
 
@@ -234,11 +242,11 @@ def get_chart_data():
                 'period': period,
                 'current_price': current_price
             })
-            
+
         except Exception as api_error:
             logging.warning(f"Chart data API error: {str(api_error)}")
             return jsonify({'error': 'Unable to fetch chart data. Please ensure you have an active session.'}), 500
-            
+
     except Exception as e:
         logging.error(f"Chart data error: {str(e)}")
         return jsonify({'error': str(e)}), 500

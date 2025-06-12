@@ -408,8 +408,10 @@ def get_holdings_api():
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
+from api.trading import trading_api
 
 # Register blueprints
-app.register_blueprint(auth_bp)
+app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(main_bp)
-app.register_blueprint(dashboard_api)
+app.register_blueprint(dashboard_api, url_prefix='/api')
+app.register_blueprint(trading_api, url_prefix='/api')

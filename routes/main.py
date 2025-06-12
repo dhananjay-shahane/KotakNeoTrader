@@ -338,6 +338,29 @@ def orders():
         flash(f'Error loading orders: {str(e)}', 'error')
         return render_template('orders.html', orders=[])
 
+@main_bp.route('/api/orders')
+@login_required
+def api_orders():
+    """API endpoint for orders data (for AJAX refresh)"""
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+
+        orders_data = trading_functions.get_orders(client)
+        return jsonify({
+            'success': True,
+            'orders': orders_data,
+            'total_orders': len(orders_data) if orders_data else 0
+        })
+    except Exception as e:
+        logging.error(f"API orders error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'orders': []
+        }), 500
+
 @main_bp.route('/charts')
 @login_required
 def charts():
