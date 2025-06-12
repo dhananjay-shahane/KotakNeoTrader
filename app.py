@@ -65,29 +65,45 @@ websocket_handler = WebSocketHandler()
 def validate_current_session():
     """Validate current session without auto-login bypass"""
     try:
+        # Check if user is authenticated
         if not session.get('authenticated'):
             return False
             
-        access_token = session.get('access_token')
-        if not access_token:
-            return False
-            
+        # Check if required session data exists
+        required_fields = ['access_token', 'session_token', 'ucc']
+        for field in required_fields:
+            if not session.get(field):
+                logging.warning(f"Missing session field: {field}")
+                return False
+        
+        # Get or restore client
         client = session.get('client')
-        if not client and access_token:
-            client = neo_client.initialize_client_with_tokens(
-                access_token,
-                session.get('session_token'),
-                session.get('sid')
-            )
-            if client:
-                session['client'] = client
+        if not client:
+            access_token = session.get('access_token')
+            session_token = session.get('session_token')
+            sid = session.get('sid')
             
+            if access_token and session_token and sid:
+                try:
+                    client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
+                    if client:
+                        session['client'] = client
+                except Exception as init_error:
+                    logging.error(f"Failed to initialize client: {init_error}")
+                    return False
+        
         if not client:
             return False
             
-        if neo_client.validate_session(client):
-            return True
-        else:
+        # Validate session with neo_client
+        try:
+            if neo_client.validate_session(client):
+                return True
+            else:
+                session.clear()
+                return False
+        except Exception as val_error:
+            logging.error(f"Session validation failed: {val_error}")
             session.clear()
             return False
             
@@ -112,53 +128,95 @@ def login():
     """Login page with TOTP authentication only"""
     if request.method == 'POST':
         try:
-            mobile_number = request.form.get('mobile_number')
-            ucc = request.form.get('ucc')
-            totp = request.form.get('totp')
-            mpin = request.form.get('mpin')
+            # Get form data
+            mobile_number = request.form.get('mobile_number', '').strip()
+            ucc = request.form.get('ucc', '').strip()
+            totp = request.form.get('totp', '').strip()
+            mpin = request.form.get('mpin', '').strip()
 
+            # Validate inputs
             if not all([mobile_number, ucc, totp, mpin]):
                 flash('All fields are required', 'error')
                 return render_template('login.html')
             
-            # Execute TOTP login
-            login_response = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+            # Validate formats
+            if len(mobile_number) != 10 or not mobile_number.isdigit():
+                flash('Mobile number must be 10 digits', 'error')
+                return render_template('login.html')
+                
+            if len(totp) != 6 or not totp.isdigit():
+                flash('TOTP must be 6 digits', 'error')
+                return render_template('login.html')
+                
+            if len(mpin) != 6 or not mpin.isdigit():
+                flash('MPIN must be 6 digits', 'error')
+                return render_template('login.html')
             
-            if login_response and login_response.get('data'):
-                # Store session data
+            # Execute TOTP login
+            result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+            
+            if result and result.get('success'):
+                client = result.get('client')
+                session_data = result.get('session_data', {})
+                
+                # Store in session
                 session['authenticated'] = True
-                session['access_token'] = login_response.get('data', {}).get('token')
-                session['session_token'] = login_response.get('data', {}).get('sid')
-                session['sid'] = login_response.get('data', {}).get('sid')
-                session['user_data'] = login_response.get('data', {})
+                session['access_token'] = session_data.get('access_token')
+                session['session_token'] = session_data.get('session_token')
+                session['sid'] = session_data.get('sid')
+                session['ucc'] = ucc
+                session['client'] = client
+                session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                session['greeting_name'] = session_data.get('greetingName', ucc)
+                session.permanent = True
                 
-                # Store user in database
-                user = user_manager.create_or_update_user(login_response)
-                if user:
-                    user_manager.create_user_session(user.id, login_response)
+                # Store additional user data
+                session['rid'] = session_data.get('rid')
+                session['user_id'] = session_data.get('user_id')
+                session['client_code'] = session_data.get('client_code')
+                session['is_trial_account'] = session_data.get('is_trial_account')
                 
-                flash('Login successful!', 'success')
+                # Store user data in database
+                try:
+                    login_response = {
+                        'success': True,
+                        'data': {
+                            'ucc': ucc,
+                            'mobile_number': mobile_number,
+                            'greeting_name': session_data.get('greetingName'),
+                            'user_id': session_data.get('user_id'),
+                            'client_code': session_data.get('client_code'),
+                            'product_code': session_data.get('product_code'),
+                            'account_type': session_data.get('account_type'),
+                            'branch_code': session_data.get('branch_code'),
+                            'is_trial_account': session_data.get('is_trial_account', False),
+                            'access_token': session_data.get('access_token'),
+                            'session_token': session_data.get('session_token'),
+                            'sid': session_data.get('sid'),
+                            'rid': session_data.get('rid')
+                        }
+                    }
+                    
+                    db_user = user_manager.create_or_update_user(login_response)
+                    user_session = user_manager.create_user_session(db_user.id, login_response)
+                    
+                    session['db_user_id'] = db_user.id
+                    session['db_session_id'] = user_session.session_id
+                    
+                    logging.info(f"User data stored in database for UCC: {ucc}")
+                    
+                except Exception as db_error:
+                    logging.error(f"Failed to store user data in database: {db_error}")
+                
+                flash('Successfully authenticated with TOTP!', 'success')
                 return redirect(url_for('dashboard'))
             else:
-                # Handle specific error cases
-                if login_response and login_response.get('error'):
-                    errors = login_response.get('error', [])
-                    if errors and isinstance(errors, list):
-                        error_msg = errors[0].get('message', 'Login failed')
-                        # Check for account lock
-                        if 'locked' in error_msg.lower():
-                            flash(f'Account Error: {error_msg}. Please try again tomorrow or contact support.', 'error')
-                        else:
-                            flash(f'Login Error: {error_msg}', 'error')
-                    else:
-                        flash('Login failed. Please check your credentials.', 'error')
-                else:
-                    error_msg = login_response.get('emsg', 'Login failed') if login_response else 'Login failed'
-                    flash(f'Login failed: {error_msg}', 'error')
+                error_msg = result.get('message', 'Authentication failed') if result else 'Login failed'
+                flash(f'TOTP login failed: {error_msg}', 'error')
                 
         except Exception as e:
-            logging.error(f"Login error: {e}")
-            flash('Login failed due to technical error', 'error')
+            logging.error(f"Login error: {str(e)}")
+            flash(f'Login failed: {str(e)}', 'error')
     
     return render_template('login.html')
 

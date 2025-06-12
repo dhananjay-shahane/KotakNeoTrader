@@ -229,6 +229,14 @@
                 e.target.value = value;
             });
 
+            // Auto-format mobile number input
+            const mobileInput = document.getElementById("mobile_number");
+            mobileInput.addEventListener("input", function (e) {
+                let value = e.target.value.replace(/\D/g, "");
+                if (value.length > 10) value = value.substr(0, 10);
+                e.target.value = value;
+            });
+
             // Auto-format MPIN input (6 digits)
             mpinInput.addEventListener("input", function (e) {
                 let value = e.target.value.replace(/\D/g, "");

@@ -3,6 +3,27 @@ import os
 from neo_api_client import NeoAPI
 
 class NeoClient:
+    
+    def initialize_client_with_tokens(self, access_token, session_token, sid):
+        """Initialize Neo client with existing tokens"""
+        try:
+            from neo_api_client import NeoAPI
+            
+            client = NeoAPI(
+                consumer_key=os.environ.get('KOTAK_CONSUMER_KEY'),
+                consumer_secret=os.environ.get('KOTAK_CONSUMER_SECRET'),
+                environment='prod'
+            )
+            
+            # Set tokens directly
+            client.access_token = access_token
+            client.session_token = session_token
+            client.sid = sid
+            
+            return client
+        except Exception as e:
+            logging.error(f"Failed to initialize client with tokens: {e}")
+            return None
     """Kotak Neo API Client wrapper"""
     
     def __init__(self):
