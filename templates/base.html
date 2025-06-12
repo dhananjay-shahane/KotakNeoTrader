@@ -1072,7 +1072,8 @@
                 if (!document.hidden) {
                     const currentPage = window.location.pathname;
                     if (currentPage === '/dashboard') {
-                        location.reload();
+                        // Use relative URL for refresh
+                        window.location.href = '/dashboard';
                     }
                 }
             }, 30000);
