@@ -375,11 +375,17 @@ def api_live_quotes():
 def api_user_profile():
     """API endpoint for user profile"""
     try:
+        # Get login time from session or format current time
+        login_time = session.get('login_time', 'N/A')
+        if login_time == 'N/A' or not login_time:
+            from datetime import datetime
+            login_time = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
+        
         # Return user session info
         profile_data = {
             'greeting_name': session.get('user_name', 'User'),
             'ucc': session.get('user_id', 'N/A'),
-            'login_time': session.get('login_time', 'N/A'),
+            'login_time': login_time,
             'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
             'token_status': 'Valid' if session.get('authenticated') else 'Invalid',
             'needs_reauth': not session.get('authenticated', False)
