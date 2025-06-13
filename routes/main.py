@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify
 import logging
 import time
+from datetime import datetime
 
 from utils.auth import login_required, validate_current_session
 from trading_functions import TradingFunctions
@@ -148,7 +149,7 @@ def positions():
             return redirect(url_for('auth.login'))
 
         positions_data = trading_functions.get_positions(client)
-        
+
         # Log the actual data structure for debugging
         if positions_data:
             if isinstance(positions_data, list) and len(positions_data) > 0:
@@ -162,11 +163,11 @@ def positions():
                     return render_template('positions.html', positions=[])
         else:
             logging.info("No positions data returned")
-        
+
         # Ensure positions_data is always a list
         if not isinstance(positions_data, list):
             positions_data = []
-            
+
         return render_template('positions.html', positions=positions_data)
     except Exception as e:
         logging.error(f"Positions error: {str(e)}")
@@ -184,7 +185,7 @@ def api_positions():
 
         # Get fresh positions data
         positions_data = trading_functions.get_positions(client)
-        
+
         # Handle error responses
         if isinstance(positions_data, dict) and 'error' in positions_data:
             error_message = positions_data['error']
@@ -195,18 +196,18 @@ def api_positions():
                 'error': error_message,
                 'positions': []
             }), 400
-        
+
         # Ensure positions_data is a list
         if not isinstance(positions_data, list):
             positions_data = []
-        
+
         # Calculate summary statistics
         total_pnl = 0.0
         realized_pnl = 0.0
         unrealized_pnl = 0.0
         long_positions = 0
         short_positions = 0
-        
+
         if positions_data:
             for position in positions_data:
                 # Calculate P&L
@@ -217,20 +218,20 @@ def api_positions():
                     pnl = float(position.get('pnl', 0))
                 elif position.get('rpnl'):
                     pnl = float(position.get('rpnl', 0))
-                
+
                 total_pnl += pnl
-                
+
                 # Calculate realized/unrealized P&L
                 if position.get('rlPnl'):
                     realized_pnl += float(position.get('rlPnl', 0))
                 if position.get('urPnl'):
                     unrealized_pnl += float(position.get('urPnl', 0))
-                
+
                 # Count long/short positions
                 buy_qty = float(position.get('flBuyQty', 0) or position.get('buyQty', 0) or 0)
                 sell_qty = float(position.get('flSellQty', 0) or position.get('sellQty', 0) or 0)
                 net_qty = buy_qty - sell_qty
-                
+
                 if net_qty > 0:
                     long_positions += 1
                 elif net_qty < 0:
@@ -253,7 +254,7 @@ def api_positions():
         error_message = str(e)
         logging.error(f"API positions error: {error_message}")
         logging.error(f"Error type: {type(e).__name__}")
-        
+
         # Check for specific error types
         if 'timeout' in error_message.lower():
             error_message = "Request timeout - please try again"
@@ -261,7 +262,7 @@ def api_positions():
             error_message = "Connection error - please check your internet connection"
         elif '2fa' in error_message.lower():
             error_message = "Authentication required - please login again"
-        
+
         return jsonify({
             'success': False,
             'message': error_message,
@@ -280,7 +281,7 @@ def api_portfolio_summary():
 
         # Get dashboard data
         dashboard_data = trading_functions.get_dashboard_data(client)
-        
+
         # Calculate summary statistics
         limits_data = dashboard_data.get('limits', {})
         portfolio_summary = {
@@ -293,7 +294,7 @@ def api_portfolio_summary():
             'total_pnl': 0.0,
             'total_investment': 0.0
         }
-        
+
         # Calculate P&L from positions
         positions = dashboard_data.get('positions', [])
         for position in positions:
@@ -302,7 +303,7 @@ def api_portfolio_summary():
                 portfolio_summary['total_pnl'] += pnl
             except (ValueError, TypeError):
                 continue
-        
+
         # Calculate investment from holdings
         holdings = dashboard_data.get('holdings', [])
         for holding in holdings:
@@ -356,7 +357,7 @@ def api_live_quotes():
             {'symbol': 'HDFC', 'ltp': 1789.25, 'changePct': 0.5},
             {'symbol': 'INFY', 'ltp': 1523.80, 'changePct': 2.1}
         ]
-        
+
         return jsonify({
             'success': True,
             'quotes': sample_quotes
@@ -380,7 +381,7 @@ def api_user_profile():
         if login_time == 'N/A' or not login_time:
             from datetime import datetime
             login_time = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
-        
+
         # Return user session info
         profile_data = {
             'greeting_name': session.get('user_name', 'User'),
@@ -390,7 +391,7 @@ def api_user_profile():
             'token_status': 'Valid' if session.get('authenticated') else 'Invalid',
             'needs_reauth': not session.get('authenticated', False)
         }
-        
+
         return jsonify({
             'success': True,
             'profile': profile_data
@@ -431,7 +432,7 @@ def api_holdings():
 
         # Get fresh holdings data
         holdings_data = trading_functions.get_holdings(client)
-        
+
         # Handle error responses
         if isinstance(holdings_data, dict) and 'error' in holdings_data:
             error_message = holdings_data['error']
@@ -442,22 +443,22 @@ def api_holdings():
                 'error': error_message,
                 'holdings': []
             }), 400
-        
+
         # Ensure holdings_data is a list
         if not isinstance(holdings_data, list):
             holdings_data = []
-        
+
         # Calculate summary statistics
         total_invested = 0.0
         current_value = 0.0
         total_holdings = len(holdings_data)
-        
+
         if holdings_data:
             for holding in holdings_data:
                 # Calculate invested value
                 invested = float(holding.get('holdingCost', 0) or 0)
                 total_invested += invested
-                
+
                 # Calculate current market value
                 market_val = float(holding.get('mktValue', 0) or 0)
                 current_value += market_val
@@ -473,12 +474,12 @@ def api_holdings():
             },
             'timestamp': int(time.time())
         })
-        
+
     except Exception as e:
         error_message = str(e)
         logging.error(f"API holdings error: {error_message}")
         logging.error(f"Error type: {type(e).__name__}")
-        
+
         # Check for specific error types
         if 'timeout' in error_message.lower():
             error_message = "Request timeout - please try again"
@@ -486,7 +487,7 @@ def api_holdings():
             error_message = "Connection error - please check your internet connection"
         elif '2fa' in error_message.lower():
             error_message = "Authentication required - please login again"
-        
+
         return jsonify({
             'success': False,
             'message': error_message,
@@ -551,3 +552,43 @@ def signals():
 def deals():
     """Deals page for placed orders from signals"""
     return render_template('deals.html')
+
+from flask import Flask
+from datetime import datetime
+
+app = Flask(__name__)
+
+@app.route('/api/user_profile')
+def get_user_profile():
+    """Get user profile information"""
+    # Ensure session is available, using a default if needed
+    session_data = session if 'session' in locals() else {}
+
+    # Ensure validate_current_session is available
+    def validate_current_session():
+        return True  # Or your actual validation logic
+
+    if not validate_current_session():
+        return jsonify({'success': False, 'error': 'Session expired'}), 401
+
+    # Get login time from session or use current time
+    login_time = session_data.get('login_time')
+    if not login_time or login_time == 'N/A':
+        login_time = datetime.now().isoformat()
+
+    profile_data = {
+        'ucc': session_data.get('ucc', 'N/A'),
+        'greeting_name': f"User {session_data.get('ucc', 'N/A')}",
+        'access_token': session_data.get('access_token', 'N/A')[:30] + '...' if session_data.get('access_token') else 'N/A',
+        'session_token': session_data.get('session_token', 'N/A')[:30] + '...' if session_data.get('session_token') else 'N/A',
+        'sid': session_data.get('sid', 'N/A')[:20] + '...' if session_data.get('sid') else 'N/A',
+        'login_time': login_time,
+        'token_status': 'Valid' if validate_current_session() else 'Invalid',
+        'needs_reauth': False
+    }
+
+    return jsonify({'success': True, 'profile': profile_data})
+
+if __name__ == '__main__':
+    app.secret_key = 'your_secret_key'  # Set a secret key for session management
+    app.run(debug=True)
