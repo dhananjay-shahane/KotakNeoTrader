@@ -194,203 +194,69 @@
                             </tr>
                         </thead>
                         <tbody id="quotesTableBody">
-                            <tr>
-                                <td><strong>RELIANCE</strong></td>
-                                <td class="price-ltp" data-symbol="RELIANCE">₹2,450.75</td>
-                                <td class="price-change text-success">+12.50</td>
-                                <td class="text-success">+0.51%</td>
-                                <td> 1,25,432</td>
-                                <td><small class="text-muted">15:29:45</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'RELIANCE')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'RELIANCE')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>TCS</strong></td>
-                                <td class="price-ltp" data-symbol="TCS">₹3,675.20</td>
-                                <td class="price-change text-danger">-8.30</td>
-                                <td class="text-danger">-0.23%</td>
-                                <td>89,567</td>
-                                <td><small class="text-muted">15:29:43</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'TCS')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'TCS')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>INFY</strong></td>
-                                <td class="price-ltp" data-symbol="INFY">₹1,832.45</td>
-                                <td class="price-change text-success">+22.15</td>
-                                <td class="text-success">+1.22%</td>
-                                <td> 2,45,789</td>
-                                <td><small class="text-muted">15:29:41</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'INFY')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'INFY')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>HDFCBANK</strong></td>
-                                <td class="price-ltp" data-symbol="HDFCBANK">₹1,645.80</td>
-                                <td class="price-change text-success">+5.60</td>
-                                <td class="text-success">+0.34%</td>
-                                <td> 1,67,890</td>
-                                <td><small class="text-muted">15:29:40</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'HDFCBANK')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'HDFCBANK')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>ICICIBANK</strong></td>
-                                <td class="price-ltp" data-symbol="ICICIBANK">₹1,198.25</td>
-                                <td class="price-change text-danger">-3.75</td>
-                                <td class="text-danger">-0.31%</td>
-                                <td> 3,21,456</td>
-                                <td><small class="text-muted">15:29:38</small></td>
-                                <td>
-                                    <button class="btn btn-xs btn-success me-1" onclick="openPlaceOrderModal('BUY', 'ICICIBANK')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', 'ICICIBANK')">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Live Positions Table -->
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary border-0 shadow-lg">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-chart-pie me-2 text-info"></i>Live Positions
-                    <span class="badge bg-info ms-2">{{ data.total_positions or 0 }}</span>
-                </h5>
-                <div>
-                    <button class="btn btn-sm btn-outline-light me-2" onclick="refreshPositions()">
-                        <i class="fas fa-sync me-1"></i>Refresh
-                    </button>
-                    <a href="{{ url_for('positions') }}" class="btn btn-sm btn-info">
-                        <i class="fas fa-external-link-alt me-1"></i>View All
-                    </a>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="positionsTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="fas fa-tag me-1"></i>Symbol</th>
-                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
-                                <th><i class="fas fa-rupee-sign me-1"></i>Avg Price</th>
-                                <th><i class="fas fa-chart-line me-1"></i>LTP</th>
-                                <th><i class="fas fa-calculator me-1"></i>P&L</th>
-                                <th><i class="fas fa-percentage me-1"></i>P&L %</th>
-                                <th><i class="fas fa-layer-group me-1"></i>Product</th>
-                                <th><i class="fas fa-cog me-1"></i>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="positionsTableBody">
-                            {% if data.positions %}
-                                {% if data.positions.get('error') %}
-                                <tr><td colspan="5" class="text-center text-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    {{ data.positions.error }}
-                                    <br><small>Please refresh your tokens using the token refresh tool</small>
-                                </td></tr>
-                                {% else %}
-                                    {% for position in data.positions[:10] %}
-                                    <tr data-position-symbol="{{ position.trdSym or position.sym }}" class="position-row">
-                                        <td>
-                                            <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
-                                            <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
-                                        </td>
-                                        <td>
-                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                            {% if net_qty > 0 %}
-                                                <span class="text-success fw-bold">+{{ net_qty }}</span>
-                                                <br><small class="text-success">LONG</small>
-                                            {% elif net_qty < 0 %}
-                                                <span class="text-danger fw-bold">{{ net_qty }}</span>
-                                                <br><small class="text-danger">SHORT</small>
-                                            {% else %}
-                                                <span class="text-muted">0</span>
-                                                <br><small class="text-muted">FLAT</small>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-warning">₹{{ "{:,.2f}"|format(position.avgPrice|float) if position.avgPrice else '0.00' }}</td>
-                                        <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
-                                            ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else '0.00' }}
-                                        </td>
-                                        <td class="position-pnl">
-                                            {% set pnl = position.pnl|float if position.pnl else 0.0 %}
-                                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                ₹{{ "{:,.2f}"|format(pnl) }}
+                            {% if data.holdings %}
+                                {% for holding in data.holdings[:10] %}
+                                <tr data-symbol="{{ holding.sym or holding.trdSym }}">
+                                    <td>
+                                        <strong class="text-primary">{{ holding.sym or holding.trdSym or 'N/A' }}</strong>
+                                        <br><small class="text-muted">{{ holding.exch or 'NSE' }}</small>
+                                    </td>
+                                    <td class="price-ltp fw-bold" data-symbol="{{ holding.sym or holding.trdSym }}">
+                                        ₹{{ "{:,.2f}"|format(holding.ltp|float) if holding.ltp else (holding.mktPrice|float if holding.mktPrice else 0.00) }}
+                                    </td>
+                                    <td class="price-change">
+                                        {% if holding.dayChange %}
+                                            {% set change = holding.dayChange|float %}
+                                            <span class="{% if change > 0 %}text-success{% elif change < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ "{:+.2f}"|format(change) }}
                                             </span>
-                                        </td>
-                                        <td>
-                                            {% if position.avgPrice and position.ltp %}
-                                                {% set pnl_percent = ((position.ltp|float - position.avgPrice|float) / position.avgPrice|float * 100) %}
-                                                <span class="fw-bold {% if pnl_percent > 0 %}text-success{% elif pnl_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                    {{ "{:+.2f}"|format(pnl_percent) }}%
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">0.00%</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge {% if position.prod == 'MIS' %}bg-warning{% elif position.prod == 'CNC' %}bg-success{% else %}bg-info{% endif %}">
-                                                {{ position.prod or 'CNC' }}
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if holding.dayChangePerc %}
+                                            {% set change_perc = holding.dayChangePerc|float %}
+                                            <span class="{% if change_perc > 0 %}text-success{% elif change_perc < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ "{:+.2f}"|format(change_perc) }}%
                                             </span>
-                                        </td>
-                                        <td>
-                                            {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                            {% if net_qty > 0 %}
-                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}', {{ net_qty }})">
-                                                    <i class="fas fa-minus"></i> Exit
-                                                </button>
-                                            {% elif net_qty < 0 %}
-                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}', {{ net_qty|abs }})">
-                                                    <i class="fas fa-plus"></i> Cover
-                                                </button>
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-info">{{ holding.qty or '0' }}</span>
+                                        <br><small class="text-muted">Qty: {{ holding.brkQty or '0' }}</small>
+                                    </td>
+                                    <td><small class="text-muted" id="time-{{ holding.sym or holding.trdSym }}">Live</small></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ holding.sym or holding.trdSym }}')">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                            <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ holding.sym or holding.trdSym }}')">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            {% if data.orders %}
+                                                {% set pending_orders = data.orders|selectattr('trdSym', 'equalto', holding.sym or holding.trdSym)|selectattr('ordSt', 'in', ['pending', 'open', 'trigger_pending'])|list %}
+                                                {% if pending_orders %}
+                                                    <button class="btn btn-xs btn-warning" onclick="showOrderManagement('{{ holding.sym or holding.trdSym }}')">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                {% endif %}
                                             {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        <i class="fas fa-chart-pie fa-3x mb-3 d-block"></i>
-                                        <h6>No positions found</h6>
-                                        <p>Start trading to see your positions here</p>
-                                        <button class="btn btn-primary" onclick="openPlaceOrderModal('BUY')">
-                                            <i class="fas fa-plus me-1"></i>Place First Order
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-chart-line fa-3x mb-3 d-block"></i>
+                                        <h6>No market data available</h6>
+                                        <p>Holdings data will appear here when available</p>
+                                        <button class="btn btn-primary" onclick="refreshQuotes()">
+                                            <i class="fas fa-sync me-1"></i>Refresh Data
                                         </button>
                                     </td>
                                 </tr>
@@ -399,16 +265,11 @@
                     </table>
                 </div>
             </div>
-            {% if data.positions and data.positions|length > 10 %}
-            <div class="card-footer bg-dark border-0 text-center">
-                <a href="{{ url_for('positions') }}" class="btn btn-outline-light">
-                    <i class="fas fa-eye me-1"></i>View All {{ data.total_positions }} Positions
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
+
+
 
 
 
@@ -1295,5 +1156,147 @@ setInterval(() => {
                 tokenStatusText.className = 'text-danger';
             }
         }
+
+// Order Management Functions
+function showOrderManagement(symbol) {
+    fetch(`/api/orders?symbol=${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.orders.length > 0) {
+                showOrderModal(data.orders);
+            } else {
+                alert('No pending orders found for ' + symbol);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching orders:', error);
+            alert('Error fetching orders');
+        });
+}
+
+function showOrderModal(orders) {
+    let modalContent = `
+        <div class="modal fade" id="orderManagementModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Manage Orders</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Type</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+    
+    orders.forEach(order => {
+        modalContent += `
+            <tr>
+                <td><strong>${order.trdSym || order.sym}</strong></td>
+                <td><span class="badge ${order.trnsTp === 'BUY' ? 'bg-success' : 'bg-danger'}">${order.trnsTp}</span></td>
+                <td>${order.qty}</td>
+                <td>₹${order.prc || 'Market'}</td>
+                <td><span class="badge bg-warning">${order.ordSt}</span></td>
+                <td>
+                    <button class="btn btn-xs btn-primary me-1" onclick="modifyOrder('${order.nOrdNo}', '${order.trdSym}', ${order.qty}, ${order.prc || 0})">
+                        <i class="fas fa-edit"></i> Modify
+                    </button>
+                    <button class="btn btn-xs btn-danger" onclick="cancelOrder('${order.nOrdNo}')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </td>
+            </tr>`;
+    });
+    
+    modalContent += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    
+    const existingModal = document.getElementById('orderManagementModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    new bootstrap.Modal(document.getElementById('orderManagementModal')).show();
+}
+
+function modifyOrder(orderNo, symbol, currentQty, currentPrice) {
+    const newQty = prompt(`Modify quantity for ${symbol}:`, currentQty);
+    const newPrice = prompt(`Modify price for ${symbol}:`, currentPrice);
+    
+    if (newQty && newPrice) {
+        const modifyData = {
+            order_no: orderNo,
+            quantity: parseInt(newQty),
+            price: parseFloat(newPrice)
+        };
+        
+        fetch('/api/modify_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(modifyData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order modified successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('orderManagementModal')).hide();
+                refreshDashboard();
+            } else {
+                alert('Failed to modify order: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error modifying order');
+        });
+    }
+}
+
+function cancelOrder(orderNo) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        fetch('/api/cancel_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order_no: orderNo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order cancelled successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('orderManagementModal')).hide();
+                refreshDashboard();
+            } else {
+                alert('Failed to cancel order: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error cancelling order');
+        });
+    }
+}
 </script>
 {% endblock %}
