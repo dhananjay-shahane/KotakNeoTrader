@@ -35,7 +35,7 @@
                                 <h3 class="text-white mb-1">Welcome back, {{ session.get('ucc', 'Trader') }}!</h3>
                                 <p class="text-white-50 mb-0">
                                     <i class="fas fa-clock me-1"></i>
-                                    Last login: <span id="lastLoginTime">Loading...</span>
+                                    Last login: <span id="lastLoginTime">{{ session.get('login_time', 'Today') }}</span>
                                 </p>
                             </div>
                         </div>
@@ -559,123 +559,7 @@
 
                 
 
-                <!-- Positions Table -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-dark table-hover" id="portfolioPositions">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Exchange</th>
-                                <th>Product</th>
-                                <th class="text-center">Buy Qty</th>
-                                <th class="text-center">Sell Qty</th>
-                                <th class="text-center">Net Qty</th>
-                                <th>Buy Amount</th>
-                                <th>Sell Amount</th>
-                                <th>P&L</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="positionsTableBody">
-                            <tr>
-                                <td colspan="10" class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Holdings Table -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-dark table-hover" id="portfolioHoldings">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Exchange</th>
-                                <th class="text-center">Quantity</th>
-                                <th>Avg Price</th>
-                                <th>LTP</th>
-                                <th>Market Value</th>
-                                <th>P&L</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="holdingsTableBody">
-                            {% if data.holdings %}
-                                {% if data.holdings is mapping and data.holdings.get('error') %}
-                                <tr><td colspan="8" class="text-center text-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    {{ data.holdings.error }}
-                                    <br><small>Please refresh your tokens using the token refresh tool</small>
-                                </td></tr>
-                                {% elif data.holdings is iterable and data.holdings is not string %}
-                                    {% for holding in data.holdings %}
-                                    {% if holding is mapping %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ holding.trdSym or holding.sym or holding.get('tradingSymbol', 'N/A') }}</strong>
-                                            <br><small class="text-muted">{{ holding.series or holding.get('series', '') }}</small>
-                                        </td>
-                                        <td><span class="badge bg-info">{{ holding.exSeg or holding.get('exchange', 'N/A') }}</span></td>
-                                        <td class="text-center">{{ holding.quantity or holding.get('qty', 0) }}</td>
-                                        <td class="text-end">₹{{ "%.2f"|format(holding.avgPrice or holding.get('averagePrice', 0) or 0) }}</td>
-                                        <td class="text-end">₹{{ "%.2f"|format(holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0) }}</td>
-                                        <td class="text-end">
-                                            {% set qty = holding.quantity or holding.get('qty', 0) or 0 %}
-                                            {% set ltp = holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0 %}
-                                            ₹{{ "%.2f"|format(qty * ltp) }}
-                                        </td>
-                                        <td class="text-end">
-                                            {% set qty = holding.quantity or holding.get('qty', 0) or 0 %}
-                                            {% set ltp = holding.ltp or holding.get('lastPrice', 0) or holding.get('marketPrice', 0) or 0 %}
-                                            {% set avg_price = holding.avgPrice or holding.get('averagePrice', 0) or 0 %}
-                                            {% set market_value = qty * ltp %}
-                                            {% set invested_value = qty * avg_price %}
-                                            {% set pnl = market_value - invested_value %}
-                                            <span class="{{ 'text-success' if pnl >= 0 else 'text-danger' }}">
-                                            ₹{{ "%.2f"|format(pnl) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge {{ 'bg-success' if holding.get('sqrFlg') == 'Y' or holding.get('status') == 'Active' else 'bg-warning' }}">
-                                            {{ 'Active' if holding.get('sqrFlg') == 'Y' or holding.get('status') == 'Active' else 'Inactive' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                                {% endfor %}
-                                {% else %}
-                                    <tr><td colspan="8" class="text-center text-warning">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>Invalid holdings data format
-                                    </td></tr>
-                                {% endif %}
-                            {% else %}
-                                <tr><td colspan="8" class="text-center py-3">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>No holdings found
-                                </td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Limits Information -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card bg-secondary">
-                            <div class="card-header">
-                                <h6 class="mb-0">Account Limits</h6>
-                            </div>
-                            <div class="card-body">
-                                <div id="limitsDisplay">
-                                    <div class="text-center py-3">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading limits data...
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
             <div class="modal-footer border-top border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -1499,7 +1383,10 @@ async function loadUserProfile() {
             const lastLoginElement = document.getElementById('lastLoginTime');
             if (lastLoginElement) {
                 if (profile.login_time && profile.login_time !== 'N/A') {
-                    lastLoginElement.textContent = profile.login_time;
+                    // Format the login time properly
+                    const loginDate = new Date(profile.login_time);
+                    const formattedTime = loginDate.toLocaleDateString() + ' at ' + loginDate.toLocaleTimeString();
+                    lastLoginElement.textContent = formattedTime;
                 } else {
                     const now = new Date();
                     const formattedTime = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
@@ -1510,14 +1397,15 @@ async function loadUserProfile() {
             // Update login time in profile modal if available
             const loginTimeElement = document.getElementById('loginTime');
             if (loginTimeElement && profile.login_time !== 'N/A') {
-                loginTimeElement.textContent = profile.login_time;
+                const loginDate = new Date(profile.login_time);
+                loginTimeElement.textContent = loginDate.toLocaleDateString() + ' at ' + loginDate.toLocaleTimeString();
             }
 
             console.log('User profile loaded:', profile);
         } else {
-            // Fallback to current time if profile data is not available
+            // Set current time as login time if no profile data
             const lastLoginElement = document.getElementById('lastLoginTime');
-            if (lastLoginElement) {
+            if (lastLoginElement && lastLoginElement.textContent === 'Loading...') {
                 const now = new Date();
                 const formattedTime = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
                 lastLoginElement.textContent = formattedTime;
@@ -1525,9 +1413,9 @@ async function loadUserProfile() {
         }
     } catch (error) {
         console.error('Error loading user profile:', error);
-        // Fallback to current time on error
+        // Set current time as fallback
         const lastLoginElement = document.getElementById('lastLoginTime');
-        if (lastLoginElement) {
+        if (lastLoginElement && lastLoginElement.textContent === 'Loading...') {
             const now = new Date();
             const formattedTime = now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
             lastLoginElement.textContent = formattedTime;
