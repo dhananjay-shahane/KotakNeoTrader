@@ -202,8 +202,11 @@
                         <tbody id="positionsTableBody">
                             {% if data.positions and data.positions|length > 0 %}
                                 {% for position in data.positions %}
-                                    {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
-                                    {% if net_qty != 0 %}
+                                    {% set buy_qty = position.flBuyQty|int %}
+                                    {% set sell_qty = position.flSellQty|int %}
+                                    {% set net_qty = buy_qty - sell_qty %}
+                                    <!-- Show positions that have any trading activity -->
+                                    {% if buy_qty > 0 or sell_qty > 0 %}
                                     {% set avg_price = ((position.buyAmt|float) - (position.sellAmt|float)) / net_qty if net_qty != 0 else 0 %}
                                     {% set current_price = position.ltp|float if position.ltp else (position.stkPrc|float if position.stkPrc else 0) %}
                                     {% set current_value = current_price * net_qty %}
