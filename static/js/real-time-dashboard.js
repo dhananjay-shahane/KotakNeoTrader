@@ -91,7 +91,13 @@ class RealTimeDashboard {
     }
 
     async manualRefresh() {
-        const refreshBtn = document.querySelector('[onclick*="refreshDashboard"], .btn:contains("Refresh")');
+        // Find refresh buttons using valid CSS selectors
+        const refreshBtn = document.querySelector('[onclick*="refreshDashboard"]') || 
+                          document.querySelector('button[onclick*="refresh"]') ||
+                          Array.from(document.querySelectorAll('.btn')).find(btn => 
+                              btn.textContent.toLowerCase().includes('refresh')
+                          );
+        
         if (refreshBtn) {
             refreshBtn.classList.add('refresh-loading');
         }

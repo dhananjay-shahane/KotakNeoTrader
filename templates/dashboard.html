@@ -194,69 +194,72 @@
                             </tr>
                         </thead>
                         <tbody id="quotesTableBody">
-                            {% if data.holdings %}
-                                {% for holding in data.holdings[:10] %}
-                                <tr data-symbol="{{ holding.sym or holding.trdSym }}">
-                                    <td>
-                                        <strong class="text-primary">{{ holding.sym or holding.trdSym or 'N/A' }}</strong>
-                                        <br><small class="text-muted">{{ holding.exch or 'NSE' }}</small>
-                                    </td>
-                                    <td class="price-ltp fw-bold" data-symbol="{{ holding.sym or holding.trdSym }}">
-                                        ₹{{ "{:,.2f}"|format(holding.ltp|float) if holding.ltp else (holding.mktPrice|float if holding.mktPrice else 0.00) }}
-                                    </td>
-                                    <td class="price-change">
-                                        {% if holding.dayChange %}
-                                            {% set change = holding.dayChange|float %}
-                                            <span class="{% if change > 0 %}text-success{% elif change < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                {{ "{:+.2f}"|format(change) }}
-                                            </span>
-                                        {% else %}
-                                            <span class="text-muted">--</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if holding.dayChangePerc %}
-                                            {% set change_perc = holding.dayChangePerc|float %}
-                                            <span class="{% if change_perc > 0 %}text-success{% elif change_perc < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                                {{ "{:+.2f}"|format(change_perc) }}%
-                                            </span>
-                                        {% else %}
-                                            <span class="text-muted">--</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="text-info">{{ holding.qty or '0' }}</span>
-                                        <br><small class="text-muted">Qty: {{ holding.brkQty or '0' }}</small>
-                                    </td>
-                                    <td><small class="text-muted" id="time-{{ holding.sym or holding.trdSym }}">Live</small></td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ holding.sym or holding.trdSym }}')">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                            <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ holding.sym or holding.trdSym }}')">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            {% if data.orders %}
-                                                {% set pending_orders = data.orders|selectattr('trdSym', 'equalto', holding.sym or holding.trdSym)|selectattr('ordSt', 'in', ['pending', 'open', 'trigger_pending'])|list %}
-                                                {% if pending_orders %}
-                                                    <button class="btn btn-xs btn-warning" onclick="showOrderManagement('{{ holding.sym or holding.trdSym }}')">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                {% endif %}
+                            {% if data.positions and data.positions|length > 0 %}
+                                {% for position in data.positions[:10] %}
+                                    {% set net_qty = (position.flBuyQty|int) - (position.flSellQty|int) %}
+                                    {% if net_qty != 0 %}
+                                    <tr data-symbol="{{ position.trdSym or position.sym }}">
+                                        <td>
+                                            <strong class="text-primary">{{ position.trdSym or position.sym or 'N/A' }}</strong>
+                                            <br><small class="text-muted">{{ position.exSeg or 'NSE' }}</small>
+                                        </td>
+                                        <td class="price-ltp fw-bold" data-symbol="{{ position.trdSym or position.sym }}">
+                                            ₹{{ "{:,.2f}"|format(position.ltp|float) if position.ltp else (position.stkPrc|float if position.stkPrc else 0.00) }}
+                                        </td>
+                                        <td class="price-change">
+                                            {% if position.ltp and position.stkPrc %}
+                                                {% set change = (position.ltp|float) - (position.stkPrc|float) %}
+                                                <span class="{% if change > 0 %}text-success{% elif change < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                    {{ "{:+.2f}"|format(change) }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">--</span>
                                             {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td>
+                                            {% if position.ltp and position.stkPrc %}
+                                                {% set change_perc = ((position.ltp|float - position.stkPrc|float) / position.stkPrc|float * 100) %}
+                                                <span class="{% if change_perc > 0 %}text-success{% elif change_perc < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                                    {{ "{:+.2f}"|format(change_perc) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">--</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="text-info">{{ net_qty }}</span>
+                                            <br><small class="text-muted">{{ position.prod or 'CNC' }}</small>
+                                        </td>
+                                        <td><small class="text-muted" id="time-{{ position.trdSym or position.sym }}">Live</small></td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-xs btn-success" onclick="openPlaceOrderModal('BUY', '{{ position.trdSym or position.sym }}')">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                                <button class="btn btn-xs btn-danger" onclick="openPlaceOrderModal('SELL', '{{ position.trdSym or position.sym }}')">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                {% if data.recent_orders %}
+                                                    {% set pending_orders = data.recent_orders|selectattr('trdSym', 'equalto', position.trdSym or position.sym)|selectattr('ordSt', 'in', ['pending', 'open', 'trigger_pending'])|list %}
+                                                    {% if pending_orders %}
+                                                        <button class="btn btn-xs btn-warning" onclick="showOrderManagement('{{ position.trdSym or position.sym }}')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
                                 {% endfor %}
                             {% else %}
                                 <tr>
                                     <td colspan="7" class="text-center text-muted py-4">
                                         <i class="fas fa-chart-line fa-3x mb-3 d-block"></i>
-                                        <h6>No market data available</h6>
-                                        <p>Holdings data will appear here when available</p>
-                                        <button class="btn btn-primary" onclick="refreshQuotes()">
-                                            <i class="fas fa-sync me-1"></i>Refresh Data
+                                        <h6>No active positions found</h6>
+                                        <p>Place orders to see live market data for your positions</p>
+                                        <button class="btn btn-primary" onclick="openPlaceOrderModal('BUY')">
+                                            <i class="fas fa-plus me-1"></i>Place Order
                                         </button>
                                     </td>
                                 </tr>
