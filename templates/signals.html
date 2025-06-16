@@ -118,29 +118,29 @@
                 <div class="table-responsive">
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
-                            <tr>
-                                <th class="text-center">SN</th>
-                                <th>DH</th>
-                                <th class="text-center">📅 Date</th>
-                                <th class="text-center">Pos</th>
-                                <th class="text-center">Qty</th>
-                                <th class="text-center">EP</th>
-                                <th class="text-center">CMP</th>
-                                <th class="text-center">% %Chng</th>
-                                <th class="text-center">Inv</th>
-                                <th class="text-center">📈 TP</th>
-                                <th class="text-center">TWA</th>
-                                <th class="text-center">💰 TPR</th>
-                                <th class="text-center">📈 PL</th>
-                                <th class="text-center">📊 ED</th>
-                                <th class="text-center">EXP</th>
-                                <th class="text-center">PR</th>
-                                <th class="text-center">PP</th>
-                                <th class="text-center">📈 IV</th>
-                                <th class="text-center">📊 SI</th>
-                                <th class="text-center">💰 OL</th>
-                                <th class="text-center">γ</th>
-                                <th class="text-center">%Ch</th>
+                            <tr id="tableHeaders">
+                                <th class="text-center" style="width: 50px;">SN</th>
+                                <th style="width: 120px;">DH</th>
+                                <th class="text-center" style="width: 100px;">Date</th>
+                                <th class="text-center" style="width: 50px;">Pos</th>
+                                <th class="text-center" style="width: 70px;">Qty</th>
+                                <th class="text-center" style="width: 80px;">EP</th>
+                                <th class="text-center" style="width: 80px;">CMP</th>
+                                <th class="text-center" style="width: 80px;">%Chng</th>
+                                <th class="text-center" style="width: 100px;">Inv</th>
+                                <th class="text-center" style="width: 80px;">TP</th>
+                                <th class="text-center" style="width: 100px;">TWA</th>
+                                <th class="text-center" style="width: 80px;">TPR</th>
+                                <th class="text-center" style="width: 80px;">PL</th>
+                                <th class="text-center" style="width: 100px;">ED</th>
+                                <th class="text-center" style="width: 80px;">EXP</th>
+                                <th class="text-center" style="width: 60px;">PR</th>
+                                <th class="text-center" style="width: 80px;">PP</th>
+                                <th class="text-center" style="width: 100px;">IV</th>
+                                <th class="text-center" style="width: 80px;">SI</th>
+                                <th class="text-center" style="width: 50px;">OL</th>
+                                <th class="text-center" style="width: 60px;">γ</th>
+                                <th class="text-center" style="width: 80px;">%Ch</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTableBody">
@@ -272,27 +272,30 @@ class TradingSignalsManager {
         this.autoRefresh = true;
         this.refreshInterval = null;
         
-        // Available columns configuration
+        // Available columns configuration matching Excel format
         this.availableColumns = {
-            'symbol': { label: 'Symbol', default: true, width: '120px' },
-            'signal': { label: 'Signal', default: true, width: '100px' },
-            'strength': { label: 'Strength', default: true, width: '100px' },
-            'price': { label: 'Price', default: true, width: '100px' },
-            'target': { label: 'Target', default: true, width: '100px' },
-            'stopLoss': { label: 'Stop Loss', default: true, width: '100px' },
-            'timeframe': { label: 'Timeframe', default: true, width: '100px' },
-            'sector': { label: 'Sector', default: false, width: '120px' },
-            'volume': { label: 'Volume', default: false, width: '120px' },
-            'change': { label: 'Change %', default: true, width: '100px' },
-            'rsi': { label: 'RSI', default: false, width: '80px' },
-            'macd': { label: 'MACD', default: false, width: '80px' },
-            'ma50': { label: 'MA50', default: false, width: '80px' },
-            'ma200': { label: 'MA200', default: false, width: '80px' },
-            'support': { label: 'Support', default: false, width: '100px' },
-            'resistance': { label: 'Resistance', default: false, width: '100px' },
-            'timestamp': { label: 'Time', default: true, width: '140px' },
-            'confidence': { label: 'Confidence', default: false, width: '100px' },
-            'action': { label: 'Action', default: true, width: '120px' }
+            'sn': { label: 'SN', default: true, width: '50px' },
+            'dh': { label: 'DH', default: true, width: '120px' },
+            'date': { label: 'Date', default: true, width: '100px' },
+            'pos': { label: 'Pos', default: true, width: '50px' },
+            'qty': { label: 'Qty', default: true, width: '70px' },
+            'ep': { label: 'EP', default: true, width: '80px' },
+            'cmp': { label: 'CMP', default: true, width: '80px' },
+            'change': { label: '%Chng', default: true, width: '80px' },
+            'inv': { label: 'Inv', default: true, width: '100px' },
+            'tp': { label: 'TP', default: true, width: '80px' },
+            'twa': { label: 'TWA', default: true, width: '100px' },
+            'tpr': { label: 'TPR', default: true, width: '80px' },
+            'pl': { label: 'PL', default: true, width: '80px' },
+            'ed': { label: 'ED', default: true, width: '100px' },
+            'exp': { label: 'EXP', default: true, width: '80px' },
+            'pr': { label: 'PR', default: true, width: '60px' },
+            'pp': { label: 'PP', default: true, width: '80px' },
+            'iv': { label: 'IV', default: true, width: '100px' },
+            'si': { label: 'SI', default: true, width: '80px' },
+            'ol': { label: 'OL', default: true, width: '50px' },
+            'gamma': { label: 'γ', default: true, width: '60px' },
+            'chng': { label: '%Ch', default: true, width: '80px' }
         };
         
         this.selectedColumns = this.getDefaultColumns();
@@ -351,21 +354,8 @@ class TradingSignalsManager {
             const th = document.createElement('th');
             const colInfo = this.availableColumns[column];
             th.style.width = colInfo.width;
-            
-            if (column === 'action') {
-                th.innerHTML = `<i class="fas fa-cog me-1"></i>${colInfo.label}`;
-            } else if (column === 'signal') {
-                th.innerHTML = `<i class="fas fa-signal me-1"></i>${colInfo.label}`;
-            } else if (column === 'price') {
-                th.innerHTML = `<i class="fas fa-rupee-sign me-1"></i>${colInfo.label}`;
-            } else if (column === 'volume') {
-                th.innerHTML = `<i class="fas fa-chart-bar me-1"></i>${colInfo.label}`;
-            } else if (column === 'timestamp') {
-                th.innerHTML = `<i class="fas fa-clock me-1"></i>${colInfo.label}`;
-            } else {
-                th.textContent = colInfo.label;
-            }
-            
+            th.className = 'text-center';
+            th.textContent = colInfo.label;
             headersRow.appendChild(th);
         });
     }
@@ -571,38 +561,86 @@ class TradingSignalsManager {
         pageSignals.forEach(signal => {
             const row = document.createElement('tr');
             
-            // Create cells for each column according to Excel format
-            const cells = [
-                signal.sn,                                                    // SN
-                `<strong class="text-primary">${signal.dh}</strong>`,        // DH (Symbol)
-                signal.date,                                                  // Date
-                signal.pos,                                                   // Pos
-                signal.qty,                                                   // Qty
-                signal.ep ? signal.ep.toFixed(2) : '',                      // EP
-                signal.cmp ? signal.cmp.toFixed(2) : '',                    // CMP
-                signal.change !== undefined ? 
-                    `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change.toFixed(2)}%</span>` : '', // %Chng
-                signal.inv ? signal.inv.toLocaleString('en-IN') : '',       // Inv
-                signal.tp ? signal.tp.toFixed(2) : '',                      // TP
-                signal.twa ? signal.twa.toLocaleString('en-IN') : '',       // TWA
-                signal.tpr ? signal.tpr.toFixed(3) : '',                    // TPR
-                signal.pl !== undefined ? 
-                    `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl}</span>` : '', // PL
-                signal.ed ? signal.ed.toLocaleString('en-IN') : '',         // ED
-                signal.exp ? signal.exp.toFixed(2) : '',                    // EXP
-                signal.pr ? signal.pr : '',                                 // PR
-                signal.pp ? signal.pp.toFixed(1) : '',                      // PP
-                signal.iv ? signal.iv.toLocaleString('en-IN') : '',         // IV
-                signal.si ? signal.si.toFixed(2) : '',                      // SI
-                signal.ol ? signal.ol : '0',                                // OL
-                signal.gamma ? signal.gamma.toFixed(1) : '',                // γ
-                signal.chng !== undefined ? 
-                    `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng.toFixed(2)}</span>` : '' // %Ch
-            ];
-            
-            cells.forEach(cellContent => {
+            // Create cells for each selected column
+            this.selectedColumns.forEach(columnKey => {
                 const cell = document.createElement('td');
                 cell.className = 'text-center';
+                
+                let cellContent = '';
+                switch(columnKey) {
+                    case 'sn':
+                        cellContent = signal.sn || '';
+                        break;
+                    case 'dh':
+                        cellContent = `<strong class="text-primary">${signal.dh || 'N/A'}</strong>`;
+                        break;
+                    case 'date':
+                        cellContent = signal.date || '';
+                        break;
+                    case 'pos':
+                        cellContent = signal.pos || '';
+                        break;
+                    case 'qty':
+                        cellContent = signal.qty || '';
+                        break;
+                    case 'ep':
+                        cellContent = signal.ep ? signal.ep.toFixed(2) : '';
+                        break;
+                    case 'cmp':
+                        cellContent = signal.cmp ? signal.cmp.toFixed(2) : '';
+                        break;
+                    case 'change':
+                        cellContent = signal.change !== undefined ? 
+                            `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change.toFixed(2)}%</span>` : '';
+                        break;
+                    case 'inv':
+                        cellContent = signal.inv ? signal.inv.toLocaleString('en-IN') : '';
+                        break;
+                    case 'tp':
+                        cellContent = signal.tp ? signal.tp.toFixed(2) : '';
+                        break;
+                    case 'twa':
+                        cellContent = signal.twa ? signal.twa.toLocaleString('en-IN') : '';
+                        break;
+                    case 'tpr':
+                        cellContent = signal.tpr ? signal.tpr.toFixed(3) : '';
+                        break;
+                    case 'pl':
+                        cellContent = signal.pl !== undefined ? 
+                            `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl}</span>` : '';
+                        break;
+                    case 'ed':
+                        cellContent = signal.ed ? signal.ed.toLocaleString('en-IN') : '';
+                        break;
+                    case 'exp':
+                        cellContent = signal.exp ? signal.exp.toFixed(2) : '';
+                        break;
+                    case 'pr':
+                        cellContent = signal.pr || '';
+                        break;
+                    case 'pp':
+                        cellContent = signal.pp ? signal.pp.toFixed(1) : '';
+                        break;
+                    case 'iv':
+                        cellContent = signal.iv ? signal.iv.toLocaleString('en-IN') : '';
+                        break;
+                    case 'si':
+                        cellContent = signal.si ? signal.si.toFixed(2) : '';
+                        break;
+                    case 'ol':
+                        cellContent = signal.ol || '0';
+                        break;
+                    case 'gamma':
+                        cellContent = signal.gamma ? signal.gamma.toFixed(1) : '';
+                        break;
+                    case 'chng':
+                        cellContent = signal.chng !== undefined ? 
+                            `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng.toFixed(2)}</span>` : '';
+                        break;
+                    default:
+                        cellContent = '';
+                }
+                
                 cell.innerHTML = cellContent;
                 row.appendChild(cell);
             });
