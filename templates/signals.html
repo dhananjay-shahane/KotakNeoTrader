@@ -29,9 +29,9 @@
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Buy Signals</h6>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Long Positions</h6>
                         <h3 class="mb-0 fw-bold text-white" id="buySignalsCount">0</h3>
-                        <small class="text-white-50">Active opportunities</small>
+                        <small class="text-white-50">Active long trades</small>
                     </div>
                     <div class="stats-icon">
                         <i class="fas fa-arrow-up fa-2x text-white"></i>
@@ -46,9 +46,9 @@
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Sell Signals</h6>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Profitable</h6>
                         <h3 class="mb-0 fw-bold text-white" id="sellSignalsCount">0</h3>
-                        <small class="text-white-50">Exit opportunities</small>
+                        <small class="text-white-50">Trades in profit</small>
                     </div>
                     <div class="stats-icon">
                         <i class="fas fa-arrow-down fa-2x text-white"></i>
@@ -63,9 +63,9 @@
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-white fw-bold mb-1">Hold Signals</h6>
+                        <h6 class="card-title text-uppercase text-white fw-bold mb-1">Active Trades</h6>
                         <h3 class="mb-0 fw-bold text-white" id="holdSignalsCount">0</h3>
-                        <small class="text-white">Wait & watch</small>
+                        <small class="text-white">Open positions</small>
                     </div>
                     <div class="stats-icon">
                         <i class="fas fa-minus fa-2x text-white"></i>
@@ -80,7 +80,7 @@
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Total Signals</h6>
+                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-1">Total Holdings</h6>
                         <h3 class="mb-0 fw-bold text-white" id="totalSignalsCount">0</h3>
                         <small class="text-white-50">Last updated: <span id="lastUpdate">--</span></small>
                     </div>
@@ -118,8 +118,29 @@
                 <div class="table-responsive">
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
-                            <tr id="tableHeaders">
-                                <!-- Headers will be dynamically generated based on selected columns -->
+                            <tr>
+                                <th class="text-center">SN</th>
+                                <th>DH</th>
+                                <th class="text-center">📅 Date</th>
+                                <th class="text-center">Pos</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-center">EP</th>
+                                <th class="text-center">CMP</th>
+                                <th class="text-center">% %Chng</th>
+                                <th class="text-center">Inv</th>
+                                <th class="text-center">📈 TP</th>
+                                <th class="text-center">TWA</th>
+                                <th class="text-center">💰 TPR</th>
+                                <th class="text-center">📈 PL</th>
+                                <th class="text-center">📊 ED</th>
+                                <th class="text-center">EXP</th>
+                                <th class="text-center">PR</th>
+                                <th class="text-center">PP</th>
+                                <th class="text-center">📈 IV</th>
+                                <th class="text-center">📊 SI</th>
+                                <th class="text-center">💰 OL</th>
+                                <th class="text-center">γ</th>
+                                <th class="text-center">%Ch</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTableBody">
@@ -365,55 +386,163 @@ class TradingSignalsManager {
     }
     
     generateSampleSignals() {
-        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'KOTAKBANK', 'HINDUNILVR', 'BAJFINANCE', 'AXISBANK', 'ASIANPAINT', 'MARUTI', 'NESTLEIND', 'TITAN', 'WIPRO', 'TATAMOTORS', 'HCLTECH'];
-        const signals = ['BUY', 'SELL', 'HOLD'];
-        const strengths = ['STRONG', 'MEDIUM', 'WEAK'];
-        const timeframes = ['1D', '1W', '1M', '3M'];
-        const sectors = ['Banking', 'IT', 'Auto', 'Pharma', 'FMCG', 'Energy'];
-        
-        const generatedSignals = [];
-        
-        for (let i = 0; i < 50; i++) {
-            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-            const signal = signals[Math.floor(Math.random() * signals.length)];
-            const strength = strengths[Math.floor(Math.random() * strengths.length)];
-            const price = Math.random() * 5000 + 100;
-            const targetMultiplier = signal === 'BUY' ? (1 + Math.random() * 0.15) : (1 - Math.random() * 0.15);
-            const slMultiplier = signal === 'BUY' ? (1 - Math.random() * 0.08) : (1 + Math.random() * 0.08);
-            
-            generatedSignals.push({
-                symbol: symbol,
-                signal: signal,
-                strength: strength,
-                price: price.toFixed(2),
-                target: (price * targetMultiplier).toFixed(2),
-                stopLoss: (price * slMultiplier).toFixed(2),
-                timeframe: timeframes[Math.floor(Math.random() * timeframes.length)],
-                sector: sectors[Math.floor(Math.random() * sectors.length)],
-                volume: Math.floor(Math.random() * 1000000) + 50000,
-                change: ((Math.random() - 0.5) * 10).toFixed(2),
-                rsi: (Math.random() * 100).toFixed(1),
-                macd: ((Math.random() - 0.5) * 20).toFixed(2),
-                ma50: (price * (0.95 + Math.random() * 0.1)).toFixed(2),
-                ma200: (price * (0.9 + Math.random() * 0.2)).toFixed(2),
-                support: (price * (0.95 - Math.random() * 0.05)).toFixed(2),
-                resistance: (price * (1.05 + Math.random() * 0.05)).toFixed(2),
-                timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-                confidence: (60 + Math.random() * 40).toFixed(1)
-            });
-        }
-        
-        return generatedSignals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Real trading data structure matching Excel format
+        return [
+            {
+                sn: 36,
+                dh: 'MOTILALFS',
+                date: '22-Nov-2024',
+                pos: 'L',
+                qty: 200,
+                ep: 227.60,
+                cmp: 222.56,
+                change: -1.96,
+                inv: 45504,
+                tp: 244.26,
+                twa: 50832,
+                tpr: 45.648,
+                pl: -992,
+                ed: 147000,
+                exp: 4.97,
+                pr: 4,
+                pp: 669.9,
+                iv: 47.849,
+                si: -1.24,
+                ol: 0,
+                gamma: 4,
+                chng: -1.96
+            },
+            {
+                sn: 37,
+                dh: 'GOLDBEES',
+                date: '13-Dec-2024',
+                pos: 'L',
+                qty: 500,
+                ep: 47.13,
+                cmp: 47.13,
+                change: 0,
+                inv: 23565,
+                tp: 52.78,
+                twa: 26398,
+                tpr: 42.628,
+                pl: -2375,
+                ed: 36600,
+                exp: 2.44,
+                pr: 4,
+                pp: 1063.9,
+                iv: 58.58,
+                si: 0.59,
+                ol: 0,
+                gamma: 4,
+                chng: 0
+            },
+            {
+                sn: 30,
+                dh: 'CONSUMRBEES',
+                date: '20-Dec-2024',
+                pos: 'L',
+                qty: 700,
+                ep: 194.00,
+                cmp: 194.00,
+                change: 0,
+                inv: 135800,
+                tp: 213.45,
+                twa: 149415,
+                tpr: 94.628,
+                pl: 0,
+                ed: 135800,
+                exp: 127.61,
+                pr: 2061,
+                pp: 5.1,
+                iv: 26010,
+                si: 5.67,
+                ol: 4,
+                gamma: 200.5,
+                chng: 0
+            },
+            {
+                sn: 31,
+                dh: 'SOLARINDUS',
+                date: '05-Jan-2025',
+                pos: 'L',
+                qty: 110,
+                ep: 86.35,
+                cmp: 86.35,
+                change: 0.24,
+                inv: 9498.5,
+                tp: 95.01,
+                twa: 10451.1,
+                tpr: 89.440,
+                pl: 26.4,
+                ed: 9525.4,
+                exp: 99.3,
+                pr: 167.1,
+                pp: 0.5,
+                iv: 102100,
+                si: 2.22,
+                ol: 1,
+                gamma: 109.9,
+                chng: 0.24
+            },
+            {
+                sn: 32,
+                dh: 'SILVERBEES',
+                date: '22-Nov-2024',
+                pos: 'L',
+                qty: 800,
+                ep: 89.17,
+                cmp: 89.00,
+                change: -0.17,
+                inv: 71200,
+                tp: 95.30,
+                twa: 76240,
+                tpr: 87.628,
+                pl: -136,
+                ed: 71064,
+                exp: 92.3,
+                pr: 185.1,
+                pp: 0.5,
+                iv: 102100,
+                si: 1.22,
+                ol: 1,
+                gamma: 109.9,
+                chng: -0.17
+            },
+            {
+                sn: 33,
+                dh: 'GOLDBEES',
+                date: '22-Nov-2024',
+                pos: 'L',
+                qty: 800,
+                ep: 66.00,
+                cmp: 66.00,
+                change: 0,
+                inv: 52800,
+                tp: 67.70,
+                twa: 54160,
+                tpr: 87.628,
+                pl: 0,
+                ed: 52800,
+                exp: 84.49,
+                pr: 1520,
+                pp: 3.3,
+                iv: 6,
+                si: 0,
+                ol: 0,
+                gamma: 0.6,
+                chng: 0
+            }
+        ];
     }
     
     updateSignalCounts() {
-        const buyCount = this.filteredSignals.filter(s => s.signal === 'BUY').length;
-        const sellCount = this.filteredSignals.filter(s => s.signal === 'SELL').length;
-        const holdCount = this.filteredSignals.filter(s => s.signal === 'HOLD').length;
+        const longPositions = this.filteredSignals.filter(s => s.pos === 'L').length;
+        const profitableSignals = this.filteredSignals.filter(s => s.pl > 0).length;
+        const activeSignals = this.filteredSignals.filter(s => s.pl !== 0).length;
         
-        document.getElementById('buySignalsCount').textContent = buyCount;
-        document.getElementById('sellSignalsCount').textContent = sellCount;
-        document.getElementById('holdSignalsCount').textContent = holdCount;
+        document.getElementById('buySignalsCount').textContent = longPositions;
+        document.getElementById('sellSignalsCount').textContent = profitableSignals;
+        document.getElementById('holdSignalsCount').textContent = activeSignals;
         document.getElementById('totalSignalsCount').textContent = this.filteredSignals.length;
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
@@ -442,72 +571,39 @@ class TradingSignalsManager {
         pageSignals.forEach(signal => {
             const row = document.createElement('tr');
             
-            this.selectedColumns.forEach(column => {
+            // Create cells for each column according to Excel format
+            const cells = [
+                signal.sn,                                                    // SN
+                `<strong class="text-primary">${signal.dh}</strong>`,        // DH (Symbol)
+                signal.date,                                                  // Date
+                signal.pos,                                                   // Pos
+                signal.qty,                                                   // Qty
+                signal.ep ? signal.ep.toFixed(2) : '',                      // EP
+                signal.cmp ? signal.cmp.toFixed(2) : '',                    // CMP
+                signal.change !== undefined ? 
+                    `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change.toFixed(2)}%</span>` : '', // %Chng
+                signal.inv ? signal.inv.toLocaleString('en-IN') : '',       // Inv
+                signal.tp ? signal.tp.toFixed(2) : '',                      // TP
+                signal.twa ? signal.twa.toLocaleString('en-IN') : '',       // TWA
+                signal.tpr ? signal.tpr.toFixed(3) : '',                    // TPR
+                signal.pl !== undefined ? 
+                    `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl}</span>` : '', // PL
+                signal.ed ? signal.ed.toLocaleString('en-IN') : '',         // ED
+                signal.exp ? signal.exp.toFixed(2) : '',                    // EXP
+                signal.pr ? signal.pr : '',                                 // PR
+                signal.pp ? signal.pp.toFixed(1) : '',                      // PP
+                signal.iv ? signal.iv.toLocaleString('en-IN') : '',         // IV
+                signal.si ? signal.si.toFixed(2) : '',                      // SI
+                signal.ol ? signal.ol : '0',                                // OL
+                signal.gamma ? signal.gamma.toFixed(1) : '',                // γ
+                signal.chng !== undefined ? 
+                    `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng.toFixed(2)}</span>` : '' // %Ch
+            ];
+            
+            cells.forEach(cellContent => {
                 const cell = document.createElement('td');
-                
-                switch (column) {
-                    case 'symbol':
-                        cell.innerHTML = `<strong class="text-primary">${signal.symbol}</strong>`;
-                        break;
-                    case 'signal':
-                        const signalClass = signal.signal === 'BUY' ? 'success' : signal.signal === 'SELL' ? 'danger' : 'warning';
-                        const signalIcon = signal.signal === 'BUY' ? 'arrow-up' : signal.signal === 'SELL' ? 'arrow-down' : 'minus';
-                        cell.innerHTML = `<span class="badge bg-${signalClass}"><i class="fas fa-${signalIcon} me-1"></i>${signal.signal}</span>`;
-                        break;
-                    case 'strength':
-                        const strengthClass = signal.strength === 'STRONG' ? 'success' : signal.strength === 'MEDIUM' ? 'warning' : 'secondary';
-                        cell.innerHTML = `<span class="badge bg-${strengthClass}">${signal.strength}</span>`;
-                        break;
-                    case 'price':
-                    case 'target':
-                    case 'stopLoss':
-                    case 'support':
-                    case 'resistance':
-                    case 'ma50':
-                    case 'ma200':
-                        cell.innerHTML = `₹${parseFloat(signal[column]).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-                        break;
-                    case 'volume':
-                        cell.textContent = parseInt(signal.volume).toLocaleString('en-IN');
-                        break;
-                    case 'change':
-                        const changeClass = parseFloat(signal.change) >= 0 ? 'text-success' : 'text-danger';
-                        const changeIcon = parseFloat(signal.change) >= 0 ? 'arrow-up' : 'arrow-down';
-                        cell.innerHTML = `<span class="${changeClass}"><i class="fas fa-${changeIcon} me-1"></i>${signal.change}%</span>`;
-                        break;
-                    case 'rsi':
-                        const rsiValue = parseFloat(signal.rsi);
-                        const rsiClass = rsiValue > 70 ? 'text-danger' : rsiValue < 30 ? 'text-success' : 'text-warning';
-                        cell.innerHTML = `<span class="${rsiClass}">${signal.rsi}</span>`;
-                        break;
-                    case 'timestamp':
-                        const date = new Date(signal.timestamp);
-                        cell.innerHTML = `<small>${date.toLocaleDateString()}<br>${date.toLocaleTimeString()}</small>`;
-                        break;
-                    case 'confidence':
-                        const confValue = parseFloat(signal.confidence);
-                        const confClass = confValue > 80 ? 'text-success' : confValue > 60 ? 'text-warning' : 'text-danger';
-                        cell.innerHTML = `<span class="${confClass}">${signal.confidence}%</span>`;
-                        break;
-                    case 'action':
-                        cell.innerHTML = `
-                            <div class="btn-group" role="group">
-                                <button class="btn btn-xs btn-outline-primary" onclick="viewSignalDetails('${signal.symbol}')" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-xs btn-outline-success" onclick="placeOrder('${signal.signal}', '${signal.symbol}', '${signal.price}')" title="Place Order">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                                <button class="btn btn-xs btn-outline-warning" onclick="addToWatchlist('${signal.symbol}')" title="Add to Watchlist">
-                                    <i class="fas fa-star"></i>
-                                </button>
-                            </div>
-                        `;
-                        break;
-                    default:
-                        cell.textContent = signal[column] || '-';
-                }
-                
+                cell.className = 'text-center';
+                cell.innerHTML = cellContent;
                 row.appendChild(cell);
             });
             
