@@ -114,50 +114,7 @@
                     </button>
                 </div>
             </div>
-            
-            <!-- Summary Row -->
-            <div class="card-body p-2 bg-gradient" style="background: linear-gradient(90deg, #16c24a 0%, #ffc107 25%, #fd7e14 50%, #6f42c1 75%, #dc3545 100%);">
-                <div class="row text-center text-white fw-bold">
-                    <div class="col-1">
-                        <small>Total: <span id="summaryTotal">6</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small><span id="summaryDate">16-Jun</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small>Pos: <span id="summaryPositions">4,600,170</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small>Qty: <span id="summaryQty">32</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small>P&L: <span id="summaryPL" class="text-warning">44,392</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small>Total: <span id="summaryTotalValue">31,919</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-body p-0"></div>
+            <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
@@ -611,31 +568,6 @@ class TradingSignalsManager {
         document.getElementById('holdSignalsCount').textContent = activeSignals;
         document.getElementById('totalSignalsCount').textContent = this.filteredSignals.length;
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-        
-        // Update summary row
-        this.updateSummaryRow();
-    }
-    
-    updateSummaryRow() {
-        if (this.filteredSignals.length === 0) return;
-        
-        // Calculate totals
-        const totalQty = this.filteredSignals.reduce((sum, signal) => sum + (signal.qty || 0), 0);
-        const totalPL = this.filteredSignals.reduce((sum, signal) => sum + (signal.pl || 0), 0);
-        const totalInvestment = this.filteredSignals.reduce((sum, signal) => sum + (signal.inv || 0), 0);
-        const totalValue = this.filteredSignals.reduce((sum, signal) => sum + (signal.ed || signal.inv || 0), 0);
-        
-        // Update summary elements
-        document.getElementById('summaryTotal').textContent = this.filteredSignals.length;
-        document.getElementById('summaryDate').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        document.getElementById('summaryPositions').textContent = totalInvestment.toLocaleString('en-IN');
-        document.getElementById('summaryQty').textContent = totalQty.toLocaleString('en-IN');
-        
-        const plElement = document.getElementById('summaryPL');
-        plElement.textContent = Math.abs(totalPL).toLocaleString('en-IN');
-        plElement.className = totalPL >= 0 ? 'text-success' : 'text-danger';
-        
-        document.getElementById('summaryTotalValue').textContent = totalValue.toLocaleString('en-IN');
     }
     
     renderSignalsTable() {
