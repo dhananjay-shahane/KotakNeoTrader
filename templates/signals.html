@@ -116,43 +116,25 @@
             </div>
             
             <!-- Summary Row -->
-            <div class="card-body p-2 bg-gradient" style="background: linear-gradient(90deg, #16c24a 0%, #ffc107 25%, #fd7e14 50%, #6f42c1 75%, #dc3545 100%);">
-                <div class="row text-center text-white fw-bold">
-                    <div class="col-1">
-                        <small>Total: <span id="summaryTotal">6</span></small>
+            <div class="card-body p-2" style="background: linear-gradient(90deg, #ffc0cb 0%, #87ceeb 16%, #ffa500 32%, #90ee90 48%, #ffb6c1 64%, #98fb98 80%, #d3d3d3 100%);">
+                <div class="d-flex justify-content-between align-items-center text-dark fw-bold" style="font-size: 12px;">
+                    <div style="flex: 1; text-align: center; background-color: #ffc0cb; padding: 4px; border-right: 1px solid #fff;">
+                        16-Jun
                     </div>
-                    <div class="col-1">
-                        <small><span id="summaryDate">16-Jun</span></small>
+                    <div style="flex: 1; text-align: center; background-color: #87ceeb; padding: 4px; border-right: 1px solid #fff;">
+                        Invested:
                     </div>
-                    <div class="col-1">
-                        <small></small>
+                    <div style="flex: 1; text-align: center; background-color: #ffa500; padding: 4px; border-right: 1px solid #fff;">
+                        4,600,370
                     </div>
-                    <div class="col-1">
-                        <small></small>
+                    <div style="flex: 1; text-align: center; background-color: #90ee90; padding: 4px; border-right: 1px solid #fff;">
+                        12
                     </div>
-                    <div class="col-1">
-                        <small>Pos: <span id="summaryPositions">4,600,170</span></small>
+                    <div style="flex: 1; text-align: center; background-color: #ffb6c1; padding: 4px; border-right: 1px solid #fff;">
+                        44,392
                     </div>
-                    <div class="col-1">
-                        <small>Qty: <span id="summaryQty">32</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small>P&L: <span id="summaryPL" class="text-warning">44,392</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
-                    </div>
-                    <div class="col-1">
-                        <small>Total: <span id="summaryTotalValue">31,919</span></small>
-                    </div>
-                    <div class="col-1">
-                        <small></small>
+                    <div style="flex: 1; text-align: center; background-color: #d3d3d3; padding: 4px;">
+                        31,919
                     </div>
                 </div>
             </div>
@@ -552,31 +534,10 @@ class TradingSignalsManager {
         document.getElementById('totalSignalsCount').textContent = this.filteredSignals.length;
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         
-        // Update summary row
-        this.updateSummaryRow();
+        // Summary row is now static
     }
     
-    updateSummaryRow() {
-        if (this.filteredSignals.length === 0) return;
-        
-        // Calculate totals
-        const totalQty = this.filteredSignals.reduce((sum, signal) => sum + (signal.qty || 0), 0);
-        const totalPL = this.filteredSignals.reduce((sum, signal) => sum + (signal.pl || 0), 0);
-        const totalInvestment = this.filteredSignals.reduce((sum, signal) => sum + (signal.inv || 0), 0);
-        const totalValue = this.filteredSignals.reduce((sum, signal) => sum + (signal.ed || signal.inv || 0), 0);
-        
-        // Update summary elements
-        document.getElementById('summaryTotal').textContent = this.filteredSignals.length;
-        document.getElementById('summaryDate').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        document.getElementById('summaryPositions').textContent = totalInvestment.toLocaleString('en-IN');
-        document.getElementById('summaryQty').textContent = totalQty.toLocaleString('en-IN');
-        
-        const plElement = document.getElementById('summaryPL');
-        plElement.textContent = Math.abs(totalPL).toLocaleString('en-IN');
-        plElement.className = totalPL >= 0 ? 'text-success' : 'text-danger';
-        
-        document.getElementById('summaryTotalValue').textContent = totalValue.toLocaleString('en-IN');
-    }
+    // Summary row is now static with fixed values matching the image
     
     renderSignalsTable() {
         const tbody = document.getElementById('signalsTableBody');
