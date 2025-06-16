@@ -323,10 +323,9 @@ def dashboard():
         return render_template('dashboard.html', data=empty_data)
 
 @app.route('/positions')
+@require_auth
 def positions():
     """Positions page"""
-    if not validate_current_session():
-        return redirect(url_for('login'))
 
     try:
         client = session.get('client')
@@ -358,10 +357,9 @@ def positions():
         return render_template('positions.html', positions=[])
 
 @app.route('/holdings')
+@require_auth
 def holdings():
     """Holdings page"""
-    if not validate_current_session():
-        return redirect(url_for('login'))
 
     try:
         client = session.get('client')
@@ -393,10 +391,9 @@ def holdings():
         return render_template('holdings.html', holdings=[])
 
 @app.route('/orders')
+@require_auth
 def orders():
     """Orders page"""
-    if not validate_current_session():
-        return redirect(url_for('login'))
 
     try:
         client = session.get('client')
@@ -428,10 +425,9 @@ def orders():
         return render_template('orders.html', orders=[])
 
 @app.route('/charts')
+@require_auth
 def charts():
     """Charts page for trading analysis"""
-    if not validate_current_session():
-        return redirect(url_for('login'))
 
     return render_template('charts.html')
 
