@@ -119,28 +119,28 @@
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
                             <tr id="tableHeaders">
-                                <th class="text-center" style="width: 50px;">SN</th>
-                                <th style="width: 120px;">DH</th>
-                                <th class="text-center" style="width: 100px;">Date</th>
-                                <th class="text-center" style="width: 50px;">Pos</th>
-                                <th class="text-center" style="width: 70px;">Qty</th>
-                                <th class="text-center" style="width: 80px;">EP</th>
-                                <th class="text-center" style="width: 80px;">CMP</th>
-                                <th class="text-center" style="width: 80px;">%Chng</th>
-                                <th class="text-center" style="width: 100px;">Inv</th>
-                                <th class="text-center" style="width: 80px;">TP</th>
-                                <th class="text-center" style="width: 100px;">TWA</th>
-                                <th class="text-center" style="width: 80px;">TPR</th>
-                                <th class="text-center" style="width: 80px;">PL</th>
-                                <th class="text-center" style="width: 100px;">ED</th>
-                                <th class="text-center" style="width: 80px;">EXP</th>
-                                <th class="text-center" style="width: 60px;">PR</th>
-                                <th class="text-center" style="width: 80px;">PP</th>
-                                <th class="text-center" style="width: 100px;">IV</th>
-                                <th class="text-center" style="width: 80px;">SI</th>
-                                <th class="text-center" style="width: 50px;">OL</th>
-                                <th class="text-center" style="width: 60px;">γ</th>
-                                <th class="text-center" style="width: 80px;">%Ch</th>
+                                <th class="text-center" style="width: 50px; background-color: #4a5568;">SN</th>
+                                <th style="width: 120px; background-color: #4a5568;">Instrument</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">Date</th>
+                                <th class="text-center" style="width: 50px; background-color: #4a5568;">Pos</th>
+                                <th class="text-center" style="width: 70px; background-color: #4a5568;">Qty</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">EP</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">CMP</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">%Chng</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">Inv</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">TP</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">TWA</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">TPR</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">PL</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">ED</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">EXP</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">PR</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">PP</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">IV</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">SI</th>
+                                <th class="text-center" style="width: 50px; background-color: #4a5568;">OL</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">γ</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">%Ch</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTableBody">
@@ -275,7 +275,7 @@ class TradingSignalsManager {
         // Available columns configuration matching Excel format
         this.availableColumns = {
             'sn': { label: 'SN', default: true, width: '50px' },
-            'dh': { label: 'DH', default: true, width: '120px' },
+            'instrument': { label: 'Instrument', default: true, width: '120px' },
             'date': { label: 'Date', default: true, width: '100px' },
             'pos': { label: 'Pos', default: true, width: '50px' },
             'qty': { label: 'Qty', default: true, width: '70px' },
@@ -380,9 +380,9 @@ class TradingSignalsManager {
         return [
             {
                 sn: 36,
-                dh: 'MOTILALFS',
+                instrument: 'MOTILALFS',
                 date: '22-Nov-2024',
-                pos: 'L',
+                pos: 1,
                 qty: 200,
                 ep: 227.60,
                 cmp: 222.56,
@@ -404,9 +404,9 @@ class TradingSignalsManager {
             },
             {
                 sn: 37,
-                dh: 'GOLDBEES',
+                instrument: 'GOLDBEES',
                 date: '13-Dec-2024',
-                pos: 'L',
+                pos: 1,
                 qty: 500,
                 ep: 47.13,
                 cmp: 47.13,
@@ -428,9 +428,9 @@ class TradingSignalsManager {
             },
             {
                 sn: 30,
-                dh: 'CONSUMRBEES',
+                instrument: 'CONSUMRBEES',
                 date: '20-Dec-2024',
-                pos: 'L',
+                pos: 1,
                 qty: 700,
                 ep: 194.00,
                 cmp: 194.00,
@@ -452,9 +452,9 @@ class TradingSignalsManager {
             },
             {
                 sn: 31,
-                dh: 'SOLARINDUS',
+                instrument: 'SOLARINDUS',
                 date: '05-Jan-2025',
-                pos: 'L',
+                pos: 1,
                 qty: 110,
                 ep: 86.35,
                 cmp: 86.35,
@@ -476,9 +476,9 @@ class TradingSignalsManager {
             },
             {
                 sn: 32,
-                dh: 'SILVERBEES',
+                instrument: 'SILVERBEES',
                 date: '22-Nov-2024',
-                pos: 'L',
+                pos: 0,
                 qty: 800,
                 ep: 89.17,
                 cmp: 89.00,
@@ -500,9 +500,9 @@ class TradingSignalsManager {
             },
             {
                 sn: 33,
-                dh: 'GOLDBEES',
+                instrument: 'GOLDBEES',
                 date: '22-Nov-2024',
-                pos: 'L',
+                pos: 0,
                 qty: 800,
                 ep: 66.00,
                 cmp: 66.00,
@@ -526,7 +526,7 @@ class TradingSignalsManager {
     }
     
     updateSignalCounts() {
-        const longPositions = this.filteredSignals.filter(s => s.pos === 'L').length;
+        const longPositions = this.filteredSignals.filter(s => s.pos === 1).length;
         const profitableSignals = this.filteredSignals.filter(s => s.pl > 0).length;
         const activeSignals = this.filteredSignals.filter(s => s.pl !== 0).length;
         
@@ -571,14 +571,14 @@ class TradingSignalsManager {
                     case 'sn':
                         cellContent = signal.sn || '';
                         break;
-                    case 'dh':
-                        cellContent = `<strong class="text-primary">${signal.dh || 'N/A'}</strong>`;
+                    case 'instrument':
+                        cellContent = `<strong class="text-primary">${signal.instrument || 'N/A'}</strong>`;
                         break;
                     case 'date':
                         cellContent = signal.date || '';
                         break;
                     case 'pos':
-                        cellContent = signal.pos || '';
+                        cellContent = `<span class="badge ${signal.pos === 1 ? 'bg-success' : 'bg-danger'}">${signal.pos}</span>`;
                         break;
                     case 'qty':
                         cellContent = signal.qty || '';
