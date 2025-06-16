@@ -431,13 +431,6 @@ def charts():
 
     return render_template('charts.html')
 
-@app.route('/signals')
-@require_auth
-def signals():
-    """Trading signals page"""
-
-    return render_template('signals.html')
-
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():

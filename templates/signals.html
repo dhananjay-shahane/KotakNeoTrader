@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Trading Signals - Kotak Neo Trading{% endblock %}
@@ -113,53 +114,77 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Summary Row exactly matching Excel -->
-            <div class="card-body p-2" style="background: linear-gradient(90deg, #ffc0cb 0%, #87ceeb 8%, #ffa500 16%, #90ee90 24%, #ffb6c1 32%, #98fb98 40%, #d3d3d3 48%, #87ceeb 56%, #ffa500 64%, #90ee90 72%, #ffb6c1 80%, #98fb98 88%, #d3d3d3 96%, #ffc0cb 100%);">
-                <div class="d-flex justify-content-between align-items-center text-dark fw-bold" style="font-size: 11px;">
-                    <div style="flex: 1; text-align: center; background-color: #ffc0cb; padding: 3px; border-right: 1px solid #fff;">16-Jun</div>
-                    <div style="flex: 1; text-align: center; background-color: #87ceeb; padding: 3px; border-right: 1px solid #fff;">DH</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffa500; padding: 3px; border-right: 1px solid #fff;">Dow</div>
-                    <div style="flex: 1; text-align: center; background-color: #90ee90; padding: 3px; border-right: 1px solid #fff;">Qty</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffb6c1; padding: 3px; border-right: 1px solid #fff;">Invested:</div>
-                    <div style="flex: 1; text-align: center; background-color: #98fb98; padding: 3px; border-right: 1px solid #fff;">4,600,370</div>
-                    <div style="flex: 1; text-align: center; background-color: #d3d3d3; padding: 3px; border-right: 1px solid #fff;">12</div>
-                    <div style="flex: 1; text-align: center; background-color: #87ceeb; padding: 3px; border-right: 1px solid #fff;">Signals</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffa500; padding: 3px; border-right: 1px solid #fff;">44,392</div>
-                    <div style="flex: 1; text-align: center; background-color: #90ee90; padding: 3px; border-right: 1px solid #fff;">TWA</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffb6c1; padding: 3px; border-right: 1px solid #fff;">TPR</div>
-                    <div style="flex: 1; text-align: center; background-color: #98fb98; padding: 3px; border-right: 1px solid #fff;">ED</div>
-                    <div style="flex: 1; text-align: center; background-color: #d3d3d3; padding: 3px; border-right: 1px solid #fff;">EXP</div>
-                    <div style="flex: 1; text-align: center; background-color: #87ceeb; padding: 3px; border-right: 1px solid #fff;">PR</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffa500; padding: 3px; border-right: 1px solid #fff;">PP</div>
-                    <div style="flex: 1; text-align: center; background-color: #90ee90; padding: 3px; border-right: 1px solid #fff;">IV</div>
-                    <div style="flex: 1; text-align: center; background-color: #ffb6c1; padding: 3px; border-right: 1px solid #fff;">SI</div>
-                    <div style="flex: 1; text-align: center; background-color: #98fb98; padding: 3px;">31,919</div>
+            
+            <!-- Summary Row -->
+            <div class="card-body p-2 bg-gradient" style="background: linear-gradient(90deg, #16c24a 0%, #ffc107 25%, #fd7e14 50%, #6f42c1 75%, #dc3545 100%);">
+                <div class="row text-center text-white fw-bold">
+                    <div class="col-1">
+                        <small>Total: <span id="summaryTotal">6</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small><span id="summaryDate">16-Jun</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
+                    <div class="col-1">
+                        <small>Pos: <span id="summaryPositions">4,600,170</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small>Qty: <span id="summaryQty">32</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
+                    <div class="col-1">
+                        <small>P&L: <span id="summaryPL" class="text-warning">44,392</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
+                    <div class="col-1">
+                        <small>Total: <span id="summaryTotalValue">31,919</span></small>
+                    </div>
+                    <div class="col-1">
+                        <small></small>
+                    </div>
                 </div>
             </div>
-
-            <div class="card-body p-0">
+            
+            <div class="card-body p-0"></div>
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0" id="signalsTable" style="font-size: 10px;">
-                        <thead>
+                    <table class="table table-dark table-hover mb-0" id="signalsTable">
+                        <thead class="table-dark">
                             <tr id="tableHeaders">
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">STF</th>
-                                <th class="text-center" style="width: 50px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">DH</th>
-                                <th class="text-center" style="width: 50px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">Dow</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">Qty</th>
-                                <th class="text-center" style="width: 60px; background-color: %Chng; color: white; padding: 6px; border: 1px solid #4a5568;">%Chng</th>
-                                <th class="text-center" style="width: 70px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">CMP</th>
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">Signals</th>
-                                <th class="text-center" style="width: 70px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">TWA</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">TPR</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">PL</th>
-                                <th class="text-center" style="width: 70px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">ED</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">EXP</th>
-                                <th class="text-center" style="width: 50px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">PR</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">PP</th>
-                                <th class="text-center" style="width: 70px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">IV</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">SI</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 6px; border: 1px solid #4a5568;">%Ch</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">STF</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">30</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">DH</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">Date</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">Pos</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">Qty</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">EP</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">CMP</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">% %Chng</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">Inv</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">TP</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">TWA</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">TPR</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">PL</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">ED</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">EXP</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">PR</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">PP</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">IV</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">SI</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">OL</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">γ</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">%Ch</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTableBody">
@@ -290,14 +315,48 @@ class TradingSignalsManager {
         this.pageSize = 20;
         this.autoRefresh = true;
         this.refreshInterval = null;
-
+        
+        // Available columns configuration matching Excel format exactly
+        this.availableColumns = {
+            'stf': { label: 'STF', default: true, width: '100px' },
+            'thirty': { label: '30', default: true, width: '60px' },
+            'dh': { label: 'DH', default: true, width: '80px' },
+            'date': { label: 'Date', default: true, width: '100px' },
+            'pos': { label: 'Pos', default: true, width: '60px' },
+            'qty': { label: 'Qty', default: true, width: '80px' },
+            'ep': { label: 'EP', default: true, width: '80px' },
+            'cmp': { label: 'CMP', default: true, width: '80px' },
+            'change': { label: '% %Chng', default: true, width: '80px' },
+            'inv': { label: 'Inv', default: true, width: '100px' },
+            'tp': { label: 'TP', default: true, width: '80px' },
+            'twa': { label: 'TWA', default: true, width: '100px' },
+            'tpr': { label: 'TPR', default: true, width: '80px' },
+            'pl': { label: 'PL', default: true, width: '80px' },
+            'ed': { label: 'ED', default: true, width: '100px' },
+            'exp': { label: 'EXP', default: true, width: '80px' },
+            'pr': { label: 'PR', default: true, width: '60px' },
+            'pp': { label: 'PP', default: true, width: '80px' },
+            'iv': { label: 'IV', default: true, width: '100px' },
+            'si': { label: 'SI', default: true, width: '80px' },
+            'ol': { label: 'OL', default: true, width: '60px' },
+            'gamma': { label: 'γ', default: true, width: '60px' },
+            'chng': { label: '%Ch', default: true, width: '80px' }
+        };
+        
+        this.selectedColumns = this.getDefaultColumns();
         this.init();
     }
-
+    
+    getDefaultColumns() {
+        return Object.keys(this.availableColumns).filter(col => this.availableColumns[col].default);
+    }
+    
     init() {
+        this.generateColumnCheckboxes();
+        this.updateTableHeaders();
         this.loadSignals();
         this.startAutoRefresh();
-
+        
         // Event listeners
         document.getElementById('autoRefreshToggle').addEventListener('change', (e) => {
             this.autoRefresh = e.target.checked;
@@ -308,128 +367,289 @@ class TradingSignalsManager {
             }
         });
     }
-
+    
+    generateColumnCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        container.innerHTML = '';
+        
+        Object.keys(this.availableColumns).forEach(column => {
+            const colInfo = this.availableColumns[column];
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6 col-lg-4 mb-2';
+            
+            colDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="col_${column}" 
+                           ${this.selectedColumns.includes(column) ? 'checked' : ''}>
+                    <label class="form-check-label" for="col_${column}">
+                        ${colInfo.label}
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(colDiv);
+        });
+    }
+    
+    updateTableHeaders() {
+        const headersRow = document.getElementById('tableHeaders');
+        headersRow.innerHTML = '';
+        
+        this.selectedColumns.forEach(column => {
+            const th = document.createElement('th');
+            const colInfo = this.availableColumns[column];
+            th.style.width = colInfo.width;
+            th.className = 'text-center';
+            th.textContent = colInfo.label;
+            headersRow.appendChild(th);
+        });
+    }
+    
     async loadSignals() {
         try {
-            // Generate sample trading signals data exactly matching Excel format
-            this.signals = this.generateExactExcelData();
+            // Generate sample trading signals data
+            this.signals = this.generateSampleSignals();
             this.filteredSignals = [...this.signals];
             this.updateSignalCounts();
             this.renderSignalsTable();
             this.updatePagination();
-
+            
         } catch (error) {
             console.error('Error loading signals:', error);
             this.showError('Failed to load trading signals');
         }
     }
-
-    generateExactExcelData() {
-        // Exact data from Excel image
+    
+    generateSampleSignals() {
+        // Real trading data structure matching Excel format with exact calculations
         return [
             {
-                symbol: 'MOEDHUSHEES',
-                dh: 227.60,
-                dow: 'DH',
-                qty: '200',
-                change_pct: -1.96,
-                cmp: 227.60,
-                signals: 223.56,
-                twa: '-1.96%',
-                tpr: 12.028,
-                pl: '-808',
+                stf: 'MOEDHUSHIEES',
+                thirty: 30,
+                dh: 'DH',
+                date: '22-Nov-2024',
+                pos: 1,
+                qty: 200,
+                ep: 227.60,
+                cmp: 223.56,
+                change: -1.96,
+                inv: 45504,
+                tp: 254.26,
+                twa: 50832,
+                tpr: 45.648,
+                pl: -808,
                 ed: 44696,
                 exp: 2.94,
                 pr: 4,
                 pp: 669.9,
-                iv: 225.4,
-                si: -1.96,
-                change: -1.96
+                iv: 215.89,
+                si: 1.31,
+                ol: 1,
+                gamma: 147000,
+                chng: -1.96
             },
             {
-                symbol: 'TETF',
-                dh: 40.38,
-                dow: 'DH',
-                qty: '500',
-                change_pct: -14.32,
-                cmp: 47.13,
-                signals: 40.38,
-                twa: '-14.32%',
-                tpr: 23565,
-                pl: 52.79,
-                ed: 26393,
-                exp: -3.375,
-                pr: '',
-                pp: 7400.8,
-                iv: 38.88,
-                si: 3.59,
-                change: 3.59
+                stf: 'TIDEWATER',
+                thirty: 30,
+                dh: 'DH',
+                date: '13-Dec-2024',
+                pos: 1,
+                qty: 500,
+                ep: 47.13,
+                cmp: 52.79,
+                change: 12.02,
+                inv: 23565,
+                tp: 52.79,
+                twa: 26395,
+                tpr: 12.028,
+                pl: 2830,
+                ed: 26395,
+                exp: 7.41,
+                pr: 1,
+                pp: 1063.9,
+                iv: 38.20,
+                si: 2.59,
+                ol: 1,
+                gamma: 36600,
+                chng: 12.02
             },
             {
-                symbol: 'CONSUMBEES',
-                dh: 127.2,
-                dow: 'DH',
-                qty: '100',
-                change_pct: 0.00,
-                cmp: 127.2,
-                signals: 127.2,
-                twa: '0.00%',
+                stf: 'CONSUMBEES',
+                thirty: 30,
+                dh: 'DH',
+                date: '20-Dec-2024',
+                pos: 0,
+                qty: 100,
+                ep: 132.45,
+                cmp: 174,
+                change: 0.00,
+                inv: 0,
+                tp: 127.2,
+                twa: 0,
                 tpr: 0.000,
                 pl: 0,
-                ed: '20-Jan-2025',
-                exp: 88.67,
-                pr: 198,
-                pp: 108.6,
-                iv: 127.2,
-                si: 2.22,
-                change: 0.48
+                ed: 2-Jan-2025,
+                exp: 12.1,
+                pr: 81,
+                pp: 3091.1,
+                iv: 30.1,
+                si: 29410,
+                ol: 8.57,
+                gamma: 14,
+                chng: -1.28
             },
             {
-                symbol: 'SILVERBEES',
-                dh: 104.25,
-                dow: 'DH',
-                qty: '1100',
-                change_pct: 0.00,
-                cmp: 86.85,
-                signals: 103.44,
-                twa: '0.00%',
-                tpr: 103464,
+                stf: 'SILVEREES',
+                thirty: 30,
+                dh: 'DH',
+                date: '16-Dec-2024',
+                pos: 0,
+                qty: 1100,
+                ep: 104.25,
+                cmp: 103.44,
+                change: 0.00,
+                inv: 0,
+                tp: 103.44,
+                twa: 0,
+                tpr: 0.000,
                 pl: 0,
                 ed: '30-Jan-2025',
                 exp: 88.87,
                 pr: 198,
-                pp: 1009.8,
-                iv: 100.90,
-                si: 0.48,
-                change: 0.48
+                pp: 1.9,
+                iv: 162780,
+                si: 2.27,
+                ol: 0,
+                gamma: 0,
+                chng: 6.14
+            },
+            {
+                stf: 'SILVEREES',
+                thirty: 30,
+                dh: 'DH',
+                date: '22-Nov-2024',
+                pos: 0,
+                qty: 607,
+                ep: 105.93,
+                cmp: 95,
+                change: 0,
+                inv: 0,
+                tp: 103.44,
+                twa: 0,
+                tpr: 0.000,
+                pl: 0,
+                ed: '14-Feb-2025',
+                exp: 91.3,
+                pr: 12.1,
+                pp: 0.5,
+                iv: 162780,
+                si: 2.22,
+                ol: 0,
+                gamma: 0,
+                chng: 0.48
+            },
+            {
+                stf: 'GOLDEBEES',
+                thirty: 30,
+                dh: 'DH',
+                date: '22-Nov-2024',
+                pos: 0,
+                qty: 100,
+                ep: 83.83,
+                cmp: 64,
+                change: 0,
+                inv: 0,
+                tp: 83.1,
+                twa: 0,
+                tpr: 0.000,
+                pl: 0,
+                ed: '20-Mar-2025',
+                exp: 2.3,
+                pr: 3,
+                pp: 0,
+                iv: 0,
+                si: 0.00,
+                ol: 0,
+                gamma: 0,
+                chng: 3.96
+            },
+            {
+                stf: 'BAJFINANCE',
+                thirty: 30,
+                dh: 'DH',
+                date: '16-Dec-2024',
+                pos: 1,
+                qty: 1500,
+                ep: 54.25,
+                cmp: 56.75,
+                change: -1.56,
+                inv: 95568,
+                tp: 66.50,
+                twa: 107035,
+                tpr: 41.168,
+                pl: -1488,
+                ed: 94080,
+                exp: 14.40,
+                pr: 17,
+                pp: 11000.6,
+                iv: 35.67,
+                si: -1.49,
+                ol: 1,
+                gamma: 706681,
+                chng: -1.49
             }
         ];
     }
-
+    
     updateSignalCounts() {
-        const longPositions = this.filteredSignals.filter(s => parseFloat(s.qty) > 0).length;
-        const profitableSignals = this.filteredSignals.filter(s => parseFloat(s.pl) > 0).length;
-        const activeSignals = this.filteredSignals.filter(s => parseFloat(s.pl) !== 0).length;
-
+        const longPositions = this.filteredSignals.filter(s => s.pos === 1).length;
+        const profitableSignals = this.filteredSignals.filter(s => s.pl > 0).length;
+        const activeSignals = this.filteredSignals.filter(s => s.pl !== 0).length;
+        
         document.getElementById('buySignalsCount').textContent = longPositions;
         document.getElementById('sellSignalsCount').textContent = profitableSignals;
         document.getElementById('holdSignalsCount').textContent = activeSignals;
         document.getElementById('totalSignalsCount').textContent = this.filteredSignals.length;
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        
+        // Update summary row
+        this.updateSummaryRow();
     }
-
+    
+    updateSummaryRow() {
+        if (this.filteredSignals.length === 0) return;
+        
+        // Calculate totals
+        const totalQty = this.filteredSignals.reduce((sum, signal) => sum + (signal.qty || 0), 0);
+        const totalPL = this.filteredSignals.reduce((sum, signal) => sum + (signal.pl || 0), 0);
+        const totalInvestment = this.filteredSignals.reduce((sum, signal) => sum + (signal.inv || 0), 0);
+        const totalValue = this.filteredSignals.reduce((sum, signal) => sum + (signal.ed || signal.inv || 0), 0);
+        
+        // Update summary elements
+        document.getElementById('summaryTotal').textContent = this.filteredSignals.length;
+        document.getElementById('summaryDate').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        document.getElementById('summaryPositions').textContent = totalInvestment.toLocaleString('en-IN');
+        document.getElementById('summaryQty').textContent = totalQty.toLocaleString('en-IN');
+        
+        const plElement = document.getElementById('summaryPL');
+        plElement.textContent = Math.abs(totalPL).toLocaleString('en-IN');
+        plElement.className = totalPL >= 0 ? 'text-success' : 'text-danger';
+        
+        document.getElementById('summaryTotalValue').textContent = totalValue.toLocaleString('en-IN');
+    }
+    
     renderSignalsTable() {
         const tbody = document.getElementById('signalsTableBody');
         const startIndex = (this.currentPage - 1) * this.pageSize;
         const endIndex = startIndex + this.pageSize;
         const pageSignals = this.filteredSignals.slice(startIndex, endIndex);
-
+        
         tbody.innerHTML = '';
-
+        
         if (pageSignals.length === 0) {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td colspan="17" class="text-center py-4">
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
                     <i class="fas fa-search fa-3x mb-3 text-muted"></i>
                     <h6 class="text-muted">No signals found</h6>
                     <p class="text-muted mb-0">Try adjusting your filters</p>
@@ -438,153 +658,191 @@ class TradingSignalsManager {
             tbody.appendChild(row);
             return;
         }
-
+        
         pageSignals.forEach(signal => {
             const row = document.createElement('tr');
-            row.style.fontSize = '10px';
-
-            // Create cells exactly matching Excel columns
-            const columns = [
-                { key: 'symbol', style: 'color: #fff; font-weight: bold;' },
-                { key: 'dh' },
-                { key: 'dow' },
-                { key: 'qty' },
-                { key: 'change_pct', format: 'percentage' },
-                { key: 'cmp', format: 'currency' },
-                { key: 'signals', format: 'currency' },
-                { key: 'twa' },
-                { key: 'tpr', format: 'number' },
-                { key: 'pl', format: 'currency' },
-                { key: 'ed' },
-                { key: 'exp', format: 'number' },
-                { key: 'pr' },
-                { key: 'pp', format: 'number' },
-                { key: 'iv', format: 'currency' },
-                { key: 'si', format: 'number' },
-                { key: 'change', format: 'percentage' }
-            ];
-
-            columns.forEach(col => {
+            
+            // Create cells for each selected column
+            this.selectedColumns.forEach(columnKey => {
                 const cell = document.createElement('td');
                 cell.className = 'text-center';
-                cell.style.padding = '4px 2px';
-                cell.style.border = '1px solid #4a5568';
-                cell.style.fontSize = '10px';
-
-                let cellContent = signal[col.key] || '';
-                let bgColor = '';
-
-                // Format cell content
-                if (col.format === 'percentage' && typeof cellContent === 'number') {
-                    bgColor = cellContent >= 0 ? '#16a085' : '#e74c3c';
-                    cellContent = `${cellContent >= 0 ? '+' : ''}${cellContent.toFixed(2)}%`;
-                    cell.style.color = 'white';
-                    cell.style.fontWeight = 'bold';
-                } else if (col.format === 'currency' && typeof cellContent === 'number') {
-                    cellContent = cellContent.toFixed(2);
-                } else if (col.format === 'number' && typeof cellContent === 'number') {
-                    cellContent = cellContent.toFixed(2);
+                
+                let cellContent = '';
+                switch(columnKey) {
+                    case 'stf':
+                        cellContent = `<strong>${signal.stf || 'STF'}</strong>`;
+                        break;
+                    case 'thirty':
+                        cellContent = signal.thirty || '30';
+                        break;
+                    case 'dh':
+                        cellContent = signal.dh || 'DH';
+                        break;
+                    case 'date':
+                        cellContent = signal.date || '';
+                        break;
+                    case 'pos':
+                        cellContent = `<span class="badge ${signal.pos === 1 ? 'bg-success' : 'bg-warning'}">${signal.pos}</span>`;
+                        break;
+                    case 'qty':
+                        cellContent = signal.qty ? signal.qty.toLocaleString('en-IN') : '';
+                        break;
+                    case 'ep':
+                        cellContent = signal.ep ? signal.ep.toFixed(2) : '';
+                        break;
+                    case 'cmp':
+                        cellContent = signal.cmp ? signal.cmp.toFixed(2) : '';
+                        break;
+                    case 'change':
+                        cellContent = signal.change !== undefined ? 
+                            `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%</span>` : '';
+                        break;
+                    case 'inv':
+                        cellContent = signal.inv ? signal.inv.toLocaleString('en-IN') : '0';
+                        break;
+                    case 'tp':
+                        cellContent = signal.tp ? signal.tp.toFixed(2) : '';
+                        break;
+                    case 'twa':
+                        cellContent = signal.twa ? signal.twa.toLocaleString('en-IN') : '0';
+                        break;
+                    case 'tpr':
+                        cellContent = signal.tpr ? signal.tpr.toFixed(3) : '0.000';
+                        break;
+                    case 'pl':
+                        cellContent = signal.pl !== undefined ? 
+                            `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl >= 0 ? '+' : ''}${signal.pl}</span>` : '0';
+                        break;
+                    case 'ed':
+                        cellContent = typeof signal.ed === 'string' ? signal.ed : (signal.ed ? signal.ed.toLocaleString('en-IN') : '');
+                        break;
+                    case 'exp':
+                        cellContent = signal.exp ? signal.exp.toFixed(2) : '';
+                        break;
+                    case 'pr':
+                        cellContent = signal.pr || '';
+                        break;
+                    case 'pp':
+                        cellContent = signal.pp ? signal.pp.toFixed(1) : '';
+                        break;
+                    case 'iv':
+                        cellContent = signal.iv ? signal.iv.toLocaleString('en-IN') : '';
+                        break;
+                    case 'si':
+                        cellContent = signal.si ? signal.si.toFixed(2) : '';
+                        break;
+                    case 'ol':
+                        cellContent = signal.ol !== undefined ? signal.ol : '0';
+                        break;
+                    case 'gamma':
+                        cellContent = signal.gamma ? signal.gamma.toLocaleString('en-IN') : '';
+                        break;
+                    case 'chng':
+                        cellContent = signal.chng !== undefined ? 
+                            `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng >= 0 ? '+' : ''}${signal.chng.toFixed(2)}</span>` : '';
+                        break;
+                    default:
+                        cellContent = '';
                 }
-
-                if (col.key === 'symbol') {
-                    cell.style.color = '#fff';
-                    cell.style.fontWeight = 'bold';
-                }
-
-                if (col.key === 'pl' && typeof signal[col.key] === 'string' && signal[col.key].includes('-')) {
-                    bgColor = '#e74c3c';
-                    cell.style.color = 'white';
-                    cell.style.fontWeight = 'bold';
-                }
-
-                if (bgColor) {
-                    cell.style.backgroundColor = bgColor;
-                }
-
-                if (col.style) {
-                    Object.assign(cell.style, col.style);
-                }
-
+                
                 cell.innerHTML = cellContent;
                 row.appendChild(cell);
             });
-
+            
             tbody.appendChild(row);
         });
-
+        
         document.getElementById('visibleSignalsCount').textContent = this.filteredSignals.length;
         document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredSignals.length);
         document.getElementById('totalCount').textContent = this.filteredSignals.length;
     }
-
+    
     updatePagination() {
         const totalPages = Math.ceil(this.filteredSignals.length / this.pageSize);
-
+        
         document.getElementById('currentPage').textContent = this.currentPage;
         document.getElementById('totalPages').textContent = totalPages;
-
+        
         document.getElementById('prevBtn').disabled = this.currentPage <= 1;
         document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
     }
-
+    
     applyFilters() {
         const signalType = document.getElementById('signalTypeFilter').value;
         const strength = document.getElementById('strengthFilter').value;
         const sector = document.getElementById('sectorFilter').value;
         const minPrice = parseFloat(document.getElementById('minPriceFilter').value) || 0;
         const maxPrice = parseFloat(document.getElementById('maxPriceFilter').value) || Infinity;
-
+        
         this.filteredSignals = this.signals.filter(signal => {
             return (!signalType || signal.signal === signalType) &&
                    (!strength || signal.strength === strength) &&
                    (!sector || signal.sector === sector) &&
-                   (parseFloat(signal.cmp) >= minPrice && parseFloat(signal.cmp) <= maxPrice);
+                   (parseFloat(signal.price) >= minPrice && parseFloat(signal.price) <= maxPrice);
         });
-
+        
         this.currentPage = 1;
         this.updateSignalCounts();
         this.renderSignalsTable();
         this.updatePagination();
     }
-
+    
     clearFilters() {
         document.getElementById('signalTypeFilter').value = '';
         document.getElementById('strengthFilter').value = '';
         document.getElementById('sectorFilter').value = '';
         document.getElementById('minPriceFilter').value = '';
         document.getElementById('maxPriceFilter').value = '';
-
+        
         this.filteredSignals = [...this.signals];
         this.currentPage = 1;
         this.updateSignalCounts();
         this.renderSignalsTable();
         this.updatePagination();
     }
-
+    
+    applyColumnSettings() {
+        this.selectedColumns = [];
+        
+        Object.keys(this.availableColumns).forEach(column => {
+            const checkbox = document.getElementById(`col_${column}`);
+            if (checkbox && checkbox.checked) {
+                this.selectedColumns.push(column);
+            }
+        });
+        
+        this.updateTableHeaders();
+        this.renderSignalsTable();
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        modal.hide();
+    }
+    
     startAutoRefresh() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
-
+        
         if (this.autoRefresh) {
             this.refreshInterval = setInterval(() => {
                 this.loadSignals();
             }, 30000); // Refresh every 30 seconds
         }
     }
-
+    
     stopAutoRefresh() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
         }
     }
-
+    
     showError(message) {
         const tbody = document.getElementById('signalsTableBody');
         tbody.innerHTML = `
             <tr>
-                <td colspan="17" class="text-center py-4">
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
                     <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
                     <h6 class="text-danger">${message}</h6>
                     <button class="btn btn-outline-primary btn-sm mt-2" onclick="signalsManager.loadSignals()">
@@ -599,6 +857,26 @@ class TradingSignalsManager {
 // Global functions
 function refreshSignals() {
     window.signalsManager.loadSignals();
+}
+
+function selectAllColumns() {
+    Object.keys(window.signalsManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+function resetDefaultColumns() {
+    Object.keys(window.signalsManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) {
+            checkbox.checked = window.signalsManager.availableColumns[column].default;
+        }
+    });
+}
+
+function applyColumnSettings() {
+    window.signalsManager.applyColumnSettings();
 }
 
 function applyFilters() {
@@ -626,12 +904,35 @@ function nextPage() {
     }
 }
 
+function viewSignalDetails(symbol) {
+    alert(`Viewing details for ${symbol}`);
+}
+
+function placeOrder(signal, symbol, price) {
+    if (window.openPlaceOrderModal) {
+        window.openPlaceOrderModal(signal, symbol);
+    } else {
+        // Simulate placing order and redirect to deals page
+        const confirmed = confirm(`Place ${signal} order for ${symbol} at ₹${price}?`);
+        if (confirmed) {
+            // In a real implementation, this would make an API call to place the order
+            alert(`Order placed successfully for ${symbol}. Check the Deals page to track this order.`);
+            // Optionally redirect to deals page
+            // window.location.href = '/deals';
+        }
+    }
+}
+
+function addToWatchlist(symbol) {
+    alert(`Added ${symbol} to watchlist`);
+}
+
 function exportSignals() {
     const data = window.signalsManager.filteredSignals;
     const csvContent = "data:text/csv;charset=utf-8," + 
         Object.keys(data[0]).join(",") + "\n" +
         data.map(row => Object.values(row).join(",")).join("\n");
-
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -642,7 +943,8 @@ function exportSignals() {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {    window.signalsManager = new TradingSignalsManager();
+document.addEventListener('DOMContentLoaded', function() {
+    window.signalsManager = new TradingSignalsManager();
 });
 </script>
 {% endblock %}
