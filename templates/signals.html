@@ -119,14 +119,15 @@
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
                             <tr id="tableHeaders">
-                                <th class="text-center" style="width: 50px; background-color: #4a5568;">SN</th>
-                                <th style="width: 120px; background-color: #4a5568;">Instrument</th>
+                                <th class="text-center" style="width: 50px; background-color: #4a5568;">STF</th>
+                                <th class="text-center" style="width: 50px; background-color: #4a5568;">30</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">DH</th>
                                 <th class="text-center" style="width: 100px; background-color: #4a5568;">Date</th>
                                 <th class="text-center" style="width: 50px; background-color: #4a5568;">Pos</th>
                                 <th class="text-center" style="width: 70px; background-color: #4a5568;">Qty</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">EP</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">CMP</th>
-                                <th class="text-center" style="width: 80px; background-color: #4a5568;">%Chng</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">% %Chng</th>
                                 <th class="text-center" style="width: 100px; background-color: #4a5568;">Inv</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">TP</th>
                                 <th class="text-center" style="width: 100px; background-color: #4a5568;">TWA</th>
@@ -274,14 +275,15 @@ class TradingSignalsManager {
         
         // Available columns configuration matching Excel format
         this.availableColumns = {
-            'sn': { label: 'SN', default: true, width: '50px' },
-            'instrument': { label: 'Instrument', default: true, width: '120px' },
+            'stf': { label: 'STF', default: true, width: '50px' },
+            'thirty': { label: '30', default: true, width: '50px' },
+            'dh': { label: 'DH', default: true, width: '80px' },
             'date': { label: 'Date', default: true, width: '100px' },
             'pos': { label: 'Pos', default: true, width: '50px' },
             'qty': { label: 'Qty', default: true, width: '70px' },
             'ep': { label: 'EP', default: true, width: '80px' },
             'cmp': { label: 'CMP', default: true, width: '80px' },
-            'change': { label: '%Chng', default: true, width: '80px' },
+            'change': { label: '% %Chng', default: true, width: '80px' },
             'inv': { label: 'Inv', default: true, width: '100px' },
             'tp': { label: 'TP', default: true, width: '80px' },
             'twa': { label: 'TWA', default: true, width: '100px' },
@@ -379,8 +381,9 @@ class TradingSignalsManager {
         // Real trading data structure matching Excel format
         return [
             {
-                sn: 36,
-                instrument: 'MOTILALFS',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '22-Nov-2024',
                 pos: 1,
                 qty: 200,
@@ -403,8 +406,9 @@ class TradingSignalsManager {
                 chng: -1.96
             },
             {
-                sn: 37,
-                instrument: 'GOLDBEES',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '13-Dec-2024',
                 pos: 1,
                 qty: 500,
@@ -427,8 +431,9 @@ class TradingSignalsManager {
                 chng: 0
             },
             {
-                sn: 30,
-                instrument: 'CONSUMRBEES',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '20-Dec-2024',
                 pos: 1,
                 qty: 700,
@@ -451,8 +456,9 @@ class TradingSignalsManager {
                 chng: 0
             },
             {
-                sn: 31,
-                instrument: 'SOLARINDUS',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '05-Jan-2025',
                 pos: 1,
                 qty: 110,
@@ -475,8 +481,9 @@ class TradingSignalsManager {
                 chng: 0.24
             },
             {
-                sn: 32,
-                instrument: 'SILVERBEES',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '22-Nov-2024',
                 pos: 0,
                 qty: 800,
@@ -499,8 +506,9 @@ class TradingSignalsManager {
                 chng: -0.17
             },
             {
-                sn: 33,
-                instrument: 'GOLDBEES',
+                stf: 'STF',
+                thirty: 30,
+                dh: 'DH',
                 date: '22-Nov-2024',
                 pos: 0,
                 qty: 800,
@@ -568,11 +576,14 @@ class TradingSignalsManager {
                 
                 let cellContent = '';
                 switch(columnKey) {
-                    case 'sn':
-                        cellContent = signal.sn || '';
+                    case 'stf':
+                        cellContent = signal.stf || 'STF';
                         break;
-                    case 'instrument':
-                        cellContent = `<strong class="text-primary">${signal.instrument || 'N/A'}</strong>`;
+                    case 'thirty':
+                        cellContent = signal.thirty || '30';
+                        break;
+                    case 'dh':
+                        cellContent = signal.dh || 'DH';
                         break;
                     case 'date':
                         cellContent = signal.date || '';
