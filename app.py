@@ -67,53 +67,45 @@ session_helper = SessionHelper()
 websocket_handler = WebSocketHandler()
 
 def validate_current_session():
-    """Validate current session without auto-login bypass"""
+    """Validate current session and check expiration"""
     try:
         # Check if user is authenticated
         if not session.get('authenticated'):
             return False
+
+        # Check session expiration
+        session_expires_at = session.get('session_expires_at')
+        if session_expires_at:
+            from datetime import datetime
+            if datetime.now() > datetime.fromisoformat(session_expires_at):
+                session.clear()
+                return False
 
         # Check if required session data exists
         required_fields = ['access_token', 'session_token', 'ucc']
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
-                return False
-
-        # Get or restore client
-        client = session.get('client')
-        if not client:
-            access_token = session.get('access_token')
-            session_token = session.get('session_token')
-            sid = session.get('sid')
-
-            if access_token and session_token and sid:
-                try:
-                    client = neo_client.initialize_client_with_tokens(access_token, session_token, sid)
-                    if client:
-                        session['client'] = client
-                except Exception as init_error:
-                    logging.error(f"Failed to initialize client: {init_error}")
-                    return False
-
-        if not client:
-            return False
-
-        # Validate session with neo_client
-        try:
-            if neo_client.validate_session(client):
-                return True
-            else:
                 session.clear()
                 return False
-        except Exception as val_error:
-            logging.error(f"Session validation failed: {val_error}")
-            session.clear()
-            return False
+
+        return True
 
     except Exception as e:
         logging.error(f"Session validation error: {e}")
+        session.clear()
         return False
+
+def require_auth(f):
+    """Decorator to require authentication for routes"""
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not validate_current_session():
+            return redirect(url_for('login', expired='true'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/health')
 def health_check():
@@ -130,6 +122,10 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page with TOTP authentication only"""
+    # Check if session expired and show message
+    session_expired = request.args.get('expired') == 'true'
+    if session_expired:
+        flash('Your session has expired. Please login again.', 'warning')
     if request.method == 'POST':
         try:
             # Get form data
@@ -173,6 +169,10 @@ def login():
                 session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 session['greeting_name'] = session_data.get('greetingName', ucc)
                 session.permanent = True
+                
+                # Set session expiration (24 hours from now)
+                expiry_time = datetime.now() + timedelta(hours=24)
+                session['session_expires_at'] = expiry_time.isoformat()
 
                 # Store additional user data
                 session['rid'] = session_data.get('rid')
@@ -232,10 +232,9 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/dashboard')
+@require_auth
 def dashboard():
     """Main dashboard with portfolio overview"""
-    if not validate_current_session():
-        return redirect(url_for('login'))
 
     try:
         client = session.get('client')
