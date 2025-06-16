@@ -162,24 +162,29 @@
                     <table class="table table-dark table-hover mb-0" id="signalsTable" style="font-size: 12px;">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Symbol</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">EP</th>
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">%Ch</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">ETF</th>
+                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">3M</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">DH</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Date</th>
                                 <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Pos</th>
                                 <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Qty</th>
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">%Chng</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">EP</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">CMP</th>
-                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Val</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">%Chng</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">Inv</th>
+                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">TP</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">TWA</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">TPR</th>
                                 <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">PL</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">ED</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">ED</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">EXP</th>
                                 <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">PR</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">PP</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">IV</th>
                                 <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">SI</th>
-                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">%Ch2</th>
+                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">OL</th>
+                                <th class="text-center" style="width: 60px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">γ</th>
+                                <th class="text-center" style="width: 80px; background-color: #2d3748; color: white; padding: 8px; border: 1px solid #4a5568;">%Ch</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTableBody">
@@ -420,14 +425,17 @@ class TradingSignalsManager {
         return [
             {
                 symbol: 'MOEDHUSHEES',
-                ep: 227.60,
-                change: -1.96,
+                thirty: 30,
+                dh: 0,
                 date: '22-Nov-2024',
                 pos: 1,
                 qty: 200,
-                change_pct: -1.96,
+                ep: 227.60,
                 cmp: 223.56,
-                val: 45504,
+                change_pct: -1.96,
+                inv: 45504,
+                tp: 12,
+                twa: 44696,
                 tpr: 12.028,
                 pl: -808,
                 ed: 44696,
@@ -436,18 +444,23 @@ class TradingSignalsManager {
                 pp: 669.9,
                 iv: 45504,
                 si: 1.31,
+                ol: 2,
+                gamma: 0.5,
                 change2: -1.96
             },
             {
                 symbol: 'TETF',
-                ep: 40.38,
-                change: 0.00,
+                thirty: 30,
+                dh: 0,
                 date: '13-Dec-2024',
                 pos: 1,
                 qty: 500,
-                change_pct: -14.32,
+                ep: 40.38,
                 cmp: 52.79,
-                val: 23565,
+                change_pct: -14.32,
+                inv: 20190,
+                tp: 26,
+                twa: 26395,
                 tpr: 12.028,
                 pl: -3375,
                 ed: 26395,
@@ -456,18 +469,23 @@ class TradingSignalsManager {
                 pp: 7609.8,
                 iv: 36650,
                 si: 2.59,
+                ol: 5,
+                gamma: 1.2,
                 change2: 3.39
             },
             {
                 symbol: 'CONSUMBEES',
-                ep: 127.2,
-                change: 0.76,
+                thirty: 30,
+                dh: 0,
                 date: '20-Dec-2024',
                 pos: 0,
                 qty: 100,
-                change_pct: 0.00,
+                ep: 127.2,
                 cmp: 127.2,
-                val: 0,
+                change_pct: 0.76,
+                inv: 12720,
+                tp: 0,
+                twa: 0,
                 tpr: 0.000,
                 pl: 0,
                 ed: '2-Jan-2025',
@@ -476,18 +494,23 @@ class TradingSignalsManager {
                 pp: 2869.8,
                 iv: 26810,
                 si: 29410,
+                ol: 0,
+                gamma: 0,
                 change2: 1.31
             },
             {
                 symbol: 'SILVERBEES',
-                ep: 104.25,
-                change: -0.76,
+                thirty: 30,
+                dh: 0,
                 date: '16-Dec-2024',
                 pos: 0,
                 qty: 1100,
-                change_pct: 0.00,
+                ep: 104.25,
                 cmp: 103.44,
-                val: 103464,
+                change_pct: -0.76,
+                inv: 114675,
+                tp: 0,
+                twa: 0,
                 tpr: 0.000,
                 pl: 0,
                 ed: '30-Jan-2025',
@@ -496,18 +519,23 @@ class TradingSignalsManager {
                 pp: 1008.6,
                 iv: 100100,
                 si: 2.22,
+                ol: 0,
+                gamma: 0,
                 change2: 0.48
             },
             {
                 symbol: 'SILVRBEES',
-                ep: 104.25,
-                change: -0.76,
+                thirty: 30,
+                dh: 0,
                 date: '22-Nov-2024',
                 pos: 0,
                 qty: 607,
-                change_pct: 0.00,
+                ep: 104.25,
                 cmp: 95,
-                val: 83.1,
+                change_pct: -8.88,
+                inv: 63280,
+                tp: 0,
+                twa: 0,
                 tpr: 0.000,
                 pl: 0,
                 ed: '14-Feb-2025',
@@ -516,18 +544,23 @@ class TradingSignalsManager {
                 pp: 1008.6,
                 iv: 162780,
                 si: 2.22,
+                ol: 0,
+                gamma: 0,
                 change2: 0.48
             },
             {
                 symbol: 'GOLDBEES',
-                ep: 83.83,
-                change: -0.86,
+                thirty: 30,
+                dh: 0,
                 date: '28-Nov-2024',
                 pos: 0,
                 qty: 100,
-                change_pct: 0.00,
+                ep: 83.83,
                 cmp: 64,
-                val: 83.1,
+                change_pct: -23.65,
+                inv: 8383,
+                tp: 0,
+                twa: 0,
                 tpr: 0.000,
                 pl: 0,
                 ed: '20-Mar-2025',
@@ -536,6 +569,8 @@ class TradingSignalsManager {
                 pp: 0,
                 iv: 0,
                 si: 0.00,
+                ol: 0,
+                gamma: 0,
                 change2: 3.96
             }
         ];
@@ -603,7 +638,7 @@ class TradingSignalsManager {
             const row = document.createElement('tr');
             
             // Create cells matching Excel column order
-            const columns = ['symbol', 'ep', 'change', 'date', 'pos', 'qty', 'change_pct', 'cmp', 'val', 'tpr', 'pl', 'ed', 'exp', 'pr', 'pp', 'iv', 'si', 'change2'];
+            const columns = ['symbol', 'thirty', 'dh', 'date', 'pos', 'qty', 'ep', 'cmp', 'change_pct', 'inv', 'tp', 'twa', 'tpr', 'pl', 'ed', 'exp', 'pr', 'pp', 'iv', 'si', 'ol', 'gamma', 'change2'];
             
             columns.forEach(columnKey => {
                 const cell = document.createElement('td');
@@ -619,14 +654,11 @@ class TradingSignalsManager {
                     case 'symbol':
                         cellContent = `<strong style="color: #fff;">${signal.symbol || ''}</strong>`;
                         break;
-                    case 'ep':
-                        cellContent = signal.ep ? signal.ep.toFixed(2) : '';
+                    case 'thirty':
+                        cellContent = signal.thirty || '30';
                         break;
-                    case 'change':
-                        if (signal.change !== undefined) {
-                            bgColor = signal.change >= 0 ? '#16a085' : '#e74c3c';
-                            cellContent = `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}`;
-                        }
+                    case 'dh':
+                        cellContent = signal.dh !== undefined ? signal.dh : '0';
                         break;
                     case 'date':
                         cellContent = signal.date || '';
@@ -638,18 +670,26 @@ class TradingSignalsManager {
                     case 'qty':
                         cellContent = signal.qty ? signal.qty.toLocaleString('en-IN') : '';
                         break;
+                    case 'ep':
+                        cellContent = signal.ep ? signal.ep.toFixed(2) : '';
+                        break;
+                    case 'cmp':
+                        cellContent = signal.cmp ? signal.cmp.toFixed(2) : '';
+                        break;
                     case 'change_pct':
                         if (signal.change_pct !== undefined) {
                             bgColor = signal.change_pct >= 0 ? '#16a085' : '#e74c3c';
                             cellContent = `${signal.change_pct >= 0 ? '+' : ''}${signal.change_pct.toFixed(2)}%`;
                         }
                         break;
-                    case 'cmp':
-                        cellContent = signal.cmp ? signal.cmp.toFixed(2) : '';
+                    case 'inv':
+                        cellContent = signal.inv ? signal.inv.toLocaleString('en-IN') : '';
                         break;
-                    case 'val':
-                        cellContent = signal.val ? signal.val.toLocaleString('en-IN') : '0';
-                        if (signal.val > 0) bgColor = '#3498db';
+                    case 'tp':
+                        cellContent = signal.tp !== undefined ? signal.tp : '';
+                        break;
+                    case 'twa':
+                        cellContent = signal.twa ? signal.twa.toLocaleString('en-IN') : '';
                         break;
                     case 'tpr':
                         cellContent = signal.tpr ? signal.tpr.toFixed(3) : '0.000';
@@ -677,6 +717,12 @@ class TradingSignalsManager {
                         break;
                     case 'si':
                         cellContent = signal.si ? signal.si.toFixed(2) : '';
+                        break;
+                    case 'ol':
+                        cellContent = signal.ol !== undefined ? signal.ol : '';
+                        break;
+                    case 'gamma':
+                        cellContent = signal.gamma ? signal.gamma.toFixed(1) : '';
                         break;
                     case 'change2':
                         if (signal.change2 !== undefined) {
