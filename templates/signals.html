@@ -119,12 +119,12 @@
                     <table class="table table-dark table-hover mb-0" id="signalsTable">
                         <thead class="table-dark">
                             <tr id="tableHeaders">
-                                <th class="text-center" style="width: 50px; background-color: #4a5568;">STF</th>
-                                <th class="text-center" style="width: 50px; background-color: #4a5568;">30</th>
+                                <th class="text-center" style="width: 100px; background-color: #4a5568;">STF</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">30</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">DH</th>
                                 <th class="text-center" style="width: 100px; background-color: #4a5568;">Date</th>
-                                <th class="text-center" style="width: 50px; background-color: #4a5568;">Pos</th>
-                                <th class="text-center" style="width: 70px; background-color: #4a5568;">Qty</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">Pos</th>
+                                <th class="text-center" style="width: 80px; background-color: #4a5568;">Qty</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">EP</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">CMP</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">% %Chng</th>
@@ -139,7 +139,7 @@
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">PP</th>
                                 <th class="text-center" style="width: 100px; background-color: #4a5568;">IV</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">SI</th>
-                                <th class="text-center" style="width: 50px; background-color: #4a5568;">OL</th>
+                                <th class="text-center" style="width: 60px; background-color: #4a5568;">OL</th>
                                 <th class="text-center" style="width: 60px; background-color: #4a5568;">γ</th>
                                 <th class="text-center" style="width: 80px; background-color: #4a5568;">%Ch</th>
                             </tr>
@@ -273,14 +273,14 @@ class TradingSignalsManager {
         this.autoRefresh = true;
         this.refreshInterval = null;
         
-        // Available columns configuration matching Excel format
+        // Available columns configuration matching Excel format exactly
         this.availableColumns = {
-            'stf': { label: 'STF', default: true, width: '50px' },
-            'thirty': { label: '30', default: true, width: '50px' },
+            'stf': { label: 'STF', default: true, width: '100px' },
+            'thirty': { label: '30', default: true, width: '60px' },
             'dh': { label: 'DH', default: true, width: '80px' },
             'date': { label: 'Date', default: true, width: '100px' },
-            'pos': { label: 'Pos', default: true, width: '50px' },
-            'qty': { label: 'Qty', default: true, width: '70px' },
+            'pos': { label: 'Pos', default: true, width: '60px' },
+            'qty': { label: 'Qty', default: true, width: '80px' },
             'ep': { label: 'EP', default: true, width: '80px' },
             'cmp': { label: 'CMP', default: true, width: '80px' },
             'change': { label: '% %Chng', default: true, width: '80px' },
@@ -295,7 +295,7 @@ class TradingSignalsManager {
             'pp': { label: 'PP', default: true, width: '80px' },
             'iv': { label: 'IV', default: true, width: '100px' },
             'si': { label: 'SI', default: true, width: '80px' },
-            'ol': { label: 'OL', default: true, width: '50px' },
+            'ol': { label: 'OL', default: true, width: '60px' },
             'gamma': { label: 'γ', default: true, width: '60px' },
             'chng': { label: '%Ch', default: true, width: '80px' }
         };
@@ -378,157 +378,182 @@ class TradingSignalsManager {
     }
     
     generateSampleSignals() {
-        // Real trading data structure matching Excel format
+        // Real trading data structure matching Excel format with exact calculations
         return [
             {
-                stf: 'STF',
+                stf: 'MOEDHUSHIEES',
                 thirty: 30,
                 dh: 'DH',
                 date: '22-Nov-2024',
                 pos: 1,
                 qty: 200,
                 ep: 227.60,
-                cmp: 222.56,
+                cmp: 223.56,
                 change: -1.96,
                 inv: 45504,
-                tp: 244.26,
+                tp: 254.26,
                 twa: 50832,
                 tpr: 45.648,
-                pl: -992,
-                ed: 147000,
-                exp: 4.97,
+                pl: -808,
+                ed: 44696,
+                exp: 2.94,
                 pr: 4,
                 pp: 669.9,
-                iv: 47.849,
-                si: -1.24,
-                ol: 0,
-                gamma: 4,
+                iv: 215.89,
+                si: 1.31,
+                ol: 1,
+                gamma: 147000,
                 chng: -1.96
             },
             {
-                stf: 'STF',
+                stf: 'TIDEWATER',
                 thirty: 30,
                 dh: 'DH',
                 date: '13-Dec-2024',
                 pos: 1,
                 qty: 500,
                 ep: 47.13,
-                cmp: 47.13,
-                change: 0,
+                cmp: 52.79,
+                change: 12.02,
                 inv: 23565,
-                tp: 52.78,
-                twa: 26398,
-                tpr: 42.628,
-                pl: -2375,
-                ed: 36600,
-                exp: 2.44,
-                pr: 4,
+                tp: 52.79,
+                twa: 26395,
+                tpr: 12.028,
+                pl: 2830,
+                ed: 26395,
+                exp: 7.41,
+                pr: 1,
                 pp: 1063.9,
-                iv: 58.58,
-                si: 0.59,
-                ol: 0,
-                gamma: 4,
-                chng: 0
+                iv: 38.20,
+                si: 2.59,
+                ol: 1,
+                gamma: 36600,
+                chng: 12.02
             },
             {
-                stf: 'STF',
+                stf: 'CONSUMBEES',
                 thirty: 30,
                 dh: 'DH',
                 date: '20-Dec-2024',
-                pos: 1,
-                qty: 700,
-                ep: 194.00,
-                cmp: 194.00,
-                change: 0,
-                inv: 135800,
-                tp: 213.45,
-                twa: 149415,
-                tpr: 94.628,
-                pl: 0,
-                ed: 135800,
-                exp: 127.61,
-                pr: 2061,
-                pp: 5.1,
-                iv: 26010,
-                si: 5.67,
-                ol: 4,
-                gamma: 200.5,
-                chng: 0
-            },
-            {
-                stf: 'STF',
-                thirty: 30,
-                dh: 'DH',
-                date: '05-Jan-2025',
-                pos: 1,
-                qty: 110,
-                ep: 86.35,
-                cmp: 86.35,
-                change: 0.24,
-                inv: 9498.5,
-                tp: 95.01,
-                twa: 10451.1,
-                tpr: 89.440,
-                pl: 26.4,
-                ed: 9525.4,
-                exp: 99.3,
-                pr: 167.1,
-                pp: 0.5,
-                iv: 102100,
-                si: 2.22,
-                ol: 1,
-                gamma: 109.9,
-                chng: 0.24
-            },
-            {
-                stf: 'STF',
-                thirty: 30,
-                dh: 'DH',
-                date: '22-Nov-2024',
                 pos: 0,
-                qty: 800,
-                ep: 89.17,
-                cmp: 89.00,
-                change: -0.17,
-                inv: 71200,
-                tp: 95.30,
-                twa: 76240,
-                tpr: 87.628,
-                pl: -136,
-                ed: 71064,
-                exp: 92.3,
-                pr: 185.1,
-                pp: 0.5,
-                iv: 102100,
-                si: 1.22,
-                ol: 1,
-                gamma: 109.9,
-                chng: -0.17
+                qty: 100,
+                ep: 132.45,
+                cmp: 174,
+                change: 0.00,
+                inv: 0,
+                tp: 127.2,
+                twa: 0,
+                tpr: 0.000,
+                pl: 0,
+                ed: 2-Jan-2025,
+                exp: 12.1,
+                pr: 81,
+                pp: 3091.1,
+                iv: 30.1,
+                si: 29410,
+                ol: 8.57,
+                gamma: 14,
+                chng: -1.28
             },
             {
-                stf: 'STF',
+                stf: 'SILVEREES',
                 thirty: 30,
                 dh: 'DH',
-                date: '22-Nov-2024',
+                date: '16-Dec-2024',
                 pos: 0,
-                qty: 800,
-                ep: 66.00,
-                cmp: 66.00,
-                change: 0,
-                inv: 52800,
-                tp: 67.70,
-                twa: 54160,
-                tpr: 87.628,
+                qty: 1100,
+                ep: 104.25,
+                cmp: 103.44,
+                change: 0.00,
+                inv: 0,
+                tp: 103.44,
+                twa: 0,
+                tpr: 0.000,
                 pl: 0,
-                ed: 52800,
-                exp: 84.49,
-                pr: 1520,
-                pp: 3.3,
-                iv: 6,
-                si: 0,
+                ed: '30-Jan-2025',
+                exp: 88.87,
+                pr: 198,
+                pp: 1.9,
+                iv: 162780,
+                si: 2.27,
                 ol: 0,
-                gamma: 0.6,
-                chng: 0
+                gamma: 0,
+                chng: 6.14
+            },
+            {
+                stf: 'SILVEREES',
+                thirty: 30,
+                dh: 'DH',
+                date: '22-Nov-2024',
+                pos: 0,
+                qty: 607,
+                ep: 105.93,
+                cmp: 95,
+                change: 0,
+                inv: 0,
+                tp: 103.44,
+                twa: 0,
+                tpr: 0.000,
+                pl: 0,
+                ed: '14-Feb-2025',
+                exp: 91.3,
+                pr: 12.1,
+                pp: 0.5,
+                iv: 162780,
+                si: 2.22,
+                ol: 0,
+                gamma: 0,
+                chng: 0.48
+            },
+            {
+                stf: 'GOLDEBEES',
+                thirty: 30,
+                dh: 'DH',
+                date: '22-Nov-2024',
+                pos: 0,
+                qty: 100,
+                ep: 83.83,
+                cmp: 64,
+                change: 0,
+                inv: 0,
+                tp: 83.1,
+                twa: 0,
+                tpr: 0.000,
+                pl: 0,
+                ed: '20-Mar-2025',
+                exp: 2.3,
+                pr: 3,
+                pp: 0,
+                iv: 0,
+                si: 0.00,
+                ol: 0,
+                gamma: 0,
+                chng: 3.96
+            },
+            {
+                stf: 'BAJFINANCE',
+                thirty: 30,
+                dh: 'DH',
+                date: '16-Dec-2024',
+                pos: 1,
+                qty: 1500,
+                ep: 54.25,
+                cmp: 56.75,
+                change: -1.56,
+                inv: 95568,
+                tp: 66.50,
+                twa: 107035,
+                tpr: 41.168,
+                pl: -1488,
+                ed: 94080,
+                exp: 14.40,
+                pr: 17,
+                pp: 11000.6,
+                iv: 35.67,
+                si: -1.49,
+                ol: 1,
+                gamma: 706681,
+                chng: -1.49
             }
         ];
     }
@@ -577,7 +602,7 @@ class TradingSignalsManager {
                 let cellContent = '';
                 switch(columnKey) {
                     case 'stf':
-                        cellContent = signal.stf || 'STF';
+                        cellContent = `<strong>${signal.stf || 'STF'}</strong>`;
                         break;
                     case 'thirty':
                         cellContent = signal.thirty || '30';
@@ -589,10 +614,10 @@ class TradingSignalsManager {
                         cellContent = signal.date || '';
                         break;
                     case 'pos':
-                        cellContent = `<span class="badge ${signal.pos === 1 ? 'bg-success' : 'bg-danger'}">${signal.pos}</span>`;
+                        cellContent = `<span class="badge ${signal.pos === 1 ? 'bg-success' : 'bg-warning'}">${signal.pos}</span>`;
                         break;
                     case 'qty':
-                        cellContent = signal.qty || '';
+                        cellContent = signal.qty ? signal.qty.toLocaleString('en-IN') : '';
                         break;
                     case 'ep':
                         cellContent = signal.ep ? signal.ep.toFixed(2) : '';
@@ -602,26 +627,26 @@ class TradingSignalsManager {
                         break;
                     case 'change':
                         cellContent = signal.change !== undefined ? 
-                            `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change.toFixed(2)}%</span>` : '';
+                            `<span class="${signal.change >= 0 ? 'text-success' : 'text-danger'}">${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%</span>` : '';
                         break;
                     case 'inv':
-                        cellContent = signal.inv ? signal.inv.toLocaleString('en-IN') : '';
+                        cellContent = signal.inv ? signal.inv.toLocaleString('en-IN') : '0';
                         break;
                     case 'tp':
                         cellContent = signal.tp ? signal.tp.toFixed(2) : '';
                         break;
                     case 'twa':
-                        cellContent = signal.twa ? signal.twa.toLocaleString('en-IN') : '';
+                        cellContent = signal.twa ? signal.twa.toLocaleString('en-IN') : '0';
                         break;
                     case 'tpr':
-                        cellContent = signal.tpr ? signal.tpr.toFixed(3) : '';
+                        cellContent = signal.tpr ? signal.tpr.toFixed(3) : '0.000';
                         break;
                     case 'pl':
                         cellContent = signal.pl !== undefined ? 
-                            `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl}</span>` : '';
+                            `<span class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">${signal.pl >= 0 ? '+' : ''}${signal.pl}</span>` : '0';
                         break;
                     case 'ed':
-                        cellContent = signal.ed ? signal.ed.toLocaleString('en-IN') : '';
+                        cellContent = typeof signal.ed === 'string' ? signal.ed : (signal.ed ? signal.ed.toLocaleString('en-IN') : '');
                         break;
                     case 'exp':
                         cellContent = signal.exp ? signal.exp.toFixed(2) : '';
@@ -639,14 +664,14 @@ class TradingSignalsManager {
                         cellContent = signal.si ? signal.si.toFixed(2) : '';
                         break;
                     case 'ol':
-                        cellContent = signal.ol || '0';
+                        cellContent = signal.ol !== undefined ? signal.ol : '0';
                         break;
                     case 'gamma':
-                        cellContent = signal.gamma ? signal.gamma.toFixed(1) : '';
+                        cellContent = signal.gamma ? signal.gamma.toLocaleString('en-IN') : '';
                         break;
                     case 'chng':
                         cellContent = signal.chng !== undefined ? 
-                            `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng.toFixed(2)}</span>` : '';
+                            `<span class="${signal.chng >= 0 ? 'text-success' : 'text-danger'}">${signal.chng >= 0 ? '+' : ''}${signal.chng.toFixed(2)}</span>` : '';
                         break;
                     default:
                         cellContent = '';
