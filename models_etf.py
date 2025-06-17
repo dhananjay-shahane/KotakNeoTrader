@@ -103,6 +103,10 @@ class ETFPosition(db.Model):
             'percentage_change': self.percentage_change,
             'target_value_amount': self.target_value_amount,
             'target_profit_return': self.target_profit_return
+        }
+
+    def to_dict_detailed(self):
+        """Convert to dictionary with detailed info for JSON serialization"""
         return {
             'id': self.id,
             'etf_symbol': self.etf_symbol,
