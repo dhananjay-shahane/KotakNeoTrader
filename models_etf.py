@@ -80,6 +80,31 @@ class ETFPosition(db.Model):
         """Convert to dictionary for JSON serialization"""
         return {
             'id': self.id,
+            'user_id': self.user_id,
+            'etf_symbol': self.etf_symbol,
+            'trading_symbol': self.trading_symbol,
+            'token': self.token,
+            'exchange': self.exchange,
+            'entry_date': self.entry_date.isoformat() if self.entry_date else None,
+            'quantity': self.quantity,
+            'entry_price': float(self.entry_price) if self.entry_price else 0,
+            'target_price': float(self.target_price) if self.target_price else None,
+            'stop_loss': float(self.stop_loss) if self.stop_loss else None,
+            'current_price': float(self.current_price) if self.current_price else 0,
+            'position_type': self.position_type,
+            'notes': self.notes,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None,
+            # Calculated properties
+            'investment_amount': self.investment_amount,
+            'current_value': self.current_value,
+            'profit_loss': self.profit_loss,
+            'percentage_change': self.percentage_change,
+            'target_value_amount': self.target_value_amount,
+            'target_profit_return': self.target_profit_return
+        }urn {
+            'id': self.id,
             'etf_symbol': self.etf_symbol,
             'trading_symbol': self.trading_symbol,
             'token': self.token,

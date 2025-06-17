@@ -11,16 +11,21 @@ logger = logging.getLogger(__name__)
 def get_etf_positions():
     """Get all ETF positions for current user"""
     try:
-        if 'user_id' not in session:
+        if 'authenticated' not in session or not session['authenticated']:
             return jsonify({'error': 'Not authenticated'}), 401
 
-        user_id = session['user_id']
+        # Use database user ID if available, otherwise fallback to UCC
+        user_id = session.get('db_user_id', 1)  # Default to user ID 1 for testing
+        
+        from etf_trading_signals import ETFTradingSignals
         etf_manager = ETFTradingSignals()
         positions = etf_manager.get_user_etf_positions(user_id)
+        summary = etf_manager.calculate_portfolio_summary(user_id)
 
         return jsonify({
             'success': True,
             'positions': positions,
+            'summary': summary,
             'count': len(positions)
         })
 

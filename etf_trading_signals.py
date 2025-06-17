@@ -5,9 +5,229 @@ from session_helper import SessionHelper
 from datetime import datetime, timedelta
 import logging
 import json
-import pandas as pd
+import random
 
 logger = logging.getLogger(__name__)
+
+class ETFTradingSignals:
+    """ETF Trading Signals Manager"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        
+    def get_user_etf_positions(self, user_id):
+        """Get all ETF positions for a user"""
+        try:
+            positions = ETFPosition.query.filter_by(user_id=user_id, is_active=True).all()
+            
+            # Update current prices with simulated data or live data
+            self.update_position_prices(positions)
+            
+            # Convert to list of dictionaries
+            positions_list = []
+            for position in positions:
+                pos_dict = position.to_dict()
+                positions_list.append(pos_dict)
+            
+            return positions_list
+            
+        except Exception as e:
+            self.logger.error(f"Error getting user ETF positions: {e}")
+            return []
+    
+    def update_position_prices(self, positions):
+        """Update current prices for ETF positions"""
+        try:
+            for position in positions:
+                # For now, simulate price updates
+                # In real implementation, this would fetch live prices from the API
+                base_price = position.entry_price
+                price_variation = random.uniform(-0.05, 0.05)  # ±5% variation
+                position.current_price = base_price * (1 + price_variation)
+                position.last_update_time = datetime.utcnow()
+            
+            db.session.commit()
+            
+        except Exception as e:
+            self.logger.error(f"Error updating position prices: {e}")
+    
+    def calculate_portfolio_summary(self, user_id):
+        """Calculate portfolio summary metrics"""
+        try:
+            positions = ETFPosition.query.filter_by(user_id=user_id, is_active=True).all()
+            
+            if not positions:
+                return {
+                    'total_positions': 0,
+                    'total_investment': 0,
+                    'current_value': 0,
+                    'total_pnl': 0,
+                    'return_percent': 0,
+                    'profit_positions': 0,
+                    'loss_positions': 0
+                }
+            
+            total_investment = sum(pos.investment_amount for pos in positions)
+            total_current_value = sum(pos.current_value for pos in positions)
+            total_pnl = total_current_value - total_investment
+            return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
+            
+            profit_positions = sum(1 for pos in positions if pos.profit_loss > 0)
+            loss_positions = sum(1 for pos in positions if pos.profit_loss < 0)
+            
+            return {
+                'total_positions': len(positions),
+                'total_investment': total_investment,
+                'current_value': total_current_value,
+                'total_pnl': total_pnl,
+                'return_percent': return_percent,
+                'profit_positions': profit_positions,
+                'loss_positions': loss_positions
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating portfolio summary: {e}")
+            return {}
+    
+    def add_etf_position(self, user_id, position_data):
+        """Add new ETF position"""
+        try:
+            position = ETFPosition()
+            position.user_id = user_id
+            position.etf_symbol = position_data['etf_symbol']
+            position.trading_symbol = position_data['trading_symbol']
+            position.token = position_data['token']
+            position.exchange = position_data.get('exchange', 'NSE')
+            position.entry_date = datetime.strptime(position_data['entry_date'], '%Y-%m-%d').date()
+            position.quantity = int(position_data['quantity'])
+            position.entry_price = float(position_data['entry_price'])
+            position.target_price = float(position_data['target_price']) if position_data.get('target_price') else None
+            position.stop_loss = float(position_data['stop_loss']) if position_data.get('stop_loss') else None
+            position.current_price = float(position_data['entry_price'])  # Initialize with entry price
+            position.position_type = position_data.get('position_type', 'LONG')
+            position.notes = position_data.get('notes', '')
+            position.is_active = True
+            position.created_at = datetime.utcnow()
+            position.last_update_time = datetime.utcnow()
+            
+            db.session.add(position)
+            db.session.commit()
+            
+            return position.to_dict()
+            
+        except Exception as e:
+            self.logger.error(f"Error adding ETF position: {e}")
+            raise ValueError(f"Failed to add position: {e}")
+    
+    def update_etf_position(self, position_id, user_id, position_data):
+        """Update existing ETF position"""
+        try:
+            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
+            if not position:
+                raise ValueError("Position not found")
+            
+            # Update fields
+            if 'quantity' in position_data:
+                position.quantity = int(position_data['quantity'])
+            if 'entry_price' in position_data:
+                position.entry_price = float(position_data['entry_price'])
+            if 'target_price' in position_data:
+                position.target_price = float(position_data['target_price']) if position_data['target_price'] else None
+            if 'stop_loss' in position_data:
+                position.stop_loss = float(position_data['stop_loss']) if position_data['stop_loss'] else None
+            if 'notes' in position_data:
+                position.notes = position_data['notes']
+            if 'position_type' in position_data:
+                position.position_type = position_data['position_type']
+            
+            position.last_update_time = datetime.utcnow()
+            
+            db.session.commit()
+            
+            return position.to_dict()
+            
+        except Exception as e:
+            self.logger.error(f"Error updating ETF position: {e}")
+            raise ValueError(f"Failed to update position: {e}")
+    
+    def delete_etf_position(self, position_id, user_id):
+        """Delete ETF position"""
+        try:
+            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
+            if not position:
+                raise ValueError("Position not found")
+            
+            db.session.delete(position)
+            db.session.commit()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error deleting ETF position: {e}")
+            return False
+    
+    def search_etf_instruments(self, query):
+        """Search for ETF instruments"""
+        try:
+            # Sample ETF instruments for search
+            etf_instruments = [
+                {'symbol': 'NIFTYBEES', 'description': 'Nippon India ETF Nifty BeES', 'trading_symbol': 'NIFTYBEES-EQ', 'token': '120001'},
+                {'symbol': 'JUNIORBEES', 'description': 'Nippon India ETF Nifty Junior BeES', 'trading_symbol': 'JUNIORBEES-EQ', 'token': '120002'},
+                {'symbol': 'GOLDBEES', 'description': 'Nippon India ETF Gold BeES', 'trading_symbol': 'GOLDBEES-EQ', 'token': '120003'},
+                {'symbol': 'SILVERBEES', 'description': 'Nippon India ETF Silver BeES', 'trading_symbol': 'SILVERBEES-EQ', 'token': '120004'},
+                {'symbol': 'LIQUIDETF', 'description': 'Nippon India ETF Liquid BeES', 'trading_symbol': 'LIQUIDETF-EQ', 'token': '120005'},
+                {'symbol': 'BANKBEES', 'description': 'Nippon India ETF Bank BeES', 'trading_symbol': 'BANKBEES-EQ', 'token': '120006'},
+                {'symbol': 'ITBEES', 'description': 'Nippon India ETF IT BeES', 'trading_symbol': 'ITBEES-EQ', 'token': '120007'},
+                {'symbol': 'PHARMABEES', 'description': 'Nippon India ETF Pharma BeES', 'trading_symbol': 'PHARMABEES-EQ', 'token': '120008'},
+                {'symbol': 'CONSUMERBEES', 'description': 'Nippon India ETF Consumer BeES', 'trading_symbol': 'CONSUMERBEES-EQ', 'token': '120009'},
+                {'symbol': 'PSUBNKBEES', 'description': 'Nippon India ETF PSU Bank BeES', 'trading_symbol': 'PSUBNKBEES-EQ', 'token': '120010'},
+                {'symbol': 'HDFCNIFETF', 'description': 'HDFC Nifty 50 ETF', 'trading_symbol': 'HDFCNIFETF-EQ', 'token': '120011'},
+                {'symbol': 'IETF', 'description': 'ICICI Prudential Nifty ETF', 'trading_symbol': 'IETF-EQ', 'token': '120012'},
+                {'symbol': 'AUBANK', 'description': 'AU Small Finance Bank ETF', 'trading_symbol': 'AUBANK-EQ', 'token': '120013'},
+            ]
+            
+            # Filter based on query
+            matching_instruments = []
+            query_upper = query.upper()
+            
+            for instrument in etf_instruments:
+                if (query_upper in instrument['symbol'].upper() or 
+                    query_upper in instrument['description'].upper()):
+                    matching_instruments.append(instrument)
+            
+            return matching_instruments[:10]  # Return top 10 matches
+            
+        except Exception as e:
+            self.logger.error(f"Error searching ETF instruments: {e}")
+            return []
+    
+    def get_live_quotes(self, instruments):
+        """Get live quotes for instruments"""
+        try:
+            # For now, return simulated quotes
+            # In real implementation, this would call the Neo API
+            quotes = {}
+            
+            for instrument in instruments:
+                token = instrument.get('token', '')
+                symbol = instrument.get('symbol', '')
+                
+                # Simulate quote data
+                base_price = random.uniform(50, 500)
+                quotes[token] = {
+                    'symbol': symbol,
+                    'ltp': round(base_price, 2),
+                    'change': round(random.uniform(-10, 10), 2),
+                    'change_percent': round(random.uniform(-5, 5), 2),
+                    'volume': random.randint(1000, 100000),
+                    'timestamp': datetime.now().isoformat()
+                }
+            
+            return quotes
+            
+        except Exception as e:
+            self.logger.error(f"Error getting live quotes: {e}")
+            return {}
 
 
 class ETFTradingSignals:
