@@ -784,6 +784,12 @@
                 </a>
             </div>
             <div class="nav-item">
+                <a href="{{ url_for('etf_signals') }}" class="nav-link {% if request.endpoint == 'etf_signals' %}active{% endif %}">
+                    <i class="fas fa-chart-bar nav-icon"></i>
+                    <span>ETF Signals</span>
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="{{ url_for('main.deals') }}" class="nav-link {% if request.endpoint == 'main.deals' %}active{% endif %}">
                     <i class="fas fa-handshake nav-icon"></i>
                     <span>Deals</span>
