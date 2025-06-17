@@ -490,7 +490,7 @@ class DealsManager {
                         cellContent = deal.date || '';
                         break;
                     case 'pos':
-                        cellContent = `<span class="badge ${deal.pos === 1 ? 'bg-success' : 'bg-danger'}">${deal.pos === 1 ? 'LONG' : 'SHORT'}</span>`;
+                        cellContent = `<span class="badge ${deal.pos === 1 ? 'bg-success' : 'bg-danger'}">${deal.pos}</span>`;
                         break;
                     case 'qty':
                         cellContent = deal.qty ? deal.qty.toLocaleString('en-IN') : '';
