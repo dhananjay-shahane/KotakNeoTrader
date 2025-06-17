@@ -1,241 +1,177 @@
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETF Trading Signals - Kotak Neo Trading</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .signals-table {
-            font-size: 0.75rem;
-            background: #1a1a1a;
-        }
-        .signals-table th {
-            background: #2d2d2d;
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.7rem;
-            text-align: center;
-            padding: 6px 3px;
-            border: 1px solid #444;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-        }
-        .signals-table td {
-            padding: 4px 3px;
-            text-align: center;
-            border: 1px solid #444;
-            vertical-align: middle;
-            white-space: nowrap;
-            font-size: 0.75rem;
-        }
-        .profit { color: #00ff00; }
-        .loss { color: #ff0000; }
-        .neutral { color: #ffa500; }
-        .table-container {
-            height: 70vh;
-            overflow: auto;
-            border: 1px solid #444;
-        }
-        .portfolio-summary {
-            background: #2d2d2d;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .summary-card {
-            background: #1a1a1a;
-            border-radius: 6px;
-            padding: 10px;
-            text-align: center;
-        }
-        .toolbar {
-            background: #2d2d2d;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .live-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .live-indicator.connected {
-            background: #00ff00;
-            animation: pulse 2s infinite;
-        }
-        .live-indicator.disconnected {
-            background: #ff0000;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .btn-sm {
-            padding: 2px 6px;
-            font-size: 0.75rem;
-        }
-        .instrument-search {
-            position: relative;
-        }
-        .search-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #2d2d2d;
-            border: 1px solid #444;
-            border-radius: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        .search-result-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #444;
-        }
-        .search-result-item:hover {
-            background: #444;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-chart-line me-2"></i>Kotak Neo Trading
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/dashboard">Dashboard</a>
-                <a class="nav-link" href="/positions">Positions</a>
-                <a class="nav-link" href="/holdings">Holdings</a>
-                <a class="nav-link active" href="/etf-signals">ETF Signals</a>
-                <a class="nav-link" href="/logout">Logout</a>
+{% extends "base.html" %}
+
+{% block title %}ETF Trading Signals - Kotak Neo Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signals-table {
+        font-size: 0.75rem;
+        background: var(--card-bg);
+    }
+    .signals-table th {
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-align: center;
+        padding: 6px 3px;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    .signals-table td {
+        padding: 4px 3px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+        white-space: nowrap;
+        font-size: 0.75rem;
+    }
+    .profit { color: var(--success-color); }
+    .loss { color: var(--danger-color); }
+    .neutral { color: var(--warning-color); }
+    .table-container {
+        height: 70vh;
+        overflow: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+    .portfolio-summary {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+    .summary-card {
+        background: var(--dark-bg);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    .live-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .live-indicator.connected {
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+    }
+    .live-indicator.disconnected {
+        background: var(--danger-color);
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">ETF Trading Signals</h1>
+        <p class="text-muted mb-0">Real-time ETF position tracking and analysis</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshSignals()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+            <i class="fas fa-cog me-1"></i>Columns
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#signalFiltersModal">
+            <i class="fas fa-filter me-1"></i>Filters
+        </button>
+
+    </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="portfolio-summary">
+    <div class="row">
+        <div class="col-12 mb-2">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie me-2"></i>ETF Portfolio Summary
+                <span class="live-indicator connected" id="liveIndicator"></span>
+                <small class="text-muted">Live Data</small>
+            </h5>
+        </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">Total Positions</div>
+                <div class="h6 mb-0" id="totalPositions">0</div>
             </div>
         </div>
-    </nav>
-
-    <div class="container-fluid mt-3">
-        <!-- Portfolio Summary -->
-        <div class="portfolio-summary">
-            <div class="row">
-                <div class="col-12 mb-2">
-                    <h5 class="mb-3">
-                        <i class="fas fa-chart-pie me-2"></i>ETF Portfolio Summary
-                        <span class="live-indicator connected" id="liveIndicator"></span>
-                        <small class="text-muted">Live Data</small>
-                    </h5>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">Total Positions</div>
-                        <div class="h6 mb-0" id="totalPositions">0</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">Investment</div>
-                        <div class="h6 mb-0" id="totalInvestment">₹0</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">Current Value</div>
-                        <div class="h6 mb-0" id="currentValue">₹0</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">P&L</div>
-                        <div class="h6 mb-0" id="totalPnL">₹0</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">Return %</div>
-                        <div class="h6 mb-0" id="returnPercent">0%</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="summary-card">
-                        <div class="text-muted small">Profit/Loss</div>
-                        <div class="small">
-                            <span class="profit" id="profitPositions">0</span> / 
-                            <span class="loss" id="lossPositions">0</span>
-                        </div>
-                    </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">Investment</div>
+                <div class="h6 mb-0" id="totalInvestment">₹0</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">Current Value</div>
+                <div class="h6 mb-0" id="currentValue">₹0</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">P&L</div>
+                <div class="h6 mb-0" id="totalPnL">₹0</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">Return %</div>
+                <div class="h6 mb-0" id="returnPercent">0%</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="summary-card">
+                <div class="text-muted small">Profit/Loss</div>
+                <div class="small">
+                    <span class="profit" id="profitPositions">0</span> / 
+                    <span class="loss" id="lossPositions">0</span>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Toolbar -->
-        <div class="toolbar">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-success btn-sm" id="addDealBtn">
-                    <i class="fas fa-plus"></i> Add Deal
-                </button>
-                <button class="btn btn-primary btn-sm" id="refreshBtn">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-                <button class="btn btn-warning btn-sm" id="exportBtn">
-                    <i class="fas fa-download"></i> Export
-                </button>
+<!-- ETF Signals Table -->
+<div class="card bg-secondary border-0 shadow-lg">
+    <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-light">
+            <i class="fas fa-signal me-2 text-primary"></i>ETF Trading Signals
+            <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
+        </h5>
+        <div class="d-flex gap-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label text-light" for="autoRefreshToggle">
+                    Auto Refresh
+                </label>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <label class="form-label small mb-0">Auto Refresh:</label>
-                <select class="form-select form-select-sm" id="autoRefreshInterval" style="width: 120px;">
-                    <option value="0">Off</option>
-                    <option value="5">5 sec</option>
-                    <option value="10" selected>10 sec</option>
-                    <option value="30">30 sec</option>
-                    <option value="60">1 min</option>
-                </select>
-            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
         </div>
-
-        <!-- ETF Signals Table -->
-        <div class="table-container">
-            <table class="table table-dark table-striped signals-table" id="signalsTable">
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 signals-table" id="signalsTable">
                 <thead>
-                    <tr>
-                        <th title="ETF Symbol">ETF</th>
-                        <th title="30 Day Performance">30</th>
-                        <th title="Days Held">DH</th>
-                        <th title="Entry Date">Date</th>
-                        <th title="Position Type">Pos</th>
-                        <th title="Quantity">Qty</th>
-                        <th title="Entry Price">EP</th>
-                        <th title="Current Market Price">CMP</th>
-                        <th title="Percentage Change">%Chan</th>
-                        <th title="Investment Amount">Inv.</th>
-                        <th title="Target Price">TP</th>
-                        <th title="Target Value Amount">TVA</th>
-                        <th title="Target Profit Return">TPR</th>
-                        <th title="Profit/Loss">PL</th>
-                        <th title="Entry Date">ED</th>
-                        <th title="Expected/Expiry">EXP</th>
-                        <th title="Price Range">PR</th>
-                        <th title="Performance Points">PP</th>
-                        <th title="Implied Volatility">IV</th>
-                        <th title="Intraday Performance">IP</th>
-                        <th title="Notes/Tags">NT</th>
-                        <th title="Quote Time">Qt</th>
-                        <th title="7 Day Change">7</th>
-                        <th title="Percentage Change">%Ch</th>
-                        <th title="Actions" style="width: 80px;">Actions</th>
+                    <tr id="tableHeaders">
+                        <!-- Dynamic headers will be generated here -->
                     </tr>
                 </thead>
                 <tbody id="signalsTableBody">
@@ -244,846 +180,815 @@
             </table>
         </div>
     </div>
+    
+    <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+        <div>
+            <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> signals</small>
+        </div>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
 
-    <!-- Add/Edit Position Modal -->
-    <div class="modal fade" id="positionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Add ETF Position</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-cog me-2"></i>Column Settings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Select which columns to display in the trading signals table:</p>
+                <div class="row" id="columnCheckboxes">
+                    <!-- Column checkboxes will be populated here -->
                 </div>
-                <div class="modal-body">
-                    <form id="positionForm">
-                        <input type="hidden" id="positionId">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="form-label">ETF Symbol *</label>
-                                <div class="instrument-search">
-                                    <input type="text" class="form-control" id="etfSymbol" placeholder="Search ETF..." required>
-                                    <div class="search-results" id="searchResults"></div>
-                                </div>
-                                <input type="hidden" id="tradingSymbol">
-                                <input type="hidden" id="instrumentToken">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Entry Date *</label>
-                                <input type="date" class="form-control" id="entryDate" required>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Quantity *</label>
-                                <input type="number" class="form-control" id="quantity" min="1" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Entry Price *</label>
-                                <input type="number" class="form-control" id="entryPrice" step="0.01" min="0" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Target Price</label>
-                                <input type="number" class="form-control" id="targetPrice" step="0.01" min="0">
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Stop Loss</label>
-                                <input type="number" class="form-control" id="stopLoss" step="0.01" min="0">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Position Type</label>
-                                <select class="form-select" id="positionType">
-                                    <option value="LONG">LONG</option>
-                                    <option value="SHORT">SHORT</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <label class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" rows="3"></textarea>
-                        </div>
-                    </form>
+                <hr class="border-secondary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="savePositionBtn">Save Position</button>
-                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        class ETFSignalsManager {
-            constructor() {
-                this.positions = [];
-                this.liveDataInterval = null;
-                this.autoRefreshInterval = 10000; // 10 seconds
-                this.searchTimeout = null;
-                this.init();
-            }
+<!-- Signal Filters Modal -->
+<div class="modal fade" id="signalFiltersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-filter me-2"></i>Signal Filters
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">Position Type</label>
+                    <select class="form-select bg-secondary text-light" id="positionTypeFilter">
+                        <option value="">All Positions</option>
+                        <option value="LONG">Long Positions</option>
+                        <option value="SHORT">Short Positions</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Profit/Loss Status</label>
+                    <select class="form-select bg-secondary text-light" id="pnlStatusFilter">
+                        <option value="">All Positions</option>
+                        <option value="profit">In Profit</option>
+                        <option value="loss">In Loss</option>
+                        <option value="neutral">Neutral</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">ETF Symbol</label>
+                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter ETF symbol...">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Min Investment</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="minInvestmentFilter" placeholder="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Max Investment</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="maxInvestmentFilter" placeholder="100000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            init() {
-                this.setupEventListeners();
-                this.loadPositions();
+<!-- Add/Edit Position Modal -->
+<div class="modal fade" id="positionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-light" id="modalTitle">Add ETF Position</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="positionForm">
+                    <input type="hidden" id="positionId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">ETF Symbol *</label>
+                            <input type="text" class="form-control" id="etfSymbol" placeholder="Search ETF..." required>
+                            <input type="hidden" id="tradingSymbol">
+                            <input type="hidden" id="instrumentToken">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Entry Date *</label>
+                            <input type="date" class="form-control" id="entryDate" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-light">Quantity *</label>
+                            <input type="number" class="form-control" id="quantity" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-light">Entry Price *</label>
+                            <input type="number" class="form-control" id="entryPrice" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-light">Target Price</label>
+                            <input type="number" class="form-control" id="targetPrice" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Stop Loss</label>
+                            <input type="number" class="form-control" id="stopLoss" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Position Type</label>
+                            <select class="form-select" id="positionType">
+                                <option value="LONG">LONG</option>
+                                <option value="SHORT">SHORT</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label text-light">Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePositionBtn">Save Position</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+class ETFSignalsManager {
+    constructor() {
+        this.positions = [];
+        this.filteredPositions = [];
+        this.currentPage = 1;
+        this.pageSize = 20;
+        this.autoRefresh = true;
+        this.refreshInterval = null;
+        this.searchTimeout = null;
+        
+        // Available columns configuration
+        this.availableColumns = {
+            'symbol': { label: 'ETF', default: true, width: '70px' },
+            'thirty': { label: '30', default: false, width: '50px' },
+            'dh': { label: 'DH', default: true, width: '50px' },
+            'date': { label: 'Date', default: true, width: '70px' },
+            'pos': { label: 'Pos', default: true, width: '50px' },
+            'qty': { label: 'Qty', default: true, width: '50px' },
+            'ep': { label: 'EP', default: true, width: '70px' },
+            'cmp': { label: 'CMP', default: true, width: '70px' },
+            'change_pct': { label: '%Chan', default: true, width: '60px' },
+            'inv': { label: 'Inv.', default: true, width: '70px' },
+            'tp': { label: 'TP', default: true, width: '60px' },
+            'tva': { label: 'TVA', default: true, width: '70px' },
+            'tpr': { label: 'TPR', default: true, width: '70px' },
+            'pl': { label: 'PL', default: true, width: '60px' },
+            'ed': { label: 'ED', default: false, width: '70px' },
+            'exp': { label: 'EXP', default: false, width: '60px' },
+            'pr': { label: 'PR', default: true, width: '80px' },
+            'pp': { label: 'PP', default: true, width: '50px' },
+            'iv': { label: 'IV', default: true, width: '60px' },
+            'ip': { label: 'IP', default: true, width: '60px' },
+            'nt': { label: 'NT', default: false, width: '60px' },
+            'qt': { label: 'Qt', default: false, width: '60px' },
+            'seven': { label: '7', default: false, width: '50px' },
+            'change2': { label: '%Ch', default: false, width: '60px' },
+            'actions': { label: 'Actions', default: true, width: '80px' }
+        };
+        
+        this.selectedColumns = this.getDefaultColumns();
+        this.init();
+    }
+    
+    getDefaultColumns() {
+        return Object.keys(this.availableColumns).filter(col => this.availableColumns[col].default);
+    }
+
+    init() {
+        this.generateColumnCheckboxes();
+        this.updateTableHeaders();
+        this.loadPositions();
+        this.startAutoRefresh();
+        this.setupEventListeners();
+        
+        // Auto refresh toggle
+        document.getElementById('autoRefreshToggle').addEventListener('change', (e) => {
+            this.autoRefresh = e.target.checked;
+            if (this.autoRefresh) {
                 this.startAutoRefresh();
-                this.initLiveDataConnection();
+            } else {
+                this.stopAutoRefresh();
             }
+        });
+    }
+    
+    generateColumnCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        container.innerHTML = '';
+        
+        Object.keys(this.availableColumns).forEach(column => {
+            const colInfo = this.availableColumns[column];
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-4 col-lg-3 mb-2';
+            
+            colDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="col_${column}" 
+                           ${this.selectedColumns.includes(column) ? 'checked' : ''}>
+                    <label class="form-check-label text-light" for="col_${column}">
+                        ${colInfo.label}
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(colDiv);
+        });
+    }
+    
+    updateTableHeaders() {
+        const headersRow = document.getElementById('tableHeaders');
+        headersRow.innerHTML = '';
+        
+        this.selectedColumns.forEach(column => {
+            const th = document.createElement('th');
+            const colInfo = this.availableColumns[column];
+            th.style.width = colInfo.width;
+            th.className = 'text-center';
+            th.style.backgroundColor = 'var(--secondary-color)';
+            th.style.color = 'var(--text-primary)';
+            th.style.fontWeight = '600';
+            th.style.fontSize = '0.7rem';
+            th.style.padding = '6px 3px';
+            th.style.border = '1px solid var(--border-color)';
+            th.style.position = 'sticky';
+            th.style.top = '0';
+            th.style.zIndex = '10';
+            th.style.whiteSpace = 'nowrap';
+            th.textContent = colInfo.label;
+            th.title = this.getColumnTooltip(column);
+            headersRow.appendChild(th);
+        });
+    }
+    
+    getColumnTooltip(column) {
+        const tooltips = {
+            'symbol': 'ETF Symbol',
+            'thirty': '30 Day Performance',
+            'dh': 'Days Held',
+            'date': 'Entry Date',
+            'pos': 'Position Type',
+            'qty': 'Quantity',
+            'ep': 'Entry Price',
+            'cmp': 'Current Market Price',
+            'change_pct': 'Percentage Change',
+            'inv': 'Investment Amount',
+            'tp': 'Target Price',
+            'tva': 'Target Value Amount',
+            'tpr': 'Target Profit Return',
+            'pl': 'Profit/Loss',
+            'ed': 'Entry Date',
+            'exp': 'Expected/Expiry',
+            'pr': 'Price Range',
+            'pp': 'Performance Points',
+            'iv': 'Implied Volatility',
+            'ip': 'Intraday Performance',
+            'nt': 'Notes/Tags',
+            'qt': 'Quote Time',
+            'seven': '7 Day Change',
+            'change2': 'Percentage Change',
+            'actions': 'Actions'
+        };
+        return tooltips[column] || column.toUpperCase();
+    }
 
-            setupEventListeners() {
-                // Add deal button
-                document.getElementById('addDealBtn').addEventListener('click', () => {
-                    this.showAddDealModal();
-                });
+    setupEventListeners() {
+        // Add deal button
+        document.getElementById('addDealBtn').addEventListener('click', () => {
+            this.showAddDealModal();
+        });
 
-                // Save position button
-                document.getElementById('savePositionBtn').addEventListener('click', () => {
-                    this.savePosition();
-                });
+        // Save position button
+        document.getElementById('savePositionBtn').addEventListener('click', () => {
+            this.savePosition();
+        });
 
-                // Refresh button
-                document.getElementById('refreshBtn').addEventListener('click', () => {
-                    this.loadPositions();
-                });
+        // Set today's date as default
+        document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+    }
 
-                // Auto refresh interval change
-                document.getElementById('autoRefreshInterval').addEventListener('change', (e) => {
-                    this.autoRefreshInterval = parseInt(e.target.value) * 1000;
-                    this.startAutoRefresh();
-                });
-
-                // ETF symbol search
-                document.getElementById('etfSymbol').addEventListener('input', (e) => {
-                    this.searchETFs(e.target.value);
-                });
-
-                // Export button
-                document.getElementById('exportBtn').addEventListener('click', () => {
-                    this.exportData();
-                });
-
-                // Set today's date as default
-                document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+    async loadPositions() {
+        try {
+            const response = await fetch('/api/etf/positions');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.positions = this.convertETFPositionsToSignals(data.positions || []);
+                this.filteredPositions = [...this.positions];
+                this.updateSummaryCards(data.summary || {});
+                this.renderPositionsTable();
+                this.updatePagination();
+            } else {
+                console.error('API Error:', data.error);
+                this.positions = [];
+                this.filteredPositions = [];
+                this.renderPositionsTable();
             }
+            
+        } catch (error) {
+            console.error('Error loading positions:', error);
+            this.showAlert('Failed to load ETF positions', 'danger');
+        }
+    }
+    
+    convertETFPositionsToSignals(positions) {
+        return positions.map(position => {
+            const daysHeld = Math.floor((new Date() - new Date(position.entry_date)) / (1000 * 60 * 60 * 24));
+            const currentPrice = position.current_price || position.entry_price;
+            const percentChange = position.percentage_change || 0;
+            const pnl = position.profit_loss || 0;
+            const investment = position.investment_amount || 0;
+            const targetValue = position.target_value_amount || 0;
+            const targetProfit = position.target_profit_return || 0;
+            
+            // Calculate performance metrics
+            const priceRange = currentPrice ? `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}` : '-';
+            const performancePoints = percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-';
+            const impliedVolatility = Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low';
+            const quoteTime = position.last_update_time ? new Date(position.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '-';
+            
+            return {
+                symbol: position.etf_symbol,
+                thirty: '-',
+                dh: daysHeld,
+                date: new Date(position.entry_date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                pos: position.position_type === 'LONG' ? 1 : 0,
+                qty: position.quantity,
+                ep: position.entry_price,
+                cmp: currentPrice,
+                change_pct: percentChange,
+                inv: investment,
+                tp: position.target_price || 0,
+                tva: targetValue,
+                tpr: targetProfit,
+                pl: pnl,
+                ed: new Date(position.entry_date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                exp: '-',
+                pr: priceRange,
+                pp: performancePoints,
+                iv: impliedVolatility,
+                ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
+                nt: position.notes || '-',
+                qt: quoteTime,
+                seven: '-',
+                change2: percentChange,
+                id: position.id,
+                position_type: position.position_type,
+                is_active: position.is_active
+            };
+        });
+    }
 
-            async loadPositions() {
-                try {
-                    const response = await fetch('/api/etf/positions');
-                    const data = await response.json();
+    renderPositionsTable() {
+        const tbody = document.getElementById('signalsTableBody');
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const pagePositions = this.filteredPositions.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        if (pagePositions.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                    <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                    <h6 class="text-muted">No ETF positions found</h6>
+                    <p class="text-muted mb-0">Add new positions or adjust filters</p>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
 
-                    if (data.success) {
-                        this.positions = data.positions || [];
-                        this.updatePositionsTable();
-                        this.updateSummaryCards(data.summary || {});
-                        console.log('Loaded', this.positions.length, 'ETF positions');
-                    } else {
-                        this.showAlert('Error loading positions: ' + (data.error || 'Unknown error'), 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error loading positions:', error);
-                    this.showAlert('Failed to load positions', 'danger');
-                }
-            }
-
-            updatePositionsTable() {
-                const tbody = document.getElementById('signalsTableBody');
-                tbody.innerHTML = '';
-
-                if (!this.positions || this.positions.length === 0) {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `<td colspan="24" class="text-center text-muted">No ETF positions found</td>`;
-                    return;
-                }
-
-                this.positions.forEach(position => {
-                    const row = document.createElement('tr');
-                                        const percentChange = position.percentage_change;
-                    const pnl = position.profit_loss;
-
-                    const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
-                    const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
-
-                    // Format entry date
-                    const entryDate = new Date(position.entry_date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                    });
-
-                    row.innerHTML = `
-                        <td><strong>${position.etf_symbol}</strong></td>
-                        <td>#N/A</td>
-                        <td>#N/A</td>
-                        <td>${entryDate}</td>
-                        <td><span class="badge ${position.is_active ? 'bg-success' : 'bg-secondary'}">${position.is_active ? '1' : '0'}</span></td>
-                        <td>${position.quantity}</td>
-                        <td>₹${position.entry_price.toFixed(2)}</td>
-                        <td class="${pnlClass}">₹${position.current_price.toFixed(2)}</td>
-                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                        <td>₹${position.investment_amount.toFixed(0)}</td>
-                        <td>₹${(position.target_price || 0).toFixed(2)}</td>
-                        <td>₹${position.target_value_amount.toFixed(0)}</td>
-                        <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
-                        <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                    `;
-                                        document.getElementById('signalsTableBody').appendChild(row);
-                });
-            }
-
-            updateSummaryCards(summary) {
-                if (!summary) summary = {};
-
-                document.getElementById('totalPositions').textContent = summary.total_positions || 0;
-                document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('returnPercent').textContent = (summary.return_percent || 0).toFixed(2) + '%';
-                document.getElementById('profitPositions').textContent = summary.profit_positions || 0;
-                document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
-
-                // Update P&L color
-                const pnlElement = document.getElementById('totalPnL');
-                const pnl = summary.total_pnl || 0;
-                pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
-
-                // Update return % color
-                const returnElement = document.getElementById('returnPercent');
-                const returnPercent = summary.return_percent || 0;
-                returnElement.className = returnPercent >= 0 ? 'text-success' : 'text-danger';
-            }
-
-            showAddDealModal() {
-                const modal = new bootstrap.Modal(document.getElementById('positionModal'));
-                const modalTitle = document.getElementById('modalTitle');
-
-                modalTitle.textContent = 'Add New Deal';
-                this.clearPositionForm();
-                modal.show();
-            }
-
-            fillPositionForm(position) {
-                document.getElementById('positionId').value = position.id;
-                document.getElementById('etfSymbol').value = position.etf_symbol;
-                document.getElementById('tradingSymbol').value = position.trading_symbol;
-                document.getElementById('instrumentToken').value = position.token;
-                document.getElementById('entryDate').value = position.entry_date;
-                document.getElementById('quantity').value = position.quantity;
-                document.getElementById('entryPrice').value = position.entry_price;
-                document.getElementById('targetPrice').value = position.target_price || '';
-                document.getElementById('stopLoss').value = position.stop_loss || '';
-                document.getElementById('positionType').value = position.position_type;
-                document.getElementById('notes').value = position.notes || '';
-            }
-
-            clearPositionForm() {
-                document.getElementById('positionForm').reset();
-                document.getElementById('positionId').value = '';
-                document.getElementById('tradingSymbol').value = '';
-                document.getElementById('instrumentToken').value = '';
-                document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-            }
-
-            async savePosition() {
-                const positionId = document.getElementById('positionId').value;
-                const formData = {
-                    etf_symbol: document.getElementById('etfSymbol').value,
-                    trading_symbol: document.getElementById('tradingSymbol').value,
-                    token: document.getElementById('instrumentToken').value,
-                    entry_date: document.getElementById('entryDate').value,
-                    quantity: parseInt(document.getElementById('quantity').value),
-                    entry_price: parseFloat(document.getElementById('entryPrice').value),
-                    target_price: parseFloat(document.getElementById('targetPrice').value) || null,
-                    stop_loss: parseFloat(document.getElementById('stopLoss').value) || null,
-                    position_type: document.getElementById('positionType').value,
-                    notes: document.getElementById('notes').value
-                };
-
-                try {
-                    let response;
-                    if (positionId) {
-                        // Update existing position
-                        formData.id = positionId;
-                        response = await fetch('/api/etf/positions', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formData)
-                        });
-                    } else {
-                        // Add new position
-                        response = await fetch('/api/etf/positions', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formData)
-                        });
-                    }
-
-                    const data = await response.json();
-                    if (data.success) {
-                        this.showAlert(data.message, 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('positionModal')).hide();
-                        this.loadPositions();
-                    } else {
-                        this.showAlert('Error: ' + data.error, 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error saving position:', error);
-                    this.showAlert('Error saving position', 'danger');
-                }
-            }
-
-            async deletePosition(positionId) {
-                if (!confirm('Are you sure you want to delete this position?')) {
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/api/etf/positions?id=${positionId}`, {
-                        method: 'DELETE'
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        this.showAlert('Position deleted successfully', 'success');
-                        this.loadPositions();
-                    } else {
-                        this.showAlert('Error: ' + data.error, 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error deleting position:', error);
-                    this.showAlert('Error deleting position', 'danger');
-                }
-            }
-
-            async editPosition(positionId) {
-                const position = this.positions.find(p => p.id === positionId);
-                if (position) {
-                    this.showPositionModal(position);
-                }
-            }
-
-            async searchETFs(query) {
-                if (this.searchTimeout) {
-                    clearTimeout(this.searchTimeout);
-                }
-
-                if (query.length < 2) {
-                    document.getElementById('searchResults').style.display = 'none';
-                    return;
-                }
-
-                this.searchTimeout = setTimeout(async () => {
-                    try {
-                        const response = await fetch(`/api/etf/search?q=${encodeURIComponent(query)}`);
-                        const data = await response.json();
-
-                        if (data.success) {
-                            this.displaySearchResults(data.instruments);
+        pagePositions.forEach(position => {
+            const row = document.createElement('tr');
+            
+            this.selectedColumns.forEach(columnKey => {
+                const cell = document.createElement('td');
+                cell.className = 'text-center';
+                cell.style.padding = '4px 3px';
+                cell.style.border = '1px solid var(--border-color)';
+                cell.style.fontSize = '0.75rem';
+                
+                let cellContent = '';
+                let bgColor = '';
+                
+                switch(columnKey) {
+                    case 'symbol':
+                        cellContent = `<strong>${position.symbol || ''}</strong>`;
+                        break;
+                    case 'thirty':
+                        cellContent = position.thirty || '-';
+                        break;
+                    case 'dh':
+                        cellContent = position.dh !== undefined ? position.dh + 'd' : '0d';
+                        break;
+                    case 'date':
+                        cellContent = position.date || '';
+                        break;
+                    case 'pos':
+                        cellContent = `<span class="badge ${position.pos === 1 ? 'bg-success' : 'bg-danger'}">${position.pos === 1 ? 'LONG' : 'SHORT'}</span>`;
+                        break;
+                    case 'qty':
+                        cellContent = position.qty ? position.qty.toLocaleString('en-IN') : '';
+                        break;
+                    case 'ep':
+                        cellContent = position.ep ? '₹' + position.ep.toFixed(2) : '';
+                        break;
+                    case 'cmp':
+                        cellContent = position.cmp ? '₹' + position.cmp.toFixed(2) : '';
+                        break;
+                    case 'change_pct':
+                        if (position.change_pct !== undefined) {
+                            bgColor = position.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                            cellContent = `${position.change_pct >= 0 ? '+' : ''}${position.change_pct.toFixed(2)}%`;
                         }
-                    } catch (error) {
-                        console.error('Error searching ETFs:', error);
-                    }
-                }, 300);
-            }
-
-            displaySearchResults(instruments) {
-                const resultsDiv = document.getElementById('searchResults');
-                resultsDiv.innerHTML = '';
-
-                if (instruments.length === 0) {
-                    resultsDiv.style.display = 'none';
-                    return;
+                        break;
+                    case 'inv':
+                        cellContent = position.inv ? '₹' + position.inv.toLocaleString('en-IN') : '';
+                        break;
+                    case 'tp':
+                        cellContent = position.tp ? '₹' + position.tp.toFixed(2) : '-';
+                        break;
+                    case 'tva':
+                        cellContent = position.tva ? '₹' + position.tva.toLocaleString('en-IN') : '';
+                        break;
+                    case 'tpr':
+                        cellContent = position.tpr ? '₹' + position.tpr.toFixed(0) : '0';
+                        break;
+                    case 'pl':
+                        if (position.pl !== undefined) {
+                            bgColor = position.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                            cellContent = `₹${position.pl >= 0 ? '+' : ''}${position.pl.toFixed(0)}`;
+                        }
+                        break;
+                    case 'ed':
+                        cellContent = position.ed || '';
+                        break;
+                    case 'exp':
+                        cellContent = position.exp || '-';
+                        break;
+                    case 'pr':
+                        cellContent = position.pr || '-';
+                        break;
+                    case 'pp':
+                        cellContent = position.pp || '-';
+                        break;
+                    case 'iv':
+                        cellContent = `<span class="badge bg-info">${position.iv || 'Low'}</span>`;
+                        break;
+                    case 'ip':
+                        cellContent = position.ip || '-';
+                        if (position.change_pct > 0) {
+                            cell.style.color = 'var(--success-color)';
+                        } else if (position.change_pct < 0) {
+                            cell.style.color = 'var(--danger-color)';
+                        }
+                        break;
+                    case 'nt':
+                        cellContent = `<small>${position.nt || '-'}</small>`;
+                        break;
+                    case 'qt':
+                        cellContent = `<small>${position.qt || '-'}</small>`;
+                        break;
+                    case 'seven':
+                        cellContent = position.seven || '-';
+                        break;
+                    case 'change2':
+                        if (position.change2 !== undefined) {
+                            bgColor = position.change2 >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                            cellContent = `${position.change2 >= 0 ? '+' : ''}${position.change2.toFixed(2)}%`;
+                        }
+                        break;
+                    case 'actions':
+                        cellContent = `
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="etfManager.editPosition(${position.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="etfManager.deletePosition(${position.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                        break;
+                    default:
+                        cellContent = '';
                 }
-
-                instruments.forEach(instrument => {
-                    const div = document.createElement('div');
-                    div.className = 'search-result-item';
-                    div.innerHTML = `
-                        <div><strong>${instrument.symbol}</strong></div>
-                        <div class="small text-muted">${instrument.description}</div>
-                    `;
-                    div.addEventListener('click', () => {
-                        document.getElementById('etfSymbol').value = instrument.symbol;
-                        document.getElementById('tradingSymbol').value = instrument.trading_symbol;
-                        document.getElementById('instrumentToken').value = instrument.token;
-                        resultsDiv.style.display = 'none';
-                    });
-                    resultsDiv.appendChild(div);
-                });
-
-                resultsDiv.style.display = 'block';
-            }
-
-            startAutoRefresh() {
-                if (this.liveDataInterval) {
-                    clearInterval(this.liveDataInterval);
+                
+                if (bgColor) {
+                    cell.style.backgroundColor = bgColor;
+                    cell.style.color = 'white';
+                    cell.style.fontWeight = 'bold';
                 }
-
-                if (this.autoRefreshInterval > 0) {
-                    this.liveDataInterval = setInterval(() => {
-                        this.loadPositions();
-                    }, this.autoRefreshInterval);
-                }
-            }
-
-            initLiveDataConnection() {
-                // Update live indicator
-                const indicator = document.getElementById('liveIndicator');
-                indicator.className = 'live-indicator connected';
-            }
-
-            generateCSV() {
-                const headers = ['ETF', '30', 'DH', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'PL', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '7', '%Ch'];
-                let csv = headers.join(',') + '\n';
-
-                this.positions.forEach(position => {
-                    const row = [
-                        position.etf_symbol,
-                        '#N/A',
-                        '#N/A',
-                        position.entry_date,
-                        position.is_active ? '1' : '0',
-                        position.quantity,
-                        position.entry_price,
-                        position.current_price,
-                        position.percentage_change.toFixed(2),
-                        position.investment_amount.toFixed(0),
-                        position.target_price || '',
-                        position.target_value_amount.toFixed(0),
-                        position.target_profit_return.toFixed(0),
-                        position.profit_loss.toFixed(0),
-                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'
-                    ];
-                    csv += row.join(',') + '\n';
-                });
-
-                return csv;
-            }
-
-            showAlert(message, type) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-                alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.body.appendChild(alertDiv);
-
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.parentNode.removeChild(alertDiv);
-                    }
-                }, 5000);
-            }
-        }
-
-        // Initialize the ETF Signals Manager
-        const etfManager = new ETFSignalsManager();
-
-        // Hide search results when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.instrument-search')) {
-                document.getElementById('searchResults').style.display = 'none';
-            }
+                
+                cell.innerHTML = cellContent;
+                row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
         });
+        
+        document.getElementById('visibleSignalsCount').textContent = this.filteredPositions.length;
+        document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredPositions.length);
+        document.getElementById('totalCount').textContent = this.filteredPositions.length;
+    }
 
-        // Positions are read-only - users can only view data in the table
-        // No edit or delete functionality for historical positions
-    </script>
+    updateSummaryCards(summary) {
+        if (!summary) summary = {};
 
-<!-- Add Position Modal -->
-    <div class="modal fade" id="addPositionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Deal</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addPositionForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">ETF Symbol</label>
-                                <input type="text" class="form-control bg-secondary text-light" name="etf_symbol" id="etfSymbolSearch" placeholder="Search ETF..." required>
-                                <div id="etfSearchResults" class="dropdown-menu" style="display: none;"></div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Trading Symbol</label>
-                                <input type="text" class="form-control bg-secondary text-light" name="trading_symbol" readonly>
-                            </div>
-                        </div>
+        document.getElementById('totalPositions').textContent = summary.total_positions || 0;
+        document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN');
+        document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN');
+        document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN');
+        document.getElementById('returnPercent').textContent = (summary.return_percent || 0).toFixed(2) + '%';
+        document.getElementById('profitPositions').textContent = summary.profit_positions || 0;
+        document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control bg-secondary text-light" name="quantity" min="1" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Entry Price</label>
-                                <input type="number" class="form-control bg-secondary text-light" name="entry_price" step="0.01" min="0" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Entry Date</label>
-                                <input type="date" class="form-control bg-secondary text-light" name="entry_date" required>
-                            </div>
-                        </div>
+        // Update P&L color
+        const pnlElement = document.getElementById('totalPnL');
+        const pnl = summary.total_pnl || 0;
+        pnlElement.className = pnl >= 0 ? 'h6 mb-0 text-success' : 'h6 mb-0 text-danger';
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Target Price (Optional)</label>
-                                <input type="number" class="form-control bg-secondary text-light" name="target_price" step="0.01" min="0">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Stop Loss (Optional)</label>
-                                <input type="number" class="form-control bg-secondary text-light" name="stop_loss" step="0.01" min="0">
-                            </div>
-                        </div>
+        // Update return % color
+        const returnElement = document.getElementById('returnPercent');
+        const returnPercent = summary.return_percent || 0;
+        returnElement.className = returnPercent >= 0 ? 'h6 mb-0 text-success' : 'h6 mb-0 text-danger';
+    }
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Position Type</label>
-                                <select class="form-select bg-secondary text-light" name="position_type">
-                                    <option value="LONG">LONG</option>
-                                    <option value="SHORT">SHORT</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Exchange</label>
-                                <select class="form-select bg-secondary text-light" name="exchange">
-                                    <option value="NSE">NSE</option>
-                                    <option value="BSE">BSE</option>
-                                </select>
-                            </div>
-                        </div>
+    updatePagination() {
+        const totalPages = Math.ceil(this.filteredPositions.length / this.pageSize);
+        
+        document.getElementById('currentPage').textContent = this.currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+        document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+    }
 
-                        <div class="mb-3">
-                            <label class="form-label">Notes (Optional)</label>
-                            <textarea class="form-control bg-secondary text-light" name="notes" rows="3" placeholder="Add any notes about this deal..."></textarea>
-                        </div>
+    showAddDealModal() {
+        const modal = new bootstrap.Modal(document.getElementById('positionModal'));
+        const modalTitle = document.getElementById('modalTitle');
 
-                        <input type="hidden" name="token" value="">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addPosition()">
-                        <i class="fas fa-plus me-1"></i>Add Deal
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+        modalTitle.textContent = 'Add New ETF Position';
+        this.clearPositionForm();
+        modal.show();
+    }
 
-    <!-- Position Details Modal -->
-    <div class="modal fade" id="positionDetailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title">Position Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">ETF Symbol</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailSymbol">-</div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">Date</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailDate">-</div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">Pos</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailPos">-</div>
-                        </div>
-                    </div>
+    clearPositionForm() {
+        document.getElementById('positionId').value = '';
+        document.getElementById('etfSymbol').value = '';
+        document.getElementById('tradingSymbol').value = '';
+        document.getElementById('instrumentToken').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('entryPrice').value = '';
+        document.getElementById('targetPrice').value = '';
+        document.getElementById('stopLoss').value = '';
+        document.getElementById('positionType').value = 'LONG';
+        document.getElementById('notes').value = '';
+        document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+    }
 
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">Quantity</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailQty">-</div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">Entry Price</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailEP">-</div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">Current Price</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailCMP">-</div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-muted">% Change</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailChange">-</div>
-                        </div>
-                    </div>
+    async savePosition() {
+        const formData = {
+            id: document.getElementById('positionId').value,
+            etf_symbol: document.getElementById('etfSymbol').value,
+            trading_symbol: document.getElementById('tradingSymbol').value,
+            token: document.getElementById('instrumentToken').value,
+            entry_date: document.getElementById('entryDate').value,
+            quantity: parseInt(document.getElementById('quantity').value),
+            entry_price: parseFloat(document.getElementById('entryPrice').value),
+            target_price: parseFloat(document.getElementById('targetPrice').value) || null,
+            stop_loss: parseFloat(document.getElementById('stopLoss').value) || null,
+            position_type: document.getElementById('positionType').value,
+            notes: document.getElementById('notes').value
+        };
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label text-muted">Investment</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailInvestment">-</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label text-muted">Target Price</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailTP">-</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label text-muted">Target Value</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailTVA">-</div>
-                        </div>
-                    </div>
+        try {
+            const url = formData.id ? `/api/etf/positions/${formData.id}` : '/api/etf/positions';
+            const method = formData.id ? 'PUT' : 'POST';
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Target Profit Return</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailTPR">-</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">P&L</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailPL">-</div>
-                        </div>
-                    </div>
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label class="form-label text-muted">Notes</label>
-                            <div class="form-control-plaintext text-light" id="positionDetailNotes">-</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        class ETFSignalsManager {
-            constructor() {
-                this.positions = [];
-                this.liveDataInterval = null;
-                this.autoRefreshInterval = 10000; // 10 seconds
-                this.searchTimeout = null;
-                this.init();
-            }
-
-            init() {
-                this.setupEventListeners();
+            const result = await response.json();
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('positionModal')).hide();
                 this.loadPositions();
-                this.startAutoRefresh();
-                this.initLiveDataConnection();
+                this.showAlert('Position saved successfully', 'success');
+            } else {
+                this.showAlert('Error: ' + result.error, 'danger');
             }
+        } catch (error) {
+            console.error('Error saving position:', error);
+            this.showAlert('Failed to save position', 'danger');
+        }
+    }
 
-            setupEventListeners() {
-                // Add deal button
-                document.getElementById('addDealBtn').addEventListener('click', () => {
-                    this.showAddDealModal();
-                });
+    async editPosition(id) {
+        const position = this.positions.find(p => p.id === id);
+        if (position) {
+            // Populate form and show modal
+            this.showAddDealModal();
+            document.getElementById('modalTitle').textContent = 'Edit ETF Position';
+            // Fill form with position data
+        }
+    }
 
-                // Save position button
-                document.getElementById('savePositionBtn').addEventListener('click', () => {
-                    this.savePosition();
-                });
-
-                // Refresh button
-                document.getElementById('refreshBtn').addEventListener('click', () => {
+    async deletePosition(id) {
+        if (confirm('Are you sure you want to delete this ETF position?')) {
+            try {
+                const response = await fetch(`/api/etf/positions?id=${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
                     this.loadPositions();
-                });
-
-                // Auto refresh interval change
-                document.getElementById('autoRefreshInterval').addEventListener('change', (e) => {
-                    this.autoRefreshInterval = parseInt(e.target.value) * 1000;
-                    this.startAutoRefresh();
-                });
-
-                // ETF symbol search
-                document.getElementById('etfSymbol').addEventListener('input', (e) => {
-                    this.searchETFs(e.target.value);
-                });
-
-                // Export button
-                document.getElementById('exportBtn').addEventListener('click', () => {
-                    this.exportData();
-                });
-
-                // Set today's date as default
-                document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-            }
-
-            async loadPositions() {
-                try {
-                    const response = await fetch('/api/etf/positions');
-                    const data = await response.json();
-
-                    if (data.success) {
-                        this.positions = data.positions || [];
-                        this.updatePositionsTable();
-                        this.updateSummaryCards(data.summary || {});
-                        console.log('Loaded', this.positions.length, 'ETF positions');
-                    } else {
-                        this.showAlert('Error loading positions: ' + (data.error || 'Unknown error'), 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error loading positions:', error);
-                    this.showAlert('Failed to load positions', 'danger');
+                    this.showAlert('Position deleted successfully', 'success');
+                } else {
+                    this.showAlert('Error: ' + result.error, 'danger');
                 }
-            }
-
-            updatePositionsTable() {
-                const tbody = document.getElementById('signalsTableBody');
-                tbody.innerHTML = '';
-
-                if (!this.positions || this.positions.length === 0) {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `<td colspan="24" class="text-center text-muted">No ETF positions found</td>`;
-                    return;
-                }
-
-                this.positions.forEach(position => {
-                    const row = document.createElement('tr');
-                                        const percentChange = position.percentage_change;
-                    const pnl = position.profit_loss;
-
-                    const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
-                    const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
-
-                    // Format entry date
-                    const entryDate = new Date(position.entry_date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                    });
-
-                    row.innerHTML = `
-                        <td><strong>${position.etf_symbol}</strong></td>
-                        <td>#N/A</td>
-                        <td>#N/A</td>
-                        <td>${entryDate}</td>
-                        <td><span class="badge ${position.is_active ? 'bg-success' : 'bg-secondary'}">${position.is_active ? '1' : '0'}</span></td>
-                        <td>${position.quantity}</td>
-                        <td>₹${position.entry_price.toFixed(2)}</td>
-                        <td class="${pnlClass}">₹${position.current_price.toFixed(2)}</td>
-                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                        <td>₹${position.investment_amount.toFixed(0)}</td>
-                        <td>₹${(position.target_price || 0).toFixed(2)}</td>
-                        <td>₹${position.target_value_amount.toFixed(0)}</td>
-                        <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
-                        <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                    `;
-                                        document.getElementById('signalsTableBody').appendChild(row);
-                });
-            }
-
-            updateSummaryCards(summary) {
-                if (!summary) summary = {};
-
-                document.getElementById('totalPositions').textContent = summary.total_positions || 0;
-                document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('returnPercent').textContent = (summary.return_percent || 0).toFixed(2) + '%';
-                document.getElementById('profitPositions').textContent = summary.profit_positions || 0;
-                document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
-
-                // Update P&L color
-                const pnlElement = document.getElementById('totalPnL');
-                const pnl = summary.total_pnl || 0;
-                pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
-
-                // Update return % color
-                const returnElement = document.getElementById('returnPercent');
-                const returnPercent = summary.return_percent || 0;
-                returnElement.className = returnPercent >= 0 ? 'text-success' : 'text-danger';
-            }
-
-            showAddDealModal() {
-                const modal = new bootstrap.Modal(document.getElementById('positionModal'));
-                const modalTitle = document.getElementById('modalTitle');
-
-                modalTitle.textContent = 'Add New Deal';
-                this.clearPositionForm();
-                modal.show();
-            }
-
-            generateCSV() {
-                const headers = ['ETF', '30', 'DH', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'PL', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '7', '%Ch'];
-                let csv = headers.join(',') + '\n';
-
-                this.positions.forEach(position => {
-                    const row = [
-                        position.etf_symbol,
-                        '#N/A',
-                        '#N/A',
-                        position.entry_date,
-                        position.is_active ? '1' : '0',
-                        position.quantity,
-                        position.entry_price,
-                        position.current_price,
-                        position.percentage_change.toFixed(2),
-                        position.investment_amount.toFixed(0),
-                        position.target_price || '',
-                        position.target_value_amount.toFixed(0),
-                        position.target_profit_return.toFixed(0),
-                        position.profit_loss.toFixed(0),
-                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'
-                    ];
-                    csv += row.join(',') + '\n';
-                });
-
-                return csv;
-            }
-
-            showAlert(message, type) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-                alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.body.appendChild(alertDiv);
-
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.parentNode.removeChild(alertDiv);
-                    }
-                }, 5000);
+            } catch (error) {
+                console.error('Error deleting position:', error);
+                this.showAlert('Failed to delete position', 'danger');
             }
         }
+    }
 
-        // Initialize the ETF Signals Manager
-        const etfManager = new ETFSignalsManager();
+    startAutoRefresh() {
+        if (this.refreshInterval) clearInterval(this.refreshInterval);
+        
+        if (this.autoRefresh) {
+            this.refreshInterval = setInterval(() => {
+                this.loadPositions();
+            }, 10000); // 10 seconds
+        }
+    }
 
-        // Hide search results when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.instrument-search')) {
-                document.getElementById('searchResults').style.display = 'none';
-            }
-        });
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
 
-        // Positions are read-only - users can only view data in the table
-        // No edit or delete functionality for historical positions
-    </script>
-</body>
-</html>
+    showAlert(message, type) {
+        // Simple alert for now
+        alert(message);
+    }
+}
+
+// Global functions for column settings and filters
+function applyColumnSettings() {
+    etfManager.selectedColumns = [];
+    
+    Object.keys(etfManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox && checkbox.checked) {
+            etfManager.selectedColumns.push(column);
+        }
+    });
+    
+    etfManager.updateTableHeaders();
+    etfManager.renderPositionsTable();
+    
+    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
+}
+
+function selectAllColumns() {
+    Object.keys(etfManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+function resetDefaultColumns() {
+    Object.keys(etfManager.availableColumns).forEach(column => {
+        const checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) {
+            checkbox.checked = etfManager.availableColumns[column].default;
+        }
+    });
+}
+
+function applyFilters() {
+    const positionType = document.getElementById('positionTypeFilter').value;
+    const pnlStatus = document.getElementById('pnlStatusFilter').value;
+    const symbol = document.getElementById('symbolFilter').value.toLowerCase();
+    const minInvestment = parseFloat(document.getElementById('minInvestmentFilter').value) || 0;
+    const maxInvestment = parseFloat(document.getElementById('maxInvestmentFilter').value) || Infinity;
+    
+    etfManager.filteredPositions = etfManager.positions.filter(position => {
+        const matchesType = !positionType || position.position_type === positionType;
+        const matchesPnL = !pnlStatus || 
+            (pnlStatus === 'profit' && position.pl > 0) ||
+            (pnlStatus === 'loss' && position.pl < 0) ||
+            (pnlStatus === 'neutral' && position.pl === 0);
+        const matchesSymbol = !symbol || position.symbol.toLowerCase().includes(symbol);
+        const matchesInvestment = position.inv >= minInvestment && position.inv <= maxInvestment;
+        
+        return matchesType && matchesPnL && matchesSymbol && matchesInvestment;
+    });
+    
+    etfManager.currentPage = 1;
+    etfManager.renderPositionsTable();
+    etfManager.updatePagination();
+}
+
+function clearFilters() {
+    document.getElementById('positionTypeFilter').value = '';
+    document.getElementById('pnlStatusFilter').value = '';
+    document.getElementById('symbolFilter').value = '';
+    document.getElementById('minInvestmentFilter').value = '';
+    document.getElementById('maxInvestmentFilter').value = '';
+    
+    etfManager.filteredPositions = [...etfManager.positions];
+    etfManager.currentPage = 1;
+    etfManager.renderPositionsTable();
+    etfManager.updatePagination();
+}
+
+function refreshSignals() {
+    etfManager.loadPositions();
+}
+
+function previousPage() {
+    if (etfManager.currentPage > 1) {
+        etfManager.currentPage--;
+        etfManager.renderPositionsTable();
+        etfManager.updatePagination();
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(etfManager.filteredPositions.length / etfManager.pageSize);
+    if (etfManager.currentPage < totalPages) {
+        etfManager.currentPage++;
+        etfManager.renderPositionsTable();
+        etfManager.updatePagination();
+    }
+}
+
+function exportSignals() {
+    const data = etfManager.filteredPositions;
+    if (!data || data.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    const csvContent = "data:text/csv;charset=utf-8," + 
+        Object.keys(data[0]).join(",") + "\n" +
+        data.map(row => Object.values(row).join(",")).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `etf_signals_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Initialize ETF Signals Manager on page load
+document.addEventListener('DOMContentLoaded', function() {
+    window.etfManager = new ETFSignalsManager();
+});
+</script>
+{% endblock %}
