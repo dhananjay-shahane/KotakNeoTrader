@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}ETF Trading Signals - Kotak Neo Trading{% endblock %}
+{% block title %}Trading Signals - Kotak Neo Trading{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -77,8 +77,8 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-1">ETF Trading Signals</h1>
-        <p class="text-muted mb-0">Real-time ETF position tracking and analysis</p>
+        <h1 class="h3 mb-1">Trading Signals</h1>
+        <p class="text-muted mb-0">Real-time position tracking and analysis</p>
     </div>
     <div class="d-flex gap-2">
         <button class="btn btn-outline-light" onclick="refreshSignals()">
@@ -94,63 +94,13 @@
     </div>
 </div>
 
-<!-- Portfolio Summary -->
-<div class="portfolio-summary">
-    <div class="row">
-        <div class="col-12 mb-2">
-            <h5 class="mb-3">
-                <i class="fas fa-chart-pie me-2"></i>ETF Portfolio Summary
-                <span class="live-indicator connected" id="liveIndicator"></span>
-                <small class="text-muted">Live Data</small>
-            </h5>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">Total Positions</div>
-                <div class="h6 mb-0" id="totalPositions">0</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">Investment</div>
-                <div class="h6 mb-0" id="totalInvestment">₹0</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">Current Value</div>
-                <div class="h6 mb-0" id="currentValue">₹0</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">P&L</div>
-                <div class="h6 mb-0" id="totalPnL">₹0</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">Return %</div>
-                <div class="h6 mb-0" id="returnPercent">0%</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="summary-card">
-                <div class="text-muted small">Profit/Loss</div>
-                <div class="small">
-                    <span class="profit" id="profitPositions">0</span> / 
-                    <span class="loss" id="lossPositions">0</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- ETF Signals Table -->
 <div class="card bg-secondary border-0 shadow-lg">
     <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-light">
-            <i class="fas fa-signal me-2 text-primary"></i>ETF Trading Signals
+            <i class="fas fa-signal me-2 text-primary"></i>Trading Signals
             <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
         </h5>
         <div class="d-flex gap-2">
@@ -182,8 +132,11 @@
     </div>
     
     <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
-        <div>
+        <div class="d-flex align-items-center gap-3">
             <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> signals</small>
+            <button class="btn btn-sm btn-success" id="addDealBtn">
+                <i class="fas fa-plus me-1"></i>Add Deal
+            </button>
         </div>
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
@@ -257,8 +210,8 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label text-light">ETF Symbol</label>
-                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter ETF symbol...">
+                    <label class="form-label text-light">Symbol</label>
+                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
                 </div>
                 <div class="row">
                     <div class="col-md-6">
@@ -284,7 +237,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark">
             <div class="modal-header">
-                <h5 class="modal-title text-light" id="modalTitle">Add ETF Position</h5>
+                <h5 class="modal-title text-light" id="modalTitle">Add Position</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -292,8 +245,8 @@
                     <input type="hidden" id="positionId">
                     <div class="row">
                         <div class="col-md-6">
-                            <label class="form-label text-light">ETF Symbol *</label>
-                            <input type="text" class="form-control" id="etfSymbol" placeholder="Search ETF..." required>
+                            <label class="form-label text-light">Symbol *</label>
+                            <input type="text" class="form-control" id="etfSymbol" placeholder="Search symbol..." required>
                             <input type="hidden" id="tradingSymbol">
                             <input type="hidden" id="instrumentToken">
                         </div>
