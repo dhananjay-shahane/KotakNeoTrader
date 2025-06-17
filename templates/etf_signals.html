@@ -8,42 +8,33 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         .signals-table {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             background: #1a1a1a;
         }
         .signals-table th {
             background: #2d2d2d;
             color: #fff;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-align: center;
-            padding: 8px 4px;
+            padding: 6px 3px;
             border: 1px solid #444;
             position: sticky;
             top: 0;
             z-index: 10;
+            white-space: nowrap;
         }
         .signals-table td {
-            padding: 6px 4px;
+            padding: 4px 3px;
             text-align: center;
             border: 1px solid #444;
             vertical-align: middle;
+            white-space: nowrap;
+            font-size: 0.75rem;
         }
         .profit { color: #00ff00; }
         .loss { color: #ff0000; }
         .neutral { color: #ffa500; }
-        .editable {
-            background: transparent;
-            border: none;
-            color: inherit;
-            text-align: center;
-            width: 100%;
-            padding: 2px;
-        }
-        .editable:focus {
-            background: #333;
-            outline: 1px solid #007bff;
-        }
         .table-container {
             height: 70vh;
             overflow: auto;
@@ -61,35 +52,16 @@
             padding: 10px;
             text-align: center;
         }
-        .add-position-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        .instrument-search {
-            position: relative;
-        }
-        .search-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
+        .toolbar {
             background: #2d2d2d;
-            border: 1px solid #444;
-            border-radius: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        .search-result-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #444;
-        }
-        .search-result-item:hover {
-            background: #444;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .live-indicator {
             width: 8px;
@@ -114,16 +86,29 @@
             padding: 2px 6px;
             font-size: 0.75rem;
         }
-        .toolbar {
+        .instrument-search {
+            position: relative;
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
             background: #2d2d2d;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #444;
+        }
+        .search-result-item:hover {
+            background: #444;
         }
     </style>
 </head>
@@ -226,30 +211,31 @@
             <table class="table table-dark table-striped signals-table" id="signalsTable">
                 <thead>
                     <tr>
-                        <th>ETF</th>
-                        <th>30</th>
-                        <th>DH</th>
-                        <th>Date</th>
-                        <th>Pos</th>
-                        <th>Qty</th>
-                        <th>EP</th>
-                        <th>CMP</th>
-                        <th>%Chan</th>
-                        <th>Inv.</th>
-                        <th>TP</th>
-                        <th>TVA</th>
-                        <th>TPR</th>
-                        <th>PL</th>
-                        <th>ED</th>
-                        <th>EXP</th>
-                        <th>PR</th>
-                        <th>PP</th>
-                        <th>IV</th>
-                        <th>IP</th>
-                        <th>NT</th>
-                        <th>Qt</th>
-                        <th>7</th>
-                        <th>%Ch</th>
+                        <th title="ETF Symbol">ETF</th>
+                        <th title="30 Day Performance">30</th>
+                        <th title="Days Held">DH</th>
+                        <th title="Entry Date">Date</th>
+                        <th title="Position Type">Pos</th>
+                        <th title="Quantity">Qty</th>
+                        <th title="Entry Price">EP</th>
+                        <th title="Current Market Price">CMP</th>
+                        <th title="Percentage Change">%Chan</th>
+                        <th title="Investment Amount">Inv.</th>
+                        <th title="Target Price">TP</th>
+                        <th title="Target Value Amount">TVA</th>
+                        <th title="Target Profit Return">TPR</th>
+                        <th title="Profit/Loss">PL</th>
+                        <th title="Entry Date">ED</th>
+                        <th title="Expected/Expiry">EXP</th>
+                        <th title="Price Range">PR</th>
+                        <th title="Performance Points">PP</th>
+                        <th title="Implied Volatility">IV</th>
+                        <th title="Intraday Performance">IP</th>
+                        <th title="Notes/Tags">NT</th>
+                        <th title="Quote Time">Qt</th>
+                        <th title="7 Day Change">7</th>
+                        <th title="Percentage Change">%Ch</th>
+                        <th title="Actions" style="width: 80px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="signalsTableBody">
@@ -411,7 +397,7 @@
 
                 this.positions.forEach(position => {
                     const row = document.createElement('tr');
-					const percentChange = position.percentage_change;
+                                        const percentChange = position.percentage_change;
                     const pnl = position.profit_loss;
 
                     const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
@@ -450,7 +436,7 @@
                         <td>-</td>
                         <td>-</td>
                     `;
-					document.getElementById('signalsTableBody').appendChild(row);
+                                        document.getElementById('signalsTableBody').appendChild(row);
                 });
             }
 
@@ -966,7 +952,7 @@
 
                 this.positions.forEach(position => {
                     const row = document.createElement('tr');
-					const percentChange = position.percentage_change;
+                                        const percentChange = position.percentage_change;
                     const pnl = position.profit_loss;
 
                     const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
@@ -1005,7 +991,7 @@
                         <td>-</td>
                         <td>-</td>
                     `;
-					document.getElementById('signalsTableBody').appendChild(row);
+                                        document.getElementById('signalsTableBody').appendChild(row);
                 });
             }
 
