@@ -32,6 +32,7 @@ db.init_app(app)
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
     import models  # noqa: F401
+    import models_etf  # noqa: F401
 
     db.create_all()
 
@@ -431,6 +432,12 @@ def charts():
 
     return render_template('charts.html')
 
+@app.route('/etf-signals')
+@require_auth
+def etf_signals():
+    """ETF Trading Signals page"""
+    return render_template('etf_signals.html')
+
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
@@ -489,9 +496,51 @@ from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
 from api.trading import trading_api
+from api import etf_signals
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(main_bp)
 app.register_blueprint(dashboard_api, url_prefix='/api')
 app.register_blueprint(trading_api, url_prefix='/api')
+
+# ETF Signals API routes
+@app.route('/api/etf/positions', methods=['GET'])
+@require_auth
+def api_get_etf_positions():
+    return etf_signals.get_etf_positions()
+
+@app.route('/api/etf/positions', methods=['POST'])
+@require_auth
+def api_add_etf_position():
+    return etf_signals.add_etf_position()
+
+@app.route('/api/etf/positions', methods=['PUT'])
+@require_auth
+def api_update_etf_position():
+    return etf_signals.update_etf_position()
+
+@app.route('/api/etf/positions', methods=['DELETE'])
+@require_auth
+def api_delete_etf_position():
+    return etf_signals.delete_etf_position()
+
+@app.route('/api/etf/search', methods=['GET'])
+@require_auth
+def api_search_etf_instruments():
+    return etf_signals.search_etf_instruments()
+
+@app.route('/api/etf/quotes', methods=['POST'])
+@require_auth
+def api_get_etf_quotes():
+    return etf_signals.get_etf_quotes()
+
+@app.route('/api/etf/portfolio-summary', methods=['GET'])
+@require_auth
+def api_get_portfolio_summary():
+    return etf_signals.get_portfolio_summary()
+
+@app.route('/api/etf/bulk-update', methods=['POST'])
+@require_auth
+def api_bulk_update_positions():
+    return etf_signals.bulk_update_positions()
