@@ -405,6 +405,10 @@ class ETFTradingSignals:
             position.position_type = position_data.get('position_type', 'LONG')
             position.notes = position_data.get('notes', '')
             
+            # Set is_active based on position type or explicit status
+            # 1 = active position, 0 = closed/inactive position
+            position.is_active = position_data.get('is_active', True)
+            
             db.session.add(position)
             db.session.commit()
             
