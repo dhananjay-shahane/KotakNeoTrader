@@ -392,7 +392,7 @@ class DealsManager {
     }
 
     generateSampleDeals() {
-        // First, load user-created deals from localStorage
+        // Only load user-created deals from localStorage
         let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
         
         // Update real-time data for user deals (simulate price changes)
@@ -416,53 +416,8 @@ class DealsManager {
             };
         });
 
-        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN'];
-        const deals = [...userDeals]; // Start with user deals
-
-        // Add sample deals if needed
-        for (let i = 0; i < (25 - userDeals.length); i++) {
-            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-            const entryPrice = Math.random() * 5000 + 100;
-            const currentPrice = entryPrice * (0.9 + Math.random() * 0.2);
-            const quantity = Math.floor(Math.random() * 100) + 1;
-            const isLong = Math.random() > 0.5;
-            const daysHeld = Math.floor(Math.random() * 30);
-            const percentChange = ((currentPrice - entryPrice) / entryPrice) * 100 * (isLong ? 1 : -1);
-            const pnl = (currentPrice - entryPrice) * quantity * (isLong ? 1 : -1);
-            const investment = entryPrice * quantity;
-            const targetPrice = entryPrice * (isLong ? 1.1 : 0.9);
-
-            deals.push({
-                symbol: symbol,
-                thirty: '-',
-                dh: daysHeld,
-                date: new Date(Date.now() - daysHeld * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                pos: isLong ? 1 : 0,
-                qty: quantity,
-                ep: entryPrice,
-                cmp: currentPrice,
-                change_pct: percentChange,
-                inv: investment,
-                tp: targetPrice,
-                tva: targetPrice * quantity,
-                tpr: (targetPrice - entryPrice) * quantity,
-                pl: pnl,
-                ed: new Date(Date.now() - daysHeld * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                pr: `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}`,
-                pp: percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-',
-                iv: Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low',
-                ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
-                nt: 'Signal deal',
-                qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                seven: '-',
-                change2: percentChange,
-                id: 'DEAL' + (1000 + i),
-                position_type: isLong ? 'LONG' : 'SHORT',
-                status: ['EXECUTED', 'PENDING', 'CANCELLED'][Math.floor(Math.random() * 3)]
-            });
-        }
-
-        return deals.sort((a, b) => b.dh - a.dh);
+        // Return only user deals, sorted by most recent first
+        return userDeals.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
     renderDealsTable() {
@@ -478,9 +433,9 @@ class DealsManager {
             row.innerHTML = `
                 <td colspan="${this.selectedColumns.length}" class="text-center py-4">
                     <i class="fas fa-handshake fa-3x mb-3 text-primary"></i>
-                    <h6 class="text-light">Deals Dashboard</h6>
-                    <p class="text-muted mb-0">Orders placed from trading signals</p>
-                    <small class="text-muted">No deals found</small>
+                    <h6 class="text-light">No Deals Found</h6>
+                    <p class="text-muted mb-0">You haven't added any deals yet</p>
+                    <small class="text-muted">Visit the ETF Signals page to add deals from trading signals</small>
                 </td>
             `;
             tbody.appendChild(row);
