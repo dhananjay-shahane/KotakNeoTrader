@@ -382,27 +382,12 @@ class ETFSignalsManager {
     }
 
     async loadPositions() {
-        try {
-            const response = await fetch('/api/etf/positions');
-            const data = await response.json();
-
-            if (data.success) {
-                this.positions = this.convertETFPositionsToSignals(data.positions || []);
-                this.filteredPositions = [...this.positions];
-                this.updateSummaryCards(data.summary || {});
-                this.renderPositionsTable();
-                this.updatePagination();
-            } else {
-                console.error('API Error:', data.error);
-                this.positions = [];
-                this.filteredPositions = [];
-                this.renderPositionsTable();
-            }
-
-        } catch (error) {
-            console.error('Error loading positions:', error);
-            this.showAlert('Failed to load ETF positions', 'danger');
-        }
+        // ETF signals are for display only - no position data loaded
+        this.positions = [];
+        this.filteredPositions = [];
+        this.renderPositionsTable();
+        this.updatePagination();
+        this.updateSummaryCards({});
     }
 
     convertETFPositionsToSignals(positions) {
@@ -465,9 +450,10 @@ class ETFSignalsManager {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                    <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
-                    <h6 class="text-muted">No ETF signals available</h6>
-                    <p class="text-muted mb-0">ETF signals will appear here when available</p>
+                    <i class="fas fa-info-circle fa-3x mb-3 text-primary"></i>
+                    <h6 class="text-light">ETF Signals Dashboard</h6>
+                    <p class="text-muted mb-0">Trading signals and analytics interface for ETF trading</p>
+                    <small class="text-muted">Position data display has been disabled</small>
                 </td>
             `;
             tbody.appendChild(row);
@@ -602,25 +588,8 @@ class ETFSignalsManager {
     }
 
     updateSummaryCards(summary) {
-        if (!summary) summary = {};
-
-        document.getElementById('totalPositions').textContent = summary.total_positions || 0;
-        document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN');
-        document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN');
-        document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN');
-        document.getElementById('returnPercent').textContent = (summary.return_percent || 0).toFixed(2) + '%';
-        document.getElementById('profitPositions').textContent = summary.profit_positions || 0;
-        document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
-
-        // Update P&L color
-        const pnlElement = document.getElementById('totalPnL');
-        const pnl = summary.total_pnl || 0;
-        pnlElement.className = pnl >= 0 ? 'h6 mb-0 text-success' : 'h6 mb-0 text-danger';
-
-        // Update return % color
-        const returnElement = document.getElementById('returnPercent');
-        const returnPercent = summary.return_percent || 0;
-        returnElement.className = returnPercent >= 0 ? 'h6 mb-0 text-success' : 'h6 mb-0 text-danger';
+        // Summary cards disabled for ETF signals view
+        console.log('ETF Signals dashboard - summary display disabled');
     }
 
     updatePagination() {
@@ -658,13 +627,8 @@ class ETFSignalsManager {
     }
 
     startAutoRefresh() {
+        // Auto-refresh disabled for ETF signals display
         if (this.refreshInterval) clearInterval(this.refreshInterval);
-
-        if (this.autoRefresh) {
-            this.refreshInterval = setInterval(() => {
-                this.loadPositions();
-            }, 10000); // 10 seconds
-        }
     }
 
     stopAutoRefresh() {
@@ -751,7 +715,8 @@ function clearFilters() {
 }
 
 function refreshSignals() {
-    etfManager.loadPositions();
+    // Refresh disabled for ETF signals display
+    console.log('ETF signals refresh - functionality disabled');
 }
 
 function previousPage() {

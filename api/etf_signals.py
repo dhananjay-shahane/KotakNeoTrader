@@ -9,44 +9,22 @@ logger = logging.getLogger(__name__)
 
 
 def get_etf_positions():
-    """Get all ETF positions for current user - Returns empty data"""
-    try:
-        if 'authenticated' not in session or not session['authenticated']:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        # Always return empty positions data
-        return jsonify({
-            'success': True,
-            'positions': [],
-            'summary': {
-                'total_positions': 0,
-                'total_investment': 0.0,
-                'current_value': 0.0,
-                'total_pnl': 0.0,
-                'return_percent': 0.0,
-                'profit_positions': 0,
-                'loss_positions': 0
-            },
-            'count': 0
-        })
-
-    except Exception as e:
-        logger.error(f"Error getting ETF positions: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'positions': [],
-            'summary': {
-                'total_positions': 0,
-                'total_investment': 0.0,
-                'current_value': 0.0,
-                'total_pnl': 0.0,
-                'return_percent': 0.0,
-                'profit_positions': 0,
-                'loss_positions': 0
-            },
-            'count': 0
-        }), 500
+    """ETF positions endpoint - disabled"""
+    return jsonify({
+        'success': True,
+        'message': 'ETF signals functionality is available for viewing only',
+        'positions': [],
+        'summary': {
+            'total_positions': 0,
+            'total_investment': 0.0,
+            'current_value': 0.0,
+            'total_pnl': 0.0,
+            'return_percent': 0.0,
+            'profit_positions': 0,
+            'loss_positions': 0
+        },
+        'count': 0
+    })
 
 
 def add_etf_position():
