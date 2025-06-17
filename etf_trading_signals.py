@@ -59,18 +59,18 @@ class ETFTradingSignals:
             if not positions:
                 return {
                     'total_positions': 0,
-                    'total_investment': 0,
-                    'current_value': 0,
-                    'total_pnl': 0,
-                    'return_percent': 0,
+                    'total_investment': 0.0,
+                    'current_value': 0.0,
+                    'total_pnl': 0.0,
+                    'return_percent': 0.0,
                     'profit_positions': 0,
                     'loss_positions': 0
                 }
             
-            total_investment = sum(pos.investment_amount for pos in positions)
-            total_current_value = sum(pos.current_value for pos in positions)
-            total_pnl = total_current_value - total_investment
-            return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
+            total_investment = float(sum(pos.investment_amount for pos in positions))
+            total_current_value = float(sum(pos.current_value for pos in positions))
+            total_pnl = float(total_current_value - total_investment)
+            return_percent = float((total_pnl / total_investment * 100)) if total_investment > 0 else 0.0
             
             profit_positions = sum(1 for pos in positions if pos.profit_loss > 0)
             loss_positions = sum(1 for pos in positions if pos.profit_loss < 0)
@@ -87,7 +87,15 @@ class ETFTradingSignals:
             
         except Exception as e:
             self.logger.error(f"Error calculating portfolio summary: {e}")
-            return {}
+            return {
+                'total_positions': 0,
+                'total_investment': 0.0,
+                'current_value': 0.0,
+                'total_pnl': 0.0,
+                'return_percent': 0.0,
+                'profit_positions': 0,
+                'loss_positions': 0
+            }
     
     def add_etf_position(self, user_id, position_data):
         """Add new ETF position"""

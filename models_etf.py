@@ -45,36 +45,46 @@ class ETFPosition(db.Model):
     @property
     def investment_amount(self):
         """Investment = Qty × EP"""
-        return float(self.quantity * self.entry_price) if self.entry_price else 0
+        if self.entry_price:
+            return float(self.quantity * float(self.entry_price))
+        return 0.0
     
     @property
     def current_value(self):
         """Current Value = Qty × CMP"""
-        return float(self.quantity * self.current_price) if self.current_price else 0
+        if self.current_price:
+            return float(self.quantity * float(self.current_price))
+        return 0.0
     
     @property
     def profit_loss(self):
         """P&L = (CMP - EP) × Qty"""
         if self.current_price and self.entry_price:
-            return float((self.current_price - self.entry_price) * self.quantity)
-        return 0
+            current_price_float = float(self.current_price)
+            entry_price_float = float(self.entry_price)
+            return float((current_price_float - entry_price_float) * self.quantity)
+        return 0.0
     
     @property
     def percentage_change(self):
         """%Change = ((CMP - EP) / EP) × 100"""
         if self.current_price and self.entry_price and self.entry_price > 0:
-            return float(((self.current_price - self.entry_price) / self.entry_price) * 100)
-        return 0
+            current_price_float = float(self.current_price)
+            entry_price_float = float(self.entry_price)
+            return float(((current_price_float - entry_price_float) / entry_price_float) * 100)
+        return 0.0
     
     @property
     def target_value_amount(self):
         """TVA = Qty × TP"""
-        return float(self.quantity * self.target_price) if self.target_price else 0
+        if self.target_price:
+            return float(self.quantity * float(self.target_price))
+        return 0.0
     
     @property
     def target_profit_return(self):
         """TPR = TVA - Investment"""
-        return self.target_value_amount - self.investment_amount
+        return float(self.target_value_amount - self.investment_amount)
     
     def to_dict(self):
         """Convert to dictionary for JSON serialization"""
