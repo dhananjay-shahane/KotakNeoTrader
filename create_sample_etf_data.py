@@ -13,62 +13,172 @@ def create_sample_etf_positions():
         # Clear existing ETF positions (for testing)
         ETFPosition.query.delete()
         
-        # Sample ETF data with realistic prices
+        # Sample ETF data matching the screenshot format
         sample_etfs = [
             {
-                'etf_symbol': 'NIFTYBEES',
-                'trading_symbol': 'NIFTYBEES-EQ',
-                'token': '15083',
+                'etf_symbol': 'IETF',
+                'trading_symbol': 'IETF-EQ',
+                'token': '40164',
                 'exchange': 'NSE',
-                'quantity': 100,
-                'entry_price': 195.50,
-                'target_price': 210.00,
-                'current_price': 202.75,
-                'entry_date': datetime.now().date() - timedelta(days=15)
+                'quantity': 500,
+                'entry_price': 47.13,
+                'target_price': 52.75,
+                'current_price': 40.68,
+                'entry_date': datetime(2024, 12, 13).date()
+            },
+            {
+                'etf_symbol': 'CONSUMERBEES',
+                'trading_symbol': 'CONSUMERBEES-EQ',
+                'token': '155443',
+                'exchange': 'NSE',
+                'quantity': 0,
+                'entry_price': 0.0,
+                'target_price': 0.0,
+                'current_price': 126.99,
+                'entry_date': datetime(2024, 6, 20).date()
+            },
+            {
+                'etf_symbol': 'SILVERBEES',
+                'trading_symbol': 'SILVERBEES-EQ',
+                'token': '106550',
+                'exchange': 'NSE',
+                'quantity': 1100,
+                'entry_price': 86.85,
+                'target_price': 0.0,
+                'current_price': 109.65,
+                'entry_date': datetime(2024, 5, 22).date()
             },
             {
                 'etf_symbol': 'GOLDBEES',
                 'trading_symbol': 'GOLDBEES-EQ',
-                'token': '1660',
+                'token': '84250',
                 'exchange': 'NSE',
-                'quantity': 200,
-                'entry_price': 43.25,
-                'target_price': 47.50,
-                'current_price': 44.80,
-                'entry_date': datetime.now().date() - timedelta(days=30)
+                'quantity': 1560,
+                'entry_price': 64.25,
+                'target_price': 66.50,
+                'current_price': 82.82,
+                'entry_date': datetime(2024, 5, 16).date()
             },
             {
-                'etf_symbol': 'BANKBEES',
-                'trading_symbol': 'BANKBEES-EQ',
-                'token': '2800',
+                'etf_symbol': 'PSUBNKBEES',
+                'trading_symbol': 'PSUBNKBEES-EQ',
+                'token': '799534',
                 'exchange': 'NSE',
                 'quantity': 50,
-                'entry_price': 385.75,
-                'target_price': 420.00,
-                'current_price': 391.20,
-                'entry_date': datetime.now().date() - timedelta(days=7)
+                'entry_price': 39.12,
+                'target_price': 39016.0,
+                'current_price': 72.61,
+                'entry_date': datetime(2024, 5, 16).date()
+            },
+            {
+                'etf_symbol': 'CONSUMERBEES',
+                'trading_symbol': 'CONSUMERBEES-EQ',
+                'token': '122145',
+                'exchange': 'NSE',
+                'quantity': 360,
+                'entry_price': 128.2,
+                'target_price': 143.56,
+                'current_price': 126.99,
+                'entry_date': datetime(2024, 5, 16).date()
+            },
+            {
+                'etf_symbol': 'HDFCNIFETF',
+                'trading_symbol': 'HDFCNIFETF-EQ',
+                'token': '25254',
+                'exchange': 'NSE',
+                'quantity': 2800,
+                'entry_price': 43.1,
+                'target_price': 68568.0,
+                'current_price': 23.85,
+                'entry_date': datetime(2024, 5, 16).date()
+            },
+            {
+                'etf_symbol': 'PHARMABEES',
+                'trading_symbol': 'PHARMABEES-EQ',
+                'token': '24140',
+                'exchange': 'NSE',
+                'quantity': 4500,
+                'entry_price': 22.7,
+                'target_price': 25.42,
+                'current_price': 22.33,
+                'entry_date': datetime(2024, 5, 16).date()
+            },
+            {
+                'etf_symbol': 'ITBEES',
+                'trading_symbol': 'ITBEES-EQ',
+                'token': '59533',
+                'exchange': 'NSE',
+                'quantity': 1,
+                'entry_price': 731.42,
+                'target_price': 881.49,
+                'current_price': 724.1,
+                'entry_date': datetime(2024, 5, 16).date()
+            },
+            {
+                'etf_symbol': 'CONSUMERBEES',
+                'trading_symbol': 'CONSUMERBEES-EQ',
+                'token': '162165',
+                'exchange': 'NSE',
+                'quantity': 472,
+                'entry_price': 124.1,
+                'target_price': 138.95,
+                'current_price': 126.99,
+                'entry_date': datetime(2024, 6, 20).date()
+            },
+            {
+                'etf_symbol': 'SILVERBEES',
+                'trading_symbol': 'SILVERBEES-EQ',
+                'token': '106326',
+                'exchange': 'NSE',
+                'quantity': 300,
+                'entry_price': 84.44,
+                'target_price': 0.0,
+                'current_price': 109.65,
+                'entry_date': datetime(2024, 6, 23).date()
             },
             {
                 'etf_symbol': 'JUNIORBEES',
                 'trading_symbol': 'JUNIORBEES-EQ',
-                'token': '583',
+                'token': '59353',
                 'exchange': 'NSE',
-                'quantity': 75,
-                'entry_price': 298.60,
-                'target_price': 315.00,
-                'current_price': 305.25,
-                'entry_date': datetime.now().date() - timedelta(days=20)
+                'quantity': 130,
+                'entry_price': 293.96,
+                'target_price': 627.64,
+                'current_price': 292.11,
+                'entry_date': datetime(2024, 6, 24).date()
             },
             {
-                'etf_symbol': 'LIQUIDBEES',
-                'trading_symbol': 'LIQUIDBEES-EQ',
-                'token': '1023',
+                'etf_symbol': 'NIFTYBEES',
+                'trading_symbol': 'NIFTYBEES-EQ',
+                'token': '264119',
                 'exchange': 'NSE',
-                'quantity': 500,
-                'entry_price': 999.85,
-                'target_price': 1000.50,
-                'current_price': 1000.12,
-                'entry_date': datetime.now().date() - timedelta(days=5)
+                'quantity': 400,
+                'entry_price': 245.48,
+                'target_price': 0.0,
+                'current_price': 278.76,
+                'entry_date': datetime(2024, 6, 28).date()
+            },
+            {
+                'etf_symbol': 'LIQUIDETF',
+                'trading_symbol': 'LIQUIDETF-EQ',
+                'token': '40079',
+                'exchange': 'NSE',
+                'quantity': 4000,
+                'entry_price': 25.18,
+                'target_price': 0.0,
+                'current_price': 26.09,
+                'entry_date': datetime(2024, 7, 24).date()
+            },
+            {
+                'etf_symbol': 'AUBANK',
+                'trading_symbol': 'AUBANK-EQ',
+                'token': '25347',
+                'exchange': 'NSE',
+                'quantity': 5000,
+                'entry_price': 23.2,
+                'target_price': 0.0,
+                'current_price': 23.86,
+                'entry_date': datetime(2024, 7, 14).date()
             }
         ]
         
