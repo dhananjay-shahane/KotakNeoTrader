@@ -539,11 +539,6 @@ def api_search_etf_instruments():
 def api_get_etf_quotes():
     return get_etf_quotes()
 
-@app.route('/api/etf/positions', methods=['GET'])
-@require_auth  
-def api_get_etf_positions():
-    return get_etf_positions()
-
 @app.route('/api/etf/portfolio-summary', methods=['GET'])
 @require_auth
 def api_get_portfolio_summary():
