@@ -227,6 +227,8 @@
                 <thead>
                     <tr>
                         <th>ETF</th>
+                        <th>30</th>
+                        <th>DH</th>
                         <th>Date</th>
                         <th>Pos</th>
                         <th>Qty</th>
@@ -237,15 +239,16 @@
                         <th>TP</th>
                         <th>TVA</th>
                         <th>TPR</th>
-                        <th>P&L</th>
-                        <th>EXP</th>
+                        <th>PL</th>
                         <th>ED</th>
+                        <th>EXP</th>
                         <th>PR</th>
                         <th>PP</th>
                         <th>IV</th>
                         <th>IP</th>
                         <th>NT</th>
                         <th>Qt</th>
+                        <th>7</th>
                         <th>%Ch</th>
                     </tr>
                 </thead>
@@ -402,7 +405,7 @@
 
                 if (!this.positions || this.positions.length === 0) {
                     const row = tbody.insertRow();
-                    row.innerHTML = `<td colspan="21" class="text-center text-muted">No ETF positions found</td>`;
+                    row.innerHTML = `<td colspan="24" class="text-center text-muted">No ETF positions found</td>`;
                     return;
                 }
 
@@ -423,6 +426,8 @@
 
                     row.innerHTML = `
                         <td><strong>${position.etf_symbol}</strong></td>
+                        <td>#N/A</td>
+                        <td>#N/A</td>
                         <td>${entryDate}</td>
                         <td><span class="badge ${position.is_active ? 'bg-success' : 'bg-secondary'}">${position.is_active ? '1' : '0'}</span></td>
                         <td>${position.quantity}</td>
@@ -434,6 +439,7 @@
                         <td>₹${position.target_value_amount.toFixed(0)}</td>
                         <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
                         <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
+                        <td>-</td>
                         <td>-</td>
                         <td>-</td>
                         <td>-</td>
@@ -650,12 +656,14 @@
             }
 
             generateCSV() {
-                const headers = ['ETF', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'P&L', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '%Ch'];
+                const headers = ['ETF', '30', 'DH', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'PL', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '7', '%Ch'];
                 let csv = headers.join(',') + '\n';
 
                 this.positions.forEach(position => {
                     const row = [
                         position.etf_symbol,
+                        '#N/A',
+                        '#N/A',
                         position.entry_date,
                         position.is_active ? '1' : '0',
                         position.quantity,
@@ -667,7 +675,7 @@
                         position.target_value_amount.toFixed(0),
                         position.target_profit_return.toFixed(0),
                         position.profit_loss.toFixed(0),
-                        '-', '-', '-', '-', '-', '-', '-', '-', '-'
+                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'
                     ];
                     csv += row.join(',') + '\n';
                 });
@@ -952,7 +960,7 @@
 
                 if (!this.positions || this.positions.length === 0) {
                     const row = tbody.insertRow();
-                    row.innerHTML = `<td colspan="21" class="text-center text-muted">No ETF positions found</td>`;
+                    row.innerHTML = `<td colspan="24" class="text-center text-muted">No ETF positions found</td>`;
                     return;
                 }
 
@@ -973,6 +981,8 @@
 
                     row.innerHTML = `
                         <td><strong>${position.etf_symbol}</strong></td>
+                        <td>#N/A</td>
+                        <td>#N/A</td>
                         <td>${entryDate}</td>
                         <td><span class="badge ${position.is_active ? 'bg-success' : 'bg-secondary'}">${position.is_active ? '1' : '0'}</span></td>
                         <td>${position.quantity}</td>
@@ -984,6 +994,7 @@
                         <td>₹${position.target_value_amount.toFixed(0)}</td>
                         <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
                         <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
+                        <td>-</td>
                         <td>-</td>
                         <td>-</td>
                         <td>-</td>
@@ -1030,12 +1041,14 @@
             }
 
             generateCSV() {
-                const headers = ['ETF', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'P&L', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '%Ch'];
+                const headers = ['ETF', '30', 'DH', 'Date', 'Pos', 'Qty', 'EP', 'CMP', '%Chan', 'Inv.', 'TP', 'TVA', 'TPR', 'PL', 'ED', 'EXP', 'PR', 'PP', 'IV', 'IP', 'NT', 'Qt', '7', '%Ch'];
                 let csv = headers.join(',') + '\n';
 
                 this.positions.forEach(position => {
                     const row = [
                         position.etf_symbol,
+                        '#N/A',
+                        '#N/A',
                         position.entry_date,
                         position.is_active ? '1' : '0',
                         position.quantity,
@@ -1047,7 +1060,7 @@
                         position.target_value_amount.toFixed(0),
                         position.target_profit_return.toFixed(0),
                         position.profit_loss.toFixed(0),
-                        '-', '-', '-', '-', '-', '-', '-', '-', '-'
+                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'
                     ];
                     csv += row.join(',') + '\n';
                 });
