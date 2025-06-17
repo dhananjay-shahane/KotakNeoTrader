@@ -662,7 +662,7 @@ class ETFSignalsManager {
 
     updateSummaryCards(summary) {
         if (!summary) return;
-        
+
         console.log('ETF Signals Dashboard Summary:', {
             totalPositions: summary.total_positions || 0,
             totalInvestment: summary.total_investment || 0,
@@ -842,5 +842,44 @@ function exportSignals() {
 document.addEventListener('DOMContentLoaded', function() {
     window.etfManager = new ETFSignalsManager();
 });
+
+// Function to save the deal
+function saveDeal() {
+    // Get values from the form
+    const dealSymbol = document.getElementById('dealSymbol').value;
+    const dealPos = document.getElementById('dealPos').value;
+    const dealQty = document.getElementById('dealQty').value;
+    const dealEP = document.getElementById('dealEP').value;
+    const dealTP = document.getElementById('dealTP').value;
+    const dealCMP = document.getElementById('dealCMP').value;
+    const dealNotes = document.getElementById('dealNotes').value;
+
+    // Basic validation
+    if (!dealSymbol || !dealPos || !dealQty || !dealEP) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    // Create deal object
+    const newDeal = {
+        symbol: dealSymbol,
+        pos: dealPos,
+        qty: dealQty,
+        ep: dealEP,
+        tp: dealTP,
+        cmp: dealCMP,
+        notes: dealNotes
+    };
+
+    // Log the new deal (for now)
+    console.log('New Deal:', newDeal);
+
+    // Close the modal
+    bootstrap.Modal.getInstance(document.getElementById('addDealModal')).hide();
+
+    // Clear the form
+    document.getElementById('addDealForm').reset();
+
+    // Optionally, refresh the signals table or display the new deal immediately
+}
 </script>
-{% endblock %}

@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Deals - Kotak Neo Trading{% endblock %}
@@ -385,7 +384,7 @@ class DealsManager {
             this.filteredDeals = [...this.deals];
             this.renderDealsTable();
             this.updatePagination();
-            
+
         } catch (error) {
             console.error('Error loading deals:', error);
             this.showError('Failed to load deals data');
@@ -393,10 +392,14 @@ class DealsManager {
     }
 
     generateSampleDeals() {
-        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'KOTAKBANK'];
-        const deals = [];
-        
-        for (let i = 0; i < 25; i++) {
+        // First, load user-created deals from localStorage
+        const userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+
+        const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN'];
+        const deals = [...userDeals]; // Start with user deals
+
+        // Add sample deals if needed
+        for (let i = 0; i < (25 - userDeals.length); i++) {
             const symbol = symbols[Math.floor(Math.random() * symbols.length)];
             const entryPrice = Math.random() * 5000 + 100;
             const currentPrice = entryPrice * (0.9 + Math.random() * 0.2);
@@ -407,7 +410,7 @@ class DealsManager {
             const pnl = (currentPrice - entryPrice) * quantity * (isLong ? 1 : -1);
             const investment = entryPrice * quantity;
             const targetPrice = entryPrice * (isLong ? 1.1 : 0.9);
-            
+
             deals.push({
                 symbol: symbol,
                 thirty: '-',
@@ -437,7 +440,7 @@ class DealsManager {
                 status: ['EXECUTED', 'PENDING', 'CANCELLED'][Math.floor(Math.random() * 3)]
             });
         }
-        
+
         return deals.sort((a, b) => b.dh - a.dh);
     }
 
