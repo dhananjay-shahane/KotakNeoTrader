@@ -103,7 +103,7 @@ class ETFPosition(db.Model):
             'percentage_change': self.percentage_change,
             'target_value_amount': self.target_value_amount,
             'target_profit_return': self.target_profit_return
-        }urn {
+        return {
             'id': self.id,
             'etf_symbol': self.etf_symbol,
             'trading_symbol': self.trading_symbol,
