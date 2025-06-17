@@ -393,7 +393,28 @@ class DealsManager {
 
     generateSampleDeals() {
         // First, load user-created deals from localStorage
-        const userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+        let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+        
+        // Update real-time data for user deals (simulate price changes)
+        userDeals = userDeals.map(deal => {
+            const timeElapsed = (Date.now() - new Date(deal.date).getTime()) / (1000 * 60 * 60 * 24);
+            const volatility = 0.02; // 2% daily volatility
+            const priceChange = (Math.random() - 0.5) * volatility * Math.sqrt(timeElapsed + 1);
+            const newCMP = deal.ep * (1 + priceChange);
+            const newPnl = (newCMP - deal.ep) * deal.qty * (deal.pos === 1 ? 1 : -1);
+            const newPercentChange = ((newCMP - deal.ep) / deal.ep) * 100 * (deal.pos === 1 ? 1 : -1);
+            
+            return {
+                ...deal,
+                cmp: newCMP,
+                pl: newPnl,
+                change_pct: newPercentChange,
+                change2: newPercentChange,
+                ip: newPercentChange > 0 ? `+${newPercentChange.toFixed(1)}%` : `${newPercentChange.toFixed(1)}%`,
+                dh: Math.floor(timeElapsed),
+                qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
+            };
+        });
 
         const symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN'];
         const deals = [...userDeals]; // Start with user deals
