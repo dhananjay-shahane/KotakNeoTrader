@@ -17,21 +17,79 @@ def get_etf_positions():
         # Use database user ID if available, otherwise fallback to UCC
         user_id = session.get('db_user_id', 1)  # Default to user ID 1 for testing
         
-        from etf_trading_signals import ETFTradingSignals
-        etf_manager = ETFTradingSignals()
-        positions = etf_manager.get_user_etf_positions(user_id)
-        summary = etf_manager.calculate_portfolio_summary(user_id)
+        try:
+            from etf_trading_signals import ETFTradingSignals
+            etf_manager = ETFTradingSignals()
+            positions = etf_manager.get_user_etf_positions(user_id)
+            summary = etf_manager.calculate_portfolio_summary(user_id)
 
-        return jsonify({
-            'success': True,
-            'positions': positions,
-            'summary': summary,
-            'count': len(positions)
-        })
+            # Ensure positions is a list
+            if positions is None:
+                positions = []
+            
+            # Ensure summary has default structure
+            if summary is None:
+                summary = {
+                    'total_positions': 0,
+                    'total_investment': 0.0,
+                    'current_value': 0.0,
+                    'total_pnl': 0.0,
+                    'return_percent': 0.0
+                }
+
+            return jsonify({
+                'success': True,
+                'positions': positions,
+                'summary': summary,
+                'count': len(positions) if positions else 0
+            })
+
+        except ImportError as ie:
+            logger.error(f"ETF module import error: {ie}")
+            # Return empty data structure if ETF module not available
+            return jsonify({
+                'success': True,
+                'positions': [],
+                'summary': {
+                    'total_positions': 0,
+                    'total_investment': 0.0,
+                    'current_value': 0.0,
+                    'total_pnl': 0.0,
+                    'return_percent': 0.0
+                },
+                'count': 0
+            })
+        except Exception as module_error:
+            logger.error(f"ETF module error: {module_error}")
+            # Return empty data structure on module errors
+            return jsonify({
+                'success': True,
+                'positions': [],
+                'summary': {
+                    'total_positions': 0,
+                    'total_investment': 0.0,
+                    'current_value': 0.0,
+                    'total_pnl': 0.0,
+                    'return_percent': 0.0
+                },
+                'count': 0
+            })
 
     except Exception as e:
         logger.error(f"Error getting ETF positions: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'positions': [],
+            'summary': {
+                'total_positions': 0,
+                'total_investment': 0.0,
+                'current_value': 0.0,
+                'total_pnl': 0.0,
+                'return_percent': 0.0
+            },
+            'count': 0
+        }), 500
 
 
 def add_etf_position():
