@@ -381,103 +381,98 @@
                 try {
                     const response = await fetch('/api/etf/positions');
                     const data = await response.json();
-                    
+
                     if (data.success) {
-                        this.positions = data.positions;
-                        this.renderPositions();
-                        this.updatePortfolioSummary();
+                        this.positions = data.positions || [];
+                        this.updatePositionsTable();
+                        this.updateSummaryCards(data.summary || {});
+                        console.log('Loaded', this.positions.length, 'ETF positions');
                     } else {
-                        console.error('Error loading positions:', data.error);
-                        this.showAlert('Error loading positions: ' + data.error, 'danger');
+                        this.showAlert('Error loading positions: ' + (data.error || 'Unknown error'), 'danger');
                     }
                 } catch (error) {
                     console.error('Error loading positions:', error);
-                    this.showAlert('Error loading positions', 'danger');
+                    this.showAlert('Failed to load positions', 'danger');
                 }
             }
 
-            renderPositions() {
+            updatePositionsTable() {
                 const tbody = document.getElementById('signalsTableBody');
                 tbody.innerHTML = '';
 
-                this.positions.forEach((position, index) => {
-                    const row = this.createPositionRow(position, index);
-                    tbody.appendChild(row);
+                if (!this.positions || this.positions.length === 0) {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `<td colspan="21" class="text-center text-muted">No ETF positions found</td>`;
+                    return;
+                }
+
+                this.positions.forEach(position => {
+                    const row = document.createElement('tr');
+					const percentChange = position.percentage_change;
+                    const pnl = position.profit_loss;
+
+                    const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
+                    const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+                    row.innerHTML = `
+                        <td><strong>${position.etf_symbol}</strong></td>
+                        <td>${new Date(position.entry_date).toLocaleDateString('en-GB')}</td>
+                        <td>${position.quantity}</td>
+                        <td>₹${position.entry_price.toFixed(2)}</td>
+                        <td class="${pnlClass}">₹${position.current_price.toFixed(2)}</td>
+                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
+                        <td>₹${position.investment_amount.toFixed(0)}</td>
+                        <td>₹${(position.target_price || 0).toFixed(2)}</td>
+                        <td>₹${position.target_value_amount.toFixed(0)}</td>
+                        <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
+                        <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
+                        <td>-</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="etfManager.editPosition(${position.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="etfManager.deletePosition(${position.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+					document.getElementById('signalsTableBody').appendChild(row);
                 });
             }
 
-            createPositionRow(position, index) {
-                const row = document.createElement('tr');
-                row.dataset.positionId = position.id;
-                
-                const percentChange = position.percentage_change;
-                const pnl = position.profit_loss;
-                
-                const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
-                const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+            updateSummaryCards(summary) {
+                if (!summary) summary = {};
 
-                row.innerHTML = `
-                    <td><strong>${position.etf_symbol}</strong></td>
-                    <td>${new Date(position.entry_date).toLocaleDateString('en-GB')}</td>
-                    <td>${position.quantity}</td>
-                    <td>₹${position.entry_price.toFixed(2)}</td>
-                    <td class="${pnlClass}">₹${position.current_price.toFixed(2)}</td>
-                    <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                    <td>₹${position.investment_amount.toFixed(0)}</td>
-                    <td>₹${(position.target_price || 0).toFixed(2)}</td>
-                    <td>₹${position.target_value_amount.toFixed(0)}</td>
-                    <td class="profit">₹${position.target_profit_return.toFixed(0)}</td>
-                    <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                    <td>-</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="etfManager.editPosition(${position.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="etfManager.deletePosition(${position.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                return row;
-            }
+                document.getElementById('totalPositions').textContent = summary.total_positions || 0;
+                document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('returnPercent').textContent = (summary.return_percent || 0).toFixed(2) + '%';
+                document.getElementById('profitPositions').textContent = summary.profit_positions || 0;
+                document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
 
-            updatePortfolioSummary() {
-                const totalPositions = this.positions.length;
-                const totalInvestment = this.positions.reduce((sum, p) => sum + p.investment_amount, 0);
-                const totalCurrentValue = this.positions.reduce((sum, p) => sum + p.current_value, 0);
-                const totalPnL = this.positions.reduce((sum, p) => sum + p.profit_loss, 0);
-                const returnPercent = totalInvestment > 0 ? (totalPnL / totalInvestment) * 100 : 0;
-                const profitPositions = this.positions.filter(p => p.profit_loss > 0).length;
-                const lossPositions = this.positions.filter(p => p.profit_loss < 0).length;
-
-                document.getElementById('totalPositions').textContent = totalPositions;
-                document.getElementById('totalInvestment').textContent = `₹${totalInvestment.toFixed(0)}`;
-                document.getElementById('currentValue').textContent = `₹${totalCurrentValue.toFixed(0)}`;
-                
+                // Update P&L color
                 const pnlElement = document.getElementById('totalPnL');
-                pnlElement.textContent = `₹${totalPnL.toFixed(0)}`;
-                pnlElement.className = `h6 mb-0 ${totalPnL > 0 ? 'profit' : totalPnL < 0 ? 'loss' : 'neutral'}`;
-                
+                const pnl = summary.total_pnl || 0;
+                pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
+
+                // Update return % color
                 const returnElement = document.getElementById('returnPercent');
-                returnElement.textContent = `${returnPercent.toFixed(2)}%`;
-                returnElement.className = `h6 mb-0 ${returnPercent > 0 ? 'profit' : returnPercent < 0 ? 'loss' : 'neutral'}`;
-                
-                document.getElementById('profitPositions').textContent = profitPositions;
-                document.getElementById('lossPositions').textContent = lossPositions;
+                const returnPercent = summary.return_percent || 0;
+                returnElement.className = returnPercent >= 0 ? 'text-success' : 'text-danger';
             }
 
             showPositionModal(position = null) {
                 const modal = new bootstrap.Modal(document.getElementById('positionModal'));
                 const modalTitle = document.getElementById('modalTitle');
-                
+
                 if (position) {
                     modalTitle.textContent = 'Edit ETF Position';
                     this.fillPositionForm(position);
@@ -485,7 +480,7 @@
                     modalTitle.textContent = 'Add ETF Position';
                     this.clearPositionForm();
                 }
-                
+
                 modal.show();
             }
 
@@ -603,7 +598,7 @@
                     try {
                         const response = await fetch(`/api/etf/search?q=${encodeURIComponent(query)}`);
                         const data = await response.json();
-                        
+
                         if (data.success) {
                             this.displaySearchResults(data.instruments);
                         }
