@@ -11,10 +11,12 @@ logger = logging.getLogger(__name__)
 def get_etf_positions():
     """Get ETF positions with live data and calculations"""
     try:
-        if 'user_id' not in session:
+        # Check authentication using the same method as other endpoints
+        if 'authenticated' not in session or not session['authenticated']:
             return jsonify({'error': 'Not authenticated'}), 401
         
-        user_id = session['user_id']
+        # Get user_id from db_user_id or fallback to 1 for demo
+        user_id = session.get('db_user_id', 1)
         
         # Import here to avoid circular imports
         from models_etf import ETFPosition
