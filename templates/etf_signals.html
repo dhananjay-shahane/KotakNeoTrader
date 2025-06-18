@@ -77,7 +77,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-1">Trading Signals</h1>
+        <h1 class="h3 mb-1">ETF Trading Signals</h1>
         <p class="text-muted mb-0">Real-time position tracking and analysis</p>
     </div>
     <div class="d-flex gap-2">
@@ -87,9 +87,58 @@
         <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
             <i class="fas fa-cog me-1"></i>Columns
         </button>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#signalFiltersModal">
-            <i class="fas fa-filter me-1"></i>Filters
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDealModal">
+            <i class="fas fa-plus me-1"></i>Add Position
         </button>
+    </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="portfolio-summary">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>Portfolio Summary
+            </h5>
+            <div class="row" id="portfolioSummary">
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Total Positions</div>
+                        <div class="h5 mb-0" id="totalPositions">0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Investment</div>
+                        <div class="h5 mb-0" id="totalInvestment">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Current Value</div>
+                        <div class="h5 mb-0" id="currentValue">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Total P&L</div>
+                        <div class="h5 mb-0" id="totalPnl">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Return %</div>
+                        <div class="h5 mb-0" id="returnPercent">0.00%</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Active/Closed</div>
+                        <div class="h5 mb-0"><span id="activePositions">0</span>/<span id="closedPositions">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -303,33 +352,30 @@ class ETFSignalsManager {
         this.refreshInterval = null;
         this.searchTimeout = null;
 
-        // Available columns configuration
+        // Available columns configuration based on your specifications
         this.availableColumns = {
-            'symbol': { label: 'ETF', default: true, width: '70px' },
-            'thirty': { label: '30', default: false, width: '50px' },
-            'dh': { label: 'DH', default: true, width: '50px' },
+            'etf_name': { label: 'ETF Name', default: true, width: '80px' },
             'date': { label: 'Date', default: true, width: '70px' },
             'pos': { label: 'Pos', default: true, width: '50px' },
-            'qty': { label: 'Qty', default: true, width: '50px' },
+            'qty': { label: 'Qty', default: true, width: '60px' },
             'ep': { label: 'EP', default: true, width: '70px' },
             'cmp': { label: 'CMP', default: true, width: '70px' },
-            'change_pct': { label: '%Chan', default: true, width: '60px' },
-            'inv': { label: 'Inv.', default: true, width: '70px' },
-            'tp': { label: 'TP', default: true, width: '60px' },
-            'tva': { label: 'TVA', default: true, width: '70px' },
-            'tpr': { label: 'TPR', default: true, width: '70px' },
-            'pl': { label: 'PL', default: true, width: '60px' },
+            'change_pct': { label: '%Chan', default: true, width: '70px' },
+            'inv': { label: 'Inv.', default: true, width: '80px' },
+            'tp': { label: 'TP', default: true, width: '70px' },
+            'tva': { label: 'TVA', default: true, width: '80px' },
+            'pl': { label: 'PL', default: true, width: '80px' },
             'ed': { label: 'ED', default: false, width: '70px' },
             'exp': { label: 'EXP', default: false, width: '60px' },
-            'pr': { label: 'PR', default: true, width: '80px' },
-            'pp': { label: 'PP', default: true, width: '50px' },
-            'iv': { label: 'IV', default: true, width: '60px' },
-            'ip': { label: 'IP', default: true, width: '60px' },
-            'nt': { label: 'NT', default: false, width: '60px' },
+            'pr': { label: 'PR', default: false, width: '80px' },
+            'pp': { label: 'PP', default: false, width: '60px' },
+            'iv': { label: 'IV', default: false, width: '80px' },
+            'ip': { label: 'IP', default: false, width: '80px' },
+            'nt': { label: 'NT', default: false, width: '100px' },
             'qt': { label: 'Qt', default: false, width: '60px' },
             'seven': { label: '7', default: false, width: '50px' },
-            'change2': { label: '%Ch', default: false, width: '60px' },
-            'actions': { label: 'Actions', default: true, width: '80px' }
+            'change2': { label: '%Ch', default: false, width: '70px' },
+            'actions': { label: 'Actions', default: true, width: '100px' }
         };
 
         this.selectedColumns = this.getDefaultColumns();
@@ -442,20 +488,35 @@ class ETFSignalsManager {
     }
 
     async loadPositions() {
-        // Load sample ETF data for display
-        this.positions = this.getSampleETFData();
-        this.filteredPositions = [...this.positions];
-        this.renderPositionsTable();
-        this.updatePagination();
-        this.updateSummaryCards({
-            total_positions: this.positions.length,
-            total_investment: this.positions.reduce((sum, pos) => sum + pos.inv, 0),
-            current_value: this.positions.reduce((sum, pos) => sum + pos.cmp * pos.qty, 0),
-            total_pnl: this.positions.reduce((sum, pos) => sum + pos.pl, 0),
-            return_percent: 2.45,
-            profit_positions: this.positions.filter(pos => pos.pl > 0).length,
-            loss_positions: this.positions.filter(pos => pos.pl < 0).length
-        });
+        try {
+            // Fetch real ETF positions from the API
+            const response = await fetch('/api/etf/positions');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.positions = data.positions || [];
+                this.filteredPositions = [...this.positions];
+                this.renderPositionsTable();
+                this.updatePagination();
+                this.updateSummaryCards(data.summary || {});
+            } else {
+                console.error('Failed to load positions:', data.error);
+                // Show empty state
+                this.positions = [];
+                this.filteredPositions = [];
+                this.renderPositionsTable();
+                this.updatePagination();
+                this.updateSummaryCards({});
+            }
+        } catch (error) {
+            console.error('Error loading positions:', error);
+            // Show empty state
+            this.positions = [];
+            this.filteredPositions = [];
+            this.renderPositionsTable();
+            this.updatePagination();
+            this.updateSummaryCards({});
+        }
     }
 
     getSampleETFData() {
