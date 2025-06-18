@@ -8,6 +8,9 @@ from utils.auth import login_required, validate_current_session
 from trading_functions import TradingFunctions
 from neo_client import NeoClient
 
+# Import ETF API functions
+from api.etf_signals import get_etf_positions
+
 main_bp = Blueprint('main', __name__)
 
 # Initialize components
@@ -371,6 +374,12 @@ def api_live_quotes():
             'quotes': []
         }), 500
 
+@main_bp.route('/api/etf_positions')
+@login_required
+def api_etf_positions():
+    """API endpoint for ETF positions"""
+    return get_etf_positions()
+
 @main_bp.route('/api/user_profile')
 @login_required
 def api_user_profile():
@@ -552,6 +561,12 @@ def signals():
 def deals():
     """Deals page for placed orders from signals"""
     return render_template('deals.html')
+
+@main_bp.route('/etf-signals')
+@login_required
+def etf_signals():
+    """ETF Trading Signals page"""
+    return render_template('etf_signals.html')
 
 from flask import Flask
 from datetime import datetime
