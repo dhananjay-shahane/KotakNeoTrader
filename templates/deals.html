@@ -393,52 +393,84 @@ class DealsManager {
 
     async generateSampleDeals() {
         try {
+            console.log('🔄 Loading deals data...');
+            
             // Load ETF data from the API
             const response = await fetch('/api/etf_positions');
             const data = await response.json();
             
-            if (data.success && data.positions) {
+            let etfDeals = [];
+            
+            if (data.success && data.positions && data.positions.length > 0) {
+                console.log(`✅ Loaded ${data.positions.length} ETF positions`);
+                
                 // Convert ETF data to deals format
-                const etfDeals = data.positions.map((etf, index) => ({
-                    id: `etf_${index}`,
-                    symbol: etf.symbol,
-                    thirty: etf.thirty || '-',
-                    dh: etf.dh || this.calculateDaysHeld(etf.date),
-                    date: etf.date || new Date().toLocaleDateString('en-GB'),
-                    pos: etf.pos || 1,
-                    qty: etf.qty,
-                    ep: etf.ep || etf.entry_price,
-                    cmp: etf.cmp || etf.current_price,
-                    change_pct: etf.change_pct || etf.pnl_percent,
-                    inv: etf.inv || etf.investment,
-                    tp: etf.tp || etf.target_price,
-                    tva: etf.tva || etf.current_value,
-                    tpr: etf.tpr || '0',
-                    pl: etf.pl || etf.pnl,
-                    ed: etf.ed || '',
-                    pr: etf.pr || '-',
-                    pp: etf.pp || '-',
-                    iv: etf.iv || 'Low',
-                    ip: etf.ip || ((etf.change_pct || 0) > 0 ? `+${(etf.change_pct || 0).toFixed(1)}%` : `${(etf.change_pct || 0).toFixed(1)}%`),
-                    nt: etf.nt || '-',
-                    qt: etf.qt || new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                    seven: etf.seven || '-',
-                    change2: etf.change2 || etf.change_pct,
-                    status: etf.pos === 1 ? 'EXECUTED' : 'PENDING',
-                    source: 'etf_data'
-                }));
-                
-                // Also load user-created deals from localStorage
-                let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-                
-                // Update real-time data for user deals (simulate price changes)
+                etfDeals = data.positions.map((etf, index) => {
+                    const daysHeld = etf.dh || this.calculateDaysHeld(etf.date);
+                    const investment = etf.inv || (etf.ep * etf.qty) || 0;
+                    const currentValue = etf.tva || (etf.cmp * etf.qty) || 0;
+                    const pnl = etf.pl || 0;
+                    const percentChange = etf.change_pct || 0;
+                    
+                    return {
+                        id: `etf_${index}`,
+                        symbol: etf.symbol || `ETF_${index}`,
+                        thirty: etf.thirty || '-',
+                        dh: daysHeld,
+                        date: etf.date || new Date().toLocaleDateString('en-GB'),
+                        pos: etf.pos || 1,
+                        qty: etf.qty || 0,
+                        ep: etf.ep || 0,
+                        cmp: etf.cmp || etf.ep || 0,
+                        change_pct: percentChange,
+                        inv: investment,
+                        tp: etf.tp || 0,
+                        tva: currentValue,
+                        tpr: etf.tpr || 0,
+                        pl: pnl,
+                        ed: etf.ed || '',
+                        pr: etf.pr || '-',
+                        pp: etf.pp || '-',
+                        iv: etf.iv || 'Low',
+                        ip: etf.ip || (percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`),
+                        nt: etf.nt || 'From ETF signals',
+                        qt: etf.qt || new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                        seven: etf.seven || '-',
+                        change2: etf.change2 || percentChange,
+                        status: etf.is_active ? 'ACTIVE' : 'CLOSED',
+                        source: 'etf_data'
+                    };
+                });
+            } else {
+                console.log('⚠️ No ETF positions received from API');
+            }
+            
+            // Load user-created deals from localStorage
+            let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+            console.log(`📋 Found ${userDeals.length} user-created deals`);
+            
+            // Update real-time data for user deals (simulate price changes)
+            if (userDeals.length > 0) {
                 userDeals = userDeals.map(deal => {
-                    const timeElapsed = (Date.now() - new Date(deal.date).getTime()) / (1000 * 60 * 60 * 24);
-                    const volatility = 0.02; // 2% daily volatility
-                    const priceChange = (Math.random() - 0.5) * volatility * Math.sqrt(timeElapsed + 1);
-                    const newCMP = deal.ep * (1 + priceChange);
-                    const newPnl = (newCMP - deal.ep) * deal.qty * (deal.pos === 1 ? 1 : -1);
-                    const newPercentChange = ((newCMP - deal.ep) / deal.ep) * 100 * (deal.pos === 1 ? 1 : -1);
+                    const now = new Date();
+                    const dealDate = new Date(deal.date);
+                    const timeElapsed = Math.max(0, (now - dealDate) / (1000 * 60 * 60 * 24)); // Days
+                    
+                    // Simulate realistic price movements
+                    const volatility = 0.015; // 1.5% daily volatility
+                    const trend = 0.001; // Slight upward trend
+                    const randomFactor = (Math.random() - 0.5) * 2;
+                    const priceChange = (trend + volatility * randomFactor) * Math.sqrt(timeElapsed + 1);
+                    
+                    const originalEP = deal.ep || 100;
+                    const newCMP = originalEP * (1 + priceChange);
+                    const quantity = deal.qty || 0;
+                    const position = deal.pos === 1 ? 1 : -1; // Long or Short
+                    
+                    const newPnl = (newCMP - originalEP) * quantity * position;
+                    const newPercentChange = ((newCMP - originalEP) / originalEP) * 100 * position;
+                    const newInvestment = originalEP * quantity;
+                    const newCurrentValue = newCMP * quantity;
                     
                     return {
                         ...deal,
@@ -446,29 +478,71 @@ class DealsManager {
                         pl: newPnl,
                         change_pct: newPercentChange,
                         change2: newPercentChange,
+                        inv: newInvestment,
+                        tva: newCurrentValue,
                         ip: newPercentChange > 0 ? `+${newPercentChange.toFixed(1)}%` : `${newPercentChange.toFixed(1)}%`,
                         dh: Math.floor(timeElapsed),
                         qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                        source: 'user_created'
+                        source: 'user_created',
+                        status: 'EXECUTED'
                     };
                 });
-                
-                // Combine ETF data and user deals
-                const allDeals = [...etfDeals, ...userDeals];
-                
-                // Sort by most recent first
-                return allDeals.sort((a, b) => new Date(b.date) - new Date(a.date));
             }
             
-            // Fallback to user deals only if ETF API fails
-            let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-            return userDeals.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Combine ETF data and user deals
+            const allDeals = [...etfDeals, ...userDeals];
+            console.log(`📊 Total deals: ${allDeals.length} (${etfDeals.length} from ETF, ${userDeals.length} user-created)`);
+            
+            // Sort by status (ACTIVE first) then by date (most recent first)
+            return allDeals.sort((a, b) => {
+                // First sort by status (ACTIVE before CLOSED)
+                if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
+                if (b.status === 'ACTIVE' && a.status !== 'ACTIVE') return 1;
+                
+                // Then sort by date (most recent first)
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateB - dateA;
+            });
             
         } catch (error) {
-            console.error('Error loading deals data:', error);
-            // Fallback to user deals only
+            console.error('❌ Error loading deals data:', error);
+            
+            // Fallback: create some sample deals if nothing is available
+            const fallbackDeals = [
+                {
+                    id: 'sample_1',
+                    symbol: 'NIFTYBEES',
+                    thirty: '2.1%',
+                    dh: 10,
+                    date: new Date().toLocaleDateString('en-GB'),
+                    pos: 1,
+                    qty: 100,
+                    ep: 250.00,
+                    cmp: 255.50,
+                    change_pct: 2.20,
+                    inv: 25000,
+                    tp: 270.00,
+                    tva: 25550,
+                    tpr: 2000,
+                    pl: 550,
+                    ed: '',
+                    pr: '245-260',
+                    pp: '★★',
+                    iv: 'Medium',
+                    ip: '+2.20%',
+                    nt: 'Sample deal',
+                    qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                    seven: '1.5%',
+                    change2: 2.20,
+                    status: 'EXECUTED',
+                    source: 'sample_data'
+                }
+            ];
+            
+            // Also try to load any existing user deals
             let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-            return userDeals.sort((a, b) => new Date(b.date) - new Date(a.date));
+            return [...fallbackDeals, ...userDeals];
         }
     }
     
