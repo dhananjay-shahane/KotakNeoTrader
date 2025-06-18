@@ -490,35 +490,56 @@ class ETFSignalsManager {
     }
 
     async loadPositions() {
-        try {
-            // Fetch real ETF positions from the API
-            const response = await fetch('/api/etf_positions');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.positions = data.positions || [];
-                this.filteredPositions = [...this.positions];
-                this.renderPositionsTable();
-                this.updatePagination();
-                this.updateSummaryCards(data.summary || {});
-            } else {
-                console.error('Failed to load positions:', data.error);
+        // Show loading state
+        this.showLoading();
+
+        console.log('Loading ETF positions...');
+        fetch('/api/etf_positions', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('ETF positions response:', data);
+                if (data.success) {
+                    this.positions = data.positions || [];
+                    this.filteredPositions = [...this.positions];
+                    this.renderPositionsTable();
+                    this.updatePagination();
+                    this.updateSummaryCards(data.summary || {});
+                    console.log(`Loaded ${this.positions.length} ETF positions`);
+                } else {
+                    console.error('API returned error:', data.error);
+                    // Show empty state
+                    this.positions = [];
+                    this.filteredPositions = [];
+                    this.renderPositionsTable();
+                    this.updatePagination();
+                    this.updateSummaryCards({});
+                }
+            })
+            .catch(error => {
+                console.error('Error loading ETF positions:', error);
                 // Show empty state
                 this.positions = [];
                 this.filteredPositions = [];
                 this.renderPositionsTable();
                 this.updatePagination();
                 this.updateSummaryCards({});
-            }
-        } catch (error) {
-            console.error('Error loading positions:', error);
-            // Show empty state
-            this.positions = [];
-            this.filteredPositions = [];
-            this.renderPositionsTable();
-            this.updatePagination();
-            this.updateSummaryCards({});
-        }
+            })
+            .finally(() => {
+                this.hideLoading();
+            });
     }
 
     getSampleETFData() {
@@ -1042,10 +1063,10 @@ function saveDeal() {
 
     // Get existing user deals from localStorage
     let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-    
+
     // Add the new deal
     userDeals.unshift(newDeal); // Add to beginning of array
-    
+
     // Save back to localStorage
     localStorage.setItem('userDeals', JSON.stringify(userDeals));
 

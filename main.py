@@ -1,2 +1,4 @@
-
-from app import app  # noqa: F401
+from app import app, db
+from models import User
+from models_etf import ETFPosition, ETFWatchlist
+import logging
