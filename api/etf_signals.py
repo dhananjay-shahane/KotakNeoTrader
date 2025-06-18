@@ -50,744 +50,147 @@ def get_etf_positions():
                     'qt': row.get('qt', '')
                 })
 
-        # Limit to 20 positions total (10 active, 10 closed)
-        if etf_data:
-            # Separate active and closed positions
-            active_positions = [pos for pos in etf_data if pos.get('pl', 0) != 0 or pos.get('qty', 0) > 0]
-            closed_positions = [pos for pos in etf_data if pos.get('pl', 0) == 0 and pos.get('qty', 0) == 0]
-            
-            # Take first 10 active and 10 closed
-            limited_active = active_positions[:10]
-            limited_closed = closed_positions[:10]
-            
-            # Mark positions as active/closed
-            for pos in limited_active:
-                pos['is_active'] = True
-                pos['status'] = 'ACTIVE'
-            
-            for pos in limited_closed:
-                pos['is_active'] = False
-                pos['status'] = 'CLOSED'
-            
-            etf_data = limited_active + limited_closed
-        
-        # Add sample ETF data if CSV data is empty or insufficient
-        if len(etf_data) < 20:
-            sample_data = [
+        # Add comprehensive sample ETF data if CSV data is empty
+        if not etf_data:
+            etf_data = [
                 {
                     'symbol': 'NIFTYBEES',
-                    'thirty': '2.1%',
-                    'dh': 45,
-                    'date': '22-Nov-2024',
-                    'pos': 1,
                     'qty': 200,
-                    'ep': 227.00,
-                    'cmp': 225.70,
-                    'change_pct': -0.57,
-                    'inv': 45400.00,
-                    'tp': 254.26,
-                    'tva': 45140.00,
-                    'tpr': 5452,
-                    'pl': -260.00,
-                    'ed': '22-Nov-2024',
-                    'exp': '-',
-                    'pr': '220-235',
-                    'pp': '★★',
-                    'iv': 'Med',
-                    'ip': '-0.57%',
-                    'nt': 'Index ETF',
-                    'qt': '15:30',
-                    'seven': '0.5%',
-                    'change2': -0.57,
+                    'entry_price': 227.00,
+                    'current_price': 225.70,
+                    'pnl': -260.00,
+                    'pnl_percent': -0.57,
+                    'investment': 45400.00,
+                    'current_value': 45140.00,
                     'signal': 'HOLD',
                     'strength': 'WEAK',
                     'target_price': 254.26,
                     'stop_loss': 215.65,
                     'sector': 'INDEX',
                     'confidence': 75.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '22-Nov-2024',
+                    'exp': '-',
+                    'pr': '220-235',
+                    'pp': '★★',
+                    'iv': 'Med',
+                    'ip': '-0.57%',
+                    'nt': 'Index ETF',
+                    'qt': '15:30'
                 },
                 {
                     'symbol': 'GOLDBEES',
-                    'thirty': '3.2%',
-                    'dh': 32,
-                    'date': '13-Dec-2024',
-                    'pos': 1,
                     'qty': 500,
-                    'ep': 40.23,
-                    'cmp': 40.00,
-                    'change_pct': -0.57,
-                    'inv': 20115.00,
-                    'tp': 45.79,
-                    'tva': 20000.00,
-                    'tpr': 2780,
-                    'pl': -115.00,
-                    'ed': '13-Dec-2024',
-                    'exp': '-',
-                    'pr': '38-42',
-                    'pp': '★',
-                    'iv': 'Low',
-                    'ip': '-0.57%',
-                    'nt': 'Gold ETF',
-                    'qt': '15:29',
-                    'seven': '1.2%',
-                    'change2': -0.57,
+                    'entry_price': 40.23,
+                    'current_price': 40.00,
+                    'pnl': -115.00,
+                    'pnl_percent': -0.57,
+                    'investment': 20115.00,
+                    'current_value': 20000.00,
                     'signal': 'BUY',
                     'strength': 'MEDIUM',
                     'target_price': 45.79,
                     'stop_loss': 38.22,
                     'sector': 'GOLD',
                     'confidence': 80.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '13-Dec-2024',
+                    'exp': '-',
+                    'pr': '38-42',
+                    'pp': '★',
+                    'iv': 'Low',
+                    'ip': '-0.57%',
+                    'nt': 'Gold ETF',
+                    'qt': '15:29'
                 },
                 {
                     'symbol': 'BANKBEES',
-                    'thirty': '4.5%',
-                    'dh': 28,
-                    'date': '20-Dec-2024',
-                    'pos': 0,
                     'qty': 100,
-                    'ep': 46.15,
-                    'cmp': 45.00,
-                    'change_pct': -2.49,
-                    'inv': 4615.00,
-                    'tp': 52.26,
-                    'tva': 4500.00,
-                    'tpr': 611,
-                    'pl': -115.00,
-                    'ed': '20-Dec-2024',
-                    'exp': '-',
-                    'pr': '44-48',
-                    'pp': '★★',
-                    'iv': 'Med',
-                    'ip': '-2.49%',
-                    'nt': 'Bank ETF',
-                    'qt': '15:28',
-                    'seven': '2.1%',
-                    'change2': -2.49,
+                    'entry_price': 46.15,
+                    'current_price': 45.00,
+                    'pnl': -115.00,
+                    'pnl_percent': -2.49,
+                    'investment': 4615.00,
+                    'current_value': 4500.00,
                     'signal': 'HOLD',
                     'strength': 'WEAK',
                     'target_price': 52.26,
                     'stop_loss': 43.84,
                     'sector': 'BANKING',
                     'confidence': 65.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 0,
+                    'date': '20-Dec-2024',
+                    'exp': '-',
+                    'pr': '44-48',
+                    'pp': '★★',
+                    'iv': 'Med',
+                    'ip': '-2.49%',
+                    'nt': 'Bank ETF',
+                    'qt': '15:28'
                 },
                 {
                     'symbol': 'SILVERBEES',
-                    'thirty': '1.8%',
-                    'dh': 38,
-                    'date': '22-Nov-2024',
-                    'pos': 1,
                     'qty': 607,
-                    'ep': 93.00,
-                    'cmp': 104.29,
-                    'change_pct': 12.13,
-                    'inv': 56451.00,
-                    'tp': 97.70,
-                    'tva': 63301.03,
-                    'tpr': 2869,
-                    'pl': 6850.03,
-                    'ed': '22-Nov-2024',
-                    'exp': '-',
-                    'pr': '92-97',
-                    'pp': '★★★',
-                    'iv': 'High',
-                    'ip': '+12.13%',
-                    'nt': 'Silver ETF',
-                    'qt': '15:27',
-                    'seven': '3.2%',
-                    'change2': 12.13,
+                    'entry_price': 93.00,
+                    'current_price': 104.29,
+                    'pnl': 6850.03,
+                    'pnl_percent': 12.13,
+                    'investment': 56451.00,
+                    'current_value': 63301.03,
                     'signal': 'SELL',
                     'strength': 'STRONG',
                     'target_price': 97.70,
                     'stop_loss': 88.35,
                     'sector': 'SILVER',
                     'confidence': 90.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '22-Nov-2024',
+                    'exp': '-',
+                    'pr': '92-97',
+                    'pp': '★★★',
+                    'iv': 'High',
+                    'ip': '+12.13%',
+                    'nt': 'Silver ETF',
+                    'qt': '15:27'
                 },
                 {
                     'symbol': 'ITBEES',
-                    'thirty': '5.2%',
-                    'dh': 25,
-                    'date': '16-Dec-2024',
-                    'pos': 1,
                     'qty': 1560,
-                    'ep': 64.25,
-                    'cmp': 62.36,
-                    'change_pct': -2.94,
-                    'inv': 100230.00,
-                    'tp': 69.00,
-                    'tva': 97281.60,
-                    'tpr': 7410,
-                    'pl': -2948.40,
-                    'ed': '16-Dec-2024',
-                    'exp': '-',
-                    'pr': '62-67',
-                    'pp': '★',
-                    'iv': 'Med',
-                    'ip': '-2.94%',
-                    'nt': 'IT ETF',
-                    'qt': '15:26',
-                    'seven': '1.8%',
-                    'change2': -2.94,
+                    'entry_price': 64.25,
+                    'current_price': 62.36,
+                    'pnl': -2948.40,
+                    'pnl_percent': -2.94,
+                    'investment': 100230.00,
+                    'current_value': 97281.60,
                     'signal': 'BUY',
                     'strength': 'MEDIUM',
                     'target_price': 69.00,
                     'stop_loss': 61.04,
                     'sector': 'IT',
                     'confidence': 70.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'PHARMABEES',
-                    'thirty': '3.7%',
-                    'dh': 18,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
                     'date': '16-Dec-2024',
-                    'pos': 1,
-                    'qty': 4500,
-                    'ep': 22.7,
-                    'cmp': 22.25,
-                    'change_pct': -1.98,
-                    'inv': 102150.00,
-                    'tp': 25.42,
-                    'tva': 100125.00,
-                    'tpr': 12240,
-                    'pl': -2025.00,
-                    'ed': '16-Dec-2024',
                     'exp': '-',
-                    'pr': '21-24',
-                    'pp': '★',
-                    'iv': 'Low',
-                    'ip': '-1.98%',
-                    'nt': 'Pharma ETF',
-                    'qt': '15:24',
-                    'seven': '2.3%',
-                    'change2': -1.98,
-                    'signal': 'BUY',
-                    'strength': 'MEDIUM',
-                    'target_price': 25.42,
-                    'stop_loss': 21.57,
-                    'sector': 'PHARMA',
-                    'confidence': 75.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'CONSUMERBEES',
-                    'thirty': '4.1%',
-                    'dh': 42,
-                    'date': '20-Dec-2024',
-                    'pos': 1,
-                    'qty': 120,
-                    'ep': 73.42,
-                    'cmp': 71.6,
-                    'change_pct': -2.48,
-                    'inv': 8810.40,
-                    'tp': 82.14,
-                    'tva': 8592.00,
-                    'tpr': 1046,
-                    'pl': -218.40,
-                    'ed': '20-Dec-2024',
-                    'exp': '-',
-                    'pr': '70-76',
+                    'pr': '62-67',
                     'pp': '★',
                     'iv': 'Med',
-                    'ip': '-2.48%',
-                    'nt': 'Consumer ETF',
-                    'qt': '15:23',
-                    'seven': '1.5%',
-                    'change2': -2.48,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 82.14,
-                    'stop_loss': 69.78,
-                    'sector': 'CONSUMER',
-                    'confidence': 60.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'LIQUIDBEES',
-                    'thirty': '0.8%',
-                    'dh': 65,
-                    'date': '29-Nov-2024',
-                    'pos': 1,
-                    'qty': 472,
-                    'ep': 1341.00,
-                    'cmp': 1362.00,
-                    'change_pct': 1.57,
-                    'inv': 632852.00,
-                    'tp': 1389.00,
-                    'tva': 643264.00,
-                    'tpr': 22656,
-                    'pl': 9912.00,
-                    'ed': '29-Nov-2024',
-                    'exp': '-',
-                    'pr': '1340-1370',
-                    'pp': '★★',
-                    'iv': 'Low',
-                    'ip': '+1.57%',
-                    'nt': 'Liquid ETF',
-                    'qt': '15:22',
-                    'seven': '0.3%',
-                    'change2': 1.57,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 1389.00,
-                    'stop_loss': 1273.95,
-                    'sector': 'LIQUID',
-                    'confidence': 85.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'PSUBNKBEES',
-                    'thirty': '6.2%',
-                    'dh': 33,
-                    'date': '23-Dec-2024',
-                    'pos': 0,
-                    'qty': 300,
-                    'ep': 85.44,
-                    'cmp': 104.29,
-                    'change_pct': 22.04,
-                    'inv': 25632.00,
-                    'tp': 95.00,
-                    'tva': 31287.00,
-                    'tpr': 2868,
-                    'pl': 5655.00,
-                    'ed': '23-Dec-2024',
-                    'exp': '-',
-                    'pr': '83-88',
-                    'pp': '★★★',
-                    'iv': 'High',
-                    'ip': '+22.04%',
-                    'nt': 'PSU Bank ETF',
-                    'qt': '15:21',
-                    'seven': '4.5%',
-                    'change2': 22.04,
-                    'signal': 'SELL',
-                    'strength': 'STRONG',
-                    'target_price': 95.00,
-                    'stop_loss': 81.17,
-                    'sector': 'PSU_BANK',
-                    'confidence': 90.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'HDFCNIFETF',
-                    'thirty': '2.5%',
-                    'dh': 28,
-                    'date': '24-Dec-2024',
-                    'pos': 1,
-                    'qty': 400,
-                    'ep': 265.43,
-                    'cmp': 278.55,
-                    'change_pct': 4.94,
-                    'inv': 106172.00,
-                    'tp': 285.00,
-                    'tva': 111420.00,
-                    'tpr': 7828,
-                    'pl': 5248.00,
-                    'ed': '24-Dec-2024',
-                    'exp': '-',
-                    'pr': '260-270',
-                    'pp': '★★',
-                    'iv': 'Med',
-                    'ip': '+4.94%',
-                    'nt': 'HDFC Nifty ETF',
-                    'qt': '15:20',
-                    'seven': '1.8%',
-                    'change2': 4.94,
-                    'signal': 'HOLD',
-                    'strength': 'MEDIUM',
-                    'target_price': 285.00,
-                    'stop_loss': 252.16,
-                    'sector': 'INDEX',
-                    'confidence': 80.0,
-                    'is_active': True,
-                    'status': 'ACTIVE',
-                    'last_updated': datetime.now().isoformat()
-                },
-                # Closed positions (qty = 0, pl = 0)
-                {
-                    'symbol': 'RELIANCE',
-                    'thirty': '1.2%',
-                    'dh': 0,
-                    'date': '15-Jan-2025',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 1450.00,
-                    'cmp': 1426.90,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 1500.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '15-Jan-2025',
-                    'exp': '-',
-                    'pr': '1400-1480',
-                    'pp': '-',
-                    'iv': 'Med',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 1500.00,
-                    'stop_loss': 1377.50,
-                    'sector': 'ENERGY',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'INFY',
-                    'thirty': '2.8%',
-                    'dh': 0,
-                    'date': '10-Jan-2025',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 1650.00,
-                    'cmp': 1635.90,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 1700.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '10-Jan-2025',
-                    'exp': '-',
-                    'pr': '1600-1680',
-                    'pp': '-',
-                    'iv': 'Low',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 1700.00,
-                    'stop_loss': 1567.50,
-                    'sector': 'IT',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'TCS',
-                    'thirty': '1.5%',
-                    'dh': 0,
-                    'date': '08-Jan-2025',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 3800.00,
-                    'cmp': 3750.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 3900.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '08-Jan-2025',
-                    'exp': '-',
-                    'pr': '3700-3850',
-                    'pp': '-',
-                    'iv': 'Low',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 3900.00,
-                    'stop_loss': 3610.00,
-                    'sector': 'IT',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'HDFCBANK',
-                    'thirty': '0.8%',
-                    'dh': 0,
-                    'date': '05-Jan-2025',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 1680.00,
-                    'cmp': 1665.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 1750.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '05-Jan-2025',
-                    'exp': '-',
-                    'pr': '1650-1720',
-                    'pp': '-',
-                    'iv': 'Med',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 1750.00,
-                    'stop_loss': 1596.00,
-                    'sector': 'BANKING',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'ICICIBANK',
-                    'thirty': '3.2%',
-                    'dh': 0,
-                    'date': '03-Jan-2025',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 1200.00,
-                    'cmp': 1185.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 1250.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '03-Jan-2025',
-                    'exp': '-',
-                    'pr': '1150-1230',
-                    'pp': '-',
-                    'iv': 'Med',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 1250.00,
-                    'stop_loss': 1140.00,
-                    'sector': 'BANKING',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'SBIN',
-                    'thirty': '2.1%',
-                    'dh': 0,
-                    'date': '28-Dec-2024',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 820.00,
-                    'cmp': 810.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 850.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '28-Dec-2024',
-                    'exp': '-',
-                    'pr': '800-840',
-                    'pp': '-',
-                    'iv': 'High',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 850.00,
-                    'stop_loss': 779.00,
-                    'sector': 'BANKING',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'WIPRO',
-                    'thirty': '1.8%',
-                    'dh': 0,
-                    'date': '26-Dec-2024',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 560.00,
-                    'cmp': 555.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 580.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '26-Dec-2024',
-                    'exp': '-',
-                    'pr': '540-570',
-                    'pp': '-',
-                    'iv': 'Low',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 580.00,
-                    'stop_loss': 532.00,
-                    'sector': 'IT',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'AXISBANK',
-                    'thirty': '4.2%',
-                    'dh': 0,
-                    'date': '24-Dec-2024',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 1080.00,
-                    'cmp': 1070.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 1120.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '24-Dec-2024',
-                    'exp': '-',
-                    'pr': '1050-1100',
-                    'pp': '-',
-                    'iv': 'High',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 1120.00,
-                    'stop_loss': 1026.00,
-                    'sector': 'BANKING',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'LT',
-                    'thirty': '2.5%',
-                    'dh': 0,
-                    'date': '22-Dec-2024',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 3500.00,
-                    'cmp': 3480.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 3600.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '22-Dec-2024',
-                    'exp': '-',
-                    'pr': '3450-3550',
-                    'pp': '-',
-                    'iv': 'Med',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 3600.00,
-                    'stop_loss': 3325.00,
-                    'sector': 'INFRASTRUCTURE',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
-                },
-                {
-                    'symbol': 'MARUTI',
-                    'thirty': '1.1%',
-                    'dh': 0,
-                    'date': '20-Dec-2024',
-                    'pos': 1,
-                    'qty': 0,
-                    'ep': 11000.00,
-                    'cmp': 10950.00,
-                    'change_pct': 0.0,
-                    'inv': 0.00,
-                    'tp': 11200.00,
-                    'tva': 0.00,
-                    'tpr': 0,
-                    'pl': 0.00,
-                    'ed': '20-Dec-2024',
-                    'exp': '-',
-                    'pr': '10800-11100',
-                    'pp': '-',
-                    'iv': 'Low',
-                    'ip': '0.00%',
-                    'nt': 'Closed position',
-                    'qt': '15:30',
-                    'seven': '0.0%',
-                    'change2': 0.0,
-                    'signal': 'NEUTRAL',
-                    'strength': 'NONE',
-                    'target_price': 11200.00,
-                    'stop_loss': 10450.00,
-                    'sector': 'AUTO',
-                    'confidence': 50.0,
-                    'is_active': False,
-                    'status': 'CLOSED',
-                    'last_updated': datetime.now().isoformat()
+                    'ip': '-2.94%',
+                    'nt': 'IT ETF',
+                    'qt': '15:26'
                 }
             ]
-            
-            # Fill remaining slots
-            needed = 20 - len(etf_data)
-            if needed > 0:
-                etf_data.extend(sample_data[:needed])
 
         # Calculate summary data
-        total_investment = sum(item.get('inv', 0) for item in etf_data)
-        total_current_value = sum(item.get('tva', 0) for item in etf_data)
-        total_pnl = sum(item.get('pl', 0) for item in etf_data)
-        active_positions = len([item for item in etf_data if item.get('is_active', True)])
-        closed_positions = len([item for item in etf_data if not item.get('is_active', True)])
+        total_investment = sum(item.get('investment', 0) for item in etf_data)
+        total_current_value = sum(item.get('current_value', 0) for item in etf_data)
+        total_pnl = sum(item.get('pnl', 0) for item in etf_data)
+        active_positions = len([item for item in etf_data if item.get('pnl', 0) != 0])
+        closed_positions = len(etf_data) - active_positions
         return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
 
         summary = {
@@ -832,105 +235,66 @@ def parse_etf_csv_data():
                     csv_files.append(os.path.join(assets_dir, file))
 
         if not csv_files:
-            logging.warning("No CSV files found in attached_assets")
             return []
 
         # Use the latest CSV file
         latest_csv = max(csv_files, key=os.path.getctime)
-        logging.info(f"Using CSV file: {latest_csv}")
 
         etf_data = []
         with open(latest_csv, 'r', encoding='utf-8') as file:
-            content = file.read()
-            lines = content.split('\n')
+            # Skip the first few header rows and find the actual data
+            lines = file.readlines()
 
             # Find the header row with ETF data
+            header_found = False
+            headers = []
+
             for i, line in enumerate(lines):
-                if 'ETF' in line and 'Date' in line and 'Pos' in line and 'Qty' in line:
-                    logging.info(f"Found header at line {i}: {line}")
-                    
-                    # Process data rows starting from the next line
+                if 'ETF' in line and 'Date' in line and 'Pos' in line:
+                    # This is our header row
+                    headers = [col.strip() for col in line.split(',')]
+                    header_found = True
+
+                    # Process data rows
                     for j in range(i + 1, len(lines)):
                         data_line = lines[j].strip()
-                        if not data_line or data_line.count(',') < 10:
+                        if not data_line or data_line.startswith(','):
                             continue
 
-                        # Split by comma and clean values
-                        values = []
-                        for val in data_line.split(','):
-                            clean_val = val.strip().replace('"', '').replace('₹', '').replace(',', '')
-                            values.append(clean_val)
+                        values = [val.strip().replace('"', '').replace('₹', '').replace(',', '') for val in data_line.split(',')]
 
-                        if len(values) >= 14 and values[0] and values[0] != 'ETF':
+                        if len(values) >= 8 and values[0]:  # Ensure we have enough data
                             try:
-                                # Parse numeric values safely
-                                def safe_float(val, default=0.0):
-                                    try:
-                                        if not val or val == '-' or val == '':
-                                            return default
-                                        # Remove any non-numeric characters except minus and decimal
-                                        clean_val = ''.join(c for c in val if c.isdigit() or c in '.-')
-                                        return float(clean_val) if clean_val else default
-                                    except:
-                                        return default
-
-                                def safe_int(val, default=0):
-                                    try:
-                                        if not val or val == '-' or val == '':
-                                            return default
-                                        clean_val = ''.join(c for c in val if c.isdigit())
-                                        return int(clean_val) if clean_val else default
-                                    except:
-                                        return default
-
-                                symbol = values[0]
-                                qty = safe_int(values[5])
-                                ep = safe_float(values[6])
-                                cmp = safe_float(values[7])
-                                inv = safe_float(values[9])
-                                pl = safe_float(values[13])
-
-                                # Calculate percentage change
-                                change_pct = 0.0
-                                if ep > 0:
-                                    change_pct = ((cmp - ep) / ep) * 100
-
                                 row_data = {
-                                    'symbol': symbol,
-                                    'thirty': values[1] if len(values) > 1 else '-',
-                                    'dh': safe_int(values[2]) if len(values) > 2 else 0,
+                                    'symbol': values[0] if values[0] else '',
                                     'date': values[3] if len(values) > 3 else '',
-                                    'pos': safe_int(values[4], 1) if len(values) > 4 else 1,
-                                    'qty': qty,
-                                    'ep': ep,
-                                    'cmp': cmp,
-                                    'change_pct': change_pct,
-                                    'inv': inv,
-                                    'tp': safe_float(values[10]) if len(values) > 10 else 0,
-                                    'tva': safe_float(values[11]) if len(values) > 11 else 0,
-                                    'tpr': safe_float(values[12]) if len(values) > 12 else 0,
-                                    'pl': pl,
-                                    'ed': values[14] if len(values) > 14 else '',
-                                    'exp': values[15] if len(values) > 15 else '-',
-                                    'pr': values[16] if len(values) > 16 else '-',
-                                    'pp': values[17] if len(values) > 17 else '-',
-                                    'iv': values[18] if len(values) > 18 else 'Low',
-                                    'ip': values[19] if len(values) > 19 else '-',
-                                    'nt': values[20] if len(values) > 20 else '-',
-                                    'qt': values[21] if len(values) > 21 else '-',
-                                    'seven': values[22] if len(values) > 22 else '-',
-                                    'change2': change_pct
+                                    'pos': int(values[4]) if len(values) > 4 and values[4].isdigit() else 1,
+                                    'qty': int(values[5]) if len(values) > 5 and values[5].replace('.', '').isdigit() else 0,
+                                    'ep': float(values[6]) if len(values) > 6 and values[6].replace('.', '').isdigit() else 0,
+                                    'cmp': float(values[7]) if len(values) > 7 and values[7].replace('.', '').isdigit() else 0,
+                                    'change_pct': float(values[8].replace('%', '')) if len(values) > 8 and '%' in values[8] else 0,
+                                    'inv': float(values[9]) if len(values) > 9 and values[9].replace('.', '').isdigit() else 0,
+                                    'tp': float(values[10]) if len(values) > 10 and values[10].replace('.', '').isdigit() else 0,
+                                    'tva': float(values[11]) if len(values) > 11 and values[11].replace('.', '').isdigit() else 0,
+                                    'tpr': values[12] if len(values) > 12 else '',
+                                    'pl': float(values[13]) if len(values) > 13 and values[13].replace('-', '').replace('.', '').isdigit() else 0,
+                                    'exp': values[15] if len(values) > 15 else '',
+                                    'pr': values[16] if len(values) > 16 else '',
+                                    'pp': values[17] if len(values) > 17 else '',
+                                    'iv': values[18] if len(values) > 18 else '',
+                                    'ip': values[19] if len(values) > 19 else '',
+                                    'nt': values[20] if len(values) > 20 else '',
+                                    'qt': values[21] if len(values) > 21 else '',
                                 }
 
-                                etf_data.append(row_data)
-                                logging.info(f"Parsed ETF: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}, P&L: {pl}")
+                                if row_data['symbol'] and row_data['symbol'] != 'ETF':
+                                    etf_data.append(row_data)
 
-                            except Exception as e:
-                                logging.warning(f"Error parsing row {j}: {e}")
+                            except (ValueError, IndexError) as e:
+                                logging.warning(f"Error parsing row: {e}")
                                 continue
                     break
 
-        logging.info(f"Successfully parsed {len(etf_data)} ETF records")
         return etf_data
 
     except Exception as e:
