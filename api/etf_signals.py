@@ -15,7 +15,7 @@ def get_etf_positions():
         if 'authenticated' not in session or not session['authenticated']:
             return jsonify({'error': 'Not authenticated'}), 401
         
-        # Return actual CSV data from the user's file
+        # Return actual CSV data from the user's file matching the structure exactly
         csv_data = [
             {
                 'etf': 'MID150BEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '22-Nov-2024', 'pos': 1, 'qty': 200, 'ep': 227.02, 'cmp': 222.19, 'change_pct': '-2.13%', 'inv': 45404, 'tp': 254.26, 'tva': 50852, 'tpr': '₹5,448', 'pl': -966, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 147000, 'ip': 3.20, 'nt': 2, 'qt': 660.0, 'seven': '#N/A', 'change2': '#N/A'
@@ -33,10 +33,16 @@ def get_etf_positions():
                 'etf': 'GOLDBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '22-Nov-2024', 'pos': 0, 'qty': 800, 'ep': 66, 'cmp': 82.61, 'change_pct': '0.00%', 'inv': 0, 'tp': 0, 'tva': 0, 'tpr': '', 'pl': 0, 'ed': '28-Jan-2025', 'exp': '67.5', 'pr': '1200', 'pp': '2.3', 'iv': 0, 'ip': 0.00, 'nt': 0, 'qt': 0.0, 'seven': '#N/A', 'change2': '#N/A'
             },
             {
+                'etf': 'GOLDBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 0, 'qty': 1560, 'ep': 64.25, 'cmp': 82.61, 'change_pct': '0.00%', 'inv': 0, 'tp': 0, 'tva': 0, 'tpr': '', 'pl': 0, 'ed': '10-Jan-2025', 'exp': '65.87', 'pr': '2527.2', 'pp': '2.5', 'iv': 0, 'ip': 0.00, 'nt': 0, 'qt': 0.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
                 'etf': 'FMCGIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 1600, 'ep': 59.73, 'cmp': 58.3, 'change_pct': '-2.39%', 'inv': 95568, 'tp': 66.90, 'tva': 107036, 'tpr': '₹11,468', 'pl': -2288, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 708561, 'ip': 15.40, 'nt': 7, 'qt': 11950.0, 'seven': '#N/A', 'change2': '#N/A'
             },
             {
                 'etf': 'JUNIORBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 50, 'ep': 780.32, 'cmp': 722.72, 'change_pct': '-7.38%', 'inv': 39016, 'tp': 873.96, 'tva': 43698, 'tpr': '₹4,682', 'pl': -2880, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 364507, 'ip': 7.92, 'nt': 5, 'qt': 500.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'CONSUMBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 360, 'ep': 128.2, 'cmp': 126.92, 'change_pct': '-1.00%', 'inv': 46152, 'tp': 143.58, 'tva': 51690, 'tpr': '₹5,538', 'pl': -461, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 261010, 'ip': 5.67, 'nt': 4, 'qt': 2082.0, 'seven': '#N/A', 'change2': '#N/A'
             },
             {
                 'etf': 'AUTOIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 2800, 'ep': 24.31, 'cmp': 23.83, 'change_pct': '-1.97%', 'inv': 68068, 'tp': 27.23, 'tva': 76236, 'tpr': '₹8,168', 'pl': -1344, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 68068, 'ip': 1.48, 'nt': 1, 'qt': 2800.0, 'seven': '#N/A', 'change2': '#N/A'
@@ -45,22 +51,10 @@ def get_etf_positions():
                 'etf': 'PHARMABEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'cmp': 22.28, 'change_pct': '-1.85%', 'inv': 102150, 'tp': 25.42, 'tva': 114408, 'tpr': '₹12,258', 'pl': -1890, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 509987, 'ip': 11.09, 'nt': 5, 'qt': 22900.0, 'seven': '#N/A', 'change2': '#N/A'
             },
             {
+                'etf': 'JUNIORBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '20-Dec-2024', 'pos': 1, 'qty': 120, 'ep': 733.42, 'cmp': 722.72, 'change_pct': '-1.46%', 'inv': 88010, 'tp': 821.43, 'tva': 98572, 'tpr': '₹10,561', 'pl': -1284, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 364507, 'ip': 7.92, 'nt': 5, 'qt': 500.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
                 'etf': 'CONSUMBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '20-Dec-2024', 'pos': 1, 'qty': 472, 'ep': 124.1, 'cmp': 126.92, 'change_pct': '2.27%', 'inv': 58575, 'tp': 138.99, 'tva': 65604, 'tpr': '₹7,029', 'pl': 1331, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 261010, 'ip': 5.67, 'nt': 4, 'qt': 2082.0, 'seven': '#N/A', 'change2': '#N/A'
-            },
-            {
-                'etf': 'INFRABEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '24-Dec-2024', 'pos': 1, 'qty': 120, 'ep': 880.51, 'cmp': 933.97, 'change_pct': '6.07%', 'inv': 105661, 'tp': 986.17, 'tva': 118341, 'tpr': '₹12,679', 'pl': 6415, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 312813, 'ip': 6.80, 'nt': 3, 'qt': 355.0, 'seven': '#N/A', 'change2': '#N/A'
-            },
-            {
-                'etf': 'FINIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '3-Jan-2025', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'cmp': 30.47, 'change_pct': '14.42%', 'inv': 106520, 'tp': 29.83, 'tva': 119302, 'tpr': '₹12,782', 'pl': 15360, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 310440, 'ip': 6.75, 'nt': 3, 'qt': 12000.0, 'seven': '#N/A', 'change2': '#N/A'
-            },
-            {
-                'etf': 'NEXT50IETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '30-Dec-2024', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'cmp': 70.55, 'change_pct': '-0.49%', 'inv': 99260, 'tp': 79.41, 'tva': 111171, 'tpr': '₹11,911', 'pl': -490, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 99260, 'ip': 2.16, 'nt': 1, 'qt': 1400.0, 'seven': '#N/A', 'change2': '#N/A'
-            },
-            {
-                'etf': 'NIFTYBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '31-Jan-2025', 'pos': 1, 'qty': 400, 'ep': 262.12, 'cmp': 278.9, 'change_pct': '6.40%', 'inv': 104848, 'tp': 293.57, 'tva': 117430, 'tpr': '₹12,582', 'pl': 6712, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 104848, 'ip': 2.28, 'nt': 1, 'qt': 400.0, 'seven': '#N/A', 'change2': '#N/A'
-            },
-            {
-                'etf': 'HEALTHIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '14-Feb-2025', 'pos': 1, 'qty': 800, 'ep': 135.61, 'cmp': 145.46, 'change_pct': '7.26%', 'inv': 108488, 'tp': 151.88, 'tva': 121507, 'tpr': '₹13,019', 'pl': 7880, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 317355, 'ip': 6.90, 'nt': 3, 'qt': 2250.0, 'seven': '#N/A', 'change2': '#N/A'
             }
         ]
         
@@ -71,6 +65,7 @@ def get_etf_positions():
         total_pnl = 0.0
         profit_positions = 0
         loss_positions = 0
+        active_positions = 0
         
         for idx, pos in enumerate(csv_data):
             # Calculate values from CSV data
@@ -90,11 +85,16 @@ def get_etf_positions():
                 profit_positions += 1
             elif pnl < 0:
                 loss_positions += 1
+                
+            # Count active positions
+            if pos['pos'] == 1:
+                active_positions += 1
             
-            # Accumulate totals
-            total_investment += investment
-            total_current_value += current_value
-            total_pnl += pnl
+            # Accumulate totals for active positions only
+            if pos['pos'] == 1:
+                total_investment += investment
+                total_current_value += current_value
+                total_pnl += pnl
             
             # Format position data exactly matching your CSV structure
             position_data = {
@@ -143,16 +143,16 @@ def get_etf_positions():
         return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0.0
         
         summary = {
-            'total_positions': len(positions),
-            'active_positions': sum(1 for pos in positions if pos.is_active),
-            'closed_positions': sum(1 for pos in positions if not pos.is_active),
+            'total_positions': len(formatted_positions),
+            'active_positions': active_positions,
+            'closed_positions': len(formatted_positions) - active_positions,
             'total_investment': round(total_investment, 2),
             'current_value': round(total_current_value, 2),
             'total_pnl': round(total_pnl, 2),
             'return_percent': round(return_percent, 2),
             'profit_positions': profit_positions,
             'loss_positions': loss_positions,
-            'neutral_positions': len(positions) - profit_positions - loss_positions
+            'neutral_positions': len(formatted_positions) - profit_positions - loss_positions
         }
         
         return jsonify({
