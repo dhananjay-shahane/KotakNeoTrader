@@ -1,5 +1,5 @@
 """ETF Trading Signals API endpoints"""
-from flask import request, jsonify, session
+from flask import Blueprint, request, jsonify, session
 from app import db
 from etf_trading_signals import ETFTradingSignals
 from user_manager import UserManager
@@ -8,7 +8,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Create the ETF signals API blueprint
+etf_signals_api = Blueprint('etf_signals_api', __name__)
 
+
+@etf_signals_api.route('/etf_positions', methods=['GET'])
 def get_etf_positions():
     """Get ETF positions data"""
     try:
@@ -46,48 +50,163 @@ def get_etf_positions():
                     'qt': row.get('qt', '')
                 })
 
-        # Add some sample ETF data if CSV data is empty
+        # Add comprehensive sample ETF data if CSV data is empty
         if not etf_data:
             etf_data = [
                 {
-                    'symbol': 'IETF',
-                    'qty': 500,
-                    'entry_price': 47.13,
-                    'current_price': 40.68,
-                    'pnl': -3225.00,
-                    'pnl_percent': -13.69,
-                    'investment': 23565.00,
-                    'current_value': 20340.00,
-                    'signal': 'BUY',
-                    'strength': 'STRONG',
-                    'target_price': 52.79,
-                    'stop_loss': 42.34,
-                    'sector': 'IT',
-                    'confidence': 85.2,
-                    'last_updated': datetime.now().isoformat()
+                    'symbol': 'NIFTYBEES',
+                    'qty': 200,
+                    'entry_price': 227.00,
+                    'current_price': 225.70,
+                    'pnl': -260.00,
+                    'pnl_percent': -0.57,
+                    'investment': 45400.00,
+                    'current_value': 45140.00,
+                    'signal': 'HOLD',
+                    'strength': 'WEAK',
+                    'target_price': 254.26,
+                    'stop_loss': 215.65,
+                    'sector': 'INDEX',
+                    'confidence': 75.0,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '22-Nov-2024',
+                    'exp': '-',
+                    'pr': '220-235',
+                    'pp': '★★',
+                    'iv': 'Med',
+                    'ip': '-0.57%',
+                    'nt': 'Index ETF',
+                    'qt': '15:30'
                 },
                 {
                     'symbol': 'GOLDBEES',
-                    'qty': 300,
-                    'entry_price': 66.00,
-                    'current_price': 82.50,
-                    'pnl': 4950.00,
-                    'pnl_percent': 25.00,
-                    'investment': 19800.00,
-                    'current_value': 24750.00,
+                    'qty': 500,
+                    'entry_price': 40.23,
+                    'current_price': 40.00,
+                    'pnl': -115.00,
+                    'pnl_percent': -0.57,
+                    'investment': 20115.00,
+                    'current_value': 20000.00,
+                    'signal': 'BUY',
+                    'strength': 'MEDIUM',
+                    'target_price': 45.79,
+                    'stop_loss': 38.22,
+                    'sector': 'GOLD',
+                    'confidence': 80.0,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '13-Dec-2024',
+                    'exp': '-',
+                    'pr': '38-42',
+                    'pp': '★',
+                    'iv': 'Low',
+                    'ip': '-0.57%',
+                    'nt': 'Gold ETF',
+                    'qt': '15:29'
+                },
+                {
+                    'symbol': 'BANKBEES',
+                    'qty': 100,
+                    'entry_price': 46.15,
+                    'current_price': 45.00,
+                    'pnl': -115.00,
+                    'pnl_percent': -2.49,
+                    'investment': 4615.00,
+                    'current_value': 4500.00,
                     'signal': 'HOLD',
                     'strength': 'WEAK',
-                    'target_price': 75.00,
-                    'stop_loss': 62.70,
-                    'sector': 'GOLD',
-                    'confidence': 70.5,
-                    'last_updated': datetime.now().isoformat()
+                    'target_price': 52.26,
+                    'stop_loss': 43.84,
+                    'sector': 'BANKING',
+                    'confidence': 65.0,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 0,
+                    'date': '20-Dec-2024',
+                    'exp': '-',
+                    'pr': '44-48',
+                    'pp': '★★',
+                    'iv': 'Med',
+                    'ip': '-2.49%',
+                    'nt': 'Bank ETF',
+                    'qt': '15:28'
+                },
+                {
+                    'symbol': 'SILVERBEES',
+                    'qty': 607,
+                    'entry_price': 93.00,
+                    'current_price': 104.29,
+                    'pnl': 6850.03,
+                    'pnl_percent': 12.13,
+                    'investment': 56451.00,
+                    'current_value': 63301.03,
+                    'signal': 'SELL',
+                    'strength': 'STRONG',
+                    'target_price': 97.70,
+                    'stop_loss': 88.35,
+                    'sector': 'SILVER',
+                    'confidence': 90.0,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '22-Nov-2024',
+                    'exp': '-',
+                    'pr': '92-97',
+                    'pp': '★★★',
+                    'iv': 'High',
+                    'ip': '+12.13%',
+                    'nt': 'Silver ETF',
+                    'qt': '15:27'
+                },
+                {
+                    'symbol': 'ITBEES',
+                    'qty': 1560,
+                    'entry_price': 64.25,
+                    'current_price': 62.36,
+                    'pnl': -2948.40,
+                    'pnl_percent': -2.94,
+                    'investment': 100230.00,
+                    'current_value': 97281.60,
+                    'signal': 'BUY',
+                    'strength': 'MEDIUM',
+                    'target_price': 69.00,
+                    'stop_loss': 61.04,
+                    'sector': 'IT',
+                    'confidence': 70.0,
+                    'last_updated': datetime.now().isoformat(),
+                    'pos': 1,
+                    'date': '16-Dec-2024',
+                    'exp': '-',
+                    'pr': '62-67',
+                    'pp': '★',
+                    'iv': 'Med',
+                    'ip': '-2.94%',
+                    'nt': 'IT ETF',
+                    'qt': '15:26'
                 }
             ]
 
+        # Calculate summary data
+        total_investment = sum(item.get('investment', 0) for item in etf_data)
+        total_current_value = sum(item.get('current_value', 0) for item in etf_data)
+        total_pnl = sum(item.get('pnl', 0) for item in etf_data)
+        active_positions = len([item for item in etf_data if item.get('pnl', 0) != 0])
+        closed_positions = len(etf_data) - active_positions
+        return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
+
+        summary = {
+            'total_positions': len(etf_data),
+            'total_investment': total_investment,
+            'current_value': total_current_value,
+            'total_pnl': total_pnl,
+            'return_percent': return_percent,
+            'active_positions': active_positions,
+            'closed_positions': closed_positions
+        }
+
         return jsonify({
             'success': True,
-            'data': etf_data,
+            'positions': etf_data,
+            'summary': summary,
             'total_positions': len(etf_data),
             'timestamp': datetime.now().isoformat()
         })
@@ -240,6 +359,7 @@ def calculate_confidence(row):
         return 60
 
 
+@etf_signals_api.route('/etf_position', methods=['POST'])
 def add_etf_position():
     """Add new ETF position"""
     try:
@@ -274,6 +394,7 @@ def add_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/etf_position', methods=['PUT'])
 def update_etf_position():
     """Update existing ETF position"""
     try:
@@ -306,6 +427,7 @@ def update_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/etf_position', methods=['DELETE'])
 def delete_etf_position():
     """Delete ETF position"""
     try:
@@ -336,6 +458,7 @@ def delete_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/etf_search', methods=['GET'])
 def search_etf_instruments():
     """Search for ETF instruments"""
     try:
@@ -360,6 +483,7 @@ def search_etf_instruments():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/etf_quotes', methods=['POST'])
 def get_etf_quotes():
     """Get live quotes for ETF instruments"""
     try:
@@ -385,6 +509,7 @@ def get_etf_quotes():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/portfolio_summary', methods=['GET'])
 def get_portfolio_summary():
     """Get portfolio summary metrics"""
     try:
@@ -405,6 +530,7 @@ def get_portfolio_summary():
         return jsonify({'error': str(e)}), 500
 
 
+@etf_signals_api.route('/etf_positions/bulk_update', methods=['PUT'])
 def bulk_update_positions():
     """Bulk update multiple ETF positions"""
     try:
