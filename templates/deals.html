@@ -397,33 +397,33 @@ class DealsManager {
             const response = await fetch('/api/etf_positions');
             const data = await response.json();
             
-            if (data.success && data.data) {
+            if (data.success && data.positions) {
                 // Convert ETF data to deals format
-                const etfDeals = data.data.map((etf, index) => ({
+                const etfDeals = data.positions.map((etf, index) => ({
                     id: `etf_${index}`,
                     symbol: etf.symbol,
-                    thirty: '-',
-                    dh: this.calculateDaysHeld(etf.date),
+                    thirty: etf.thirty || '-',
+                    dh: etf.dh || this.calculateDaysHeld(etf.date),
                     date: etf.date || new Date().toLocaleDateString('en-GB'),
                     pos: etf.pos || 1,
                     qty: etf.qty,
-                    ep: etf.entry_price,
-                    cmp: etf.current_price,
-                    change_pct: etf.pnl_percent,
-                    inv: etf.investment,
-                    tp: etf.target_price,
-                    tva: etf.current_value,
+                    ep: etf.ep || etf.entry_price,
+                    cmp: etf.cmp || etf.current_price,
+                    change_pct: etf.change_pct || etf.pnl_percent,
+                    inv: etf.inv || etf.investment,
+                    tp: etf.tp || etf.target_price,
+                    tva: etf.tva || etf.current_value,
                     tpr: etf.tpr || '0',
-                    pl: etf.pnl,
-                    ed: etf.exp || '',
+                    pl: etf.pl || etf.pnl,
+                    ed: etf.ed || '',
                     pr: etf.pr || '-',
                     pp: etf.pp || '-',
                     iv: etf.iv || 'Low',
-                    ip: etf.pnl_percent > 0 ? `+${etf.pnl_percent.toFixed(1)}%` : `${etf.pnl_percent.toFixed(1)}%`,
+                    ip: etf.ip || ((etf.change_pct || 0) > 0 ? `+${(etf.change_pct || 0).toFixed(1)}%` : `${(etf.change_pct || 0).toFixed(1)}%`),
                     nt: etf.nt || '-',
-                    qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                    seven: '-',
-                    change2: etf.pnl_percent,
+                    qt: etf.qt || new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                    seven: etf.seven || '-',
+                    change2: etf.change2 || etf.change_pct,
                     status: etf.pos === 1 ? 'EXECUTED' : 'PENDING',
                     source: 'etf_data'
                 }));

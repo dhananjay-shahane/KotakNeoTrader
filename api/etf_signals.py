@@ -55,141 +55,176 @@ def get_etf_positions():
             etf_data = [
                 {
                     'symbol': 'NIFTYBEES',
-                    'qty': 200,
-                    'entry_price': 227.00,
-                    'current_price': 225.70,
-                    'pnl': -260.00,
-                    'pnl_percent': -0.57,
-                    'investment': 45400.00,
-                    'current_value': 45140.00,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 254.26,
-                    'stop_loss': 215.65,
-                    'sector': 'INDEX',
-                    'confidence': 75.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
+                    'thirty': '2.1%',
+                    'dh': 45,
                     'date': '22-Nov-2024',
+                    'pos': 1,
+                    'qty': 200,
+                    'ep': 227.00,
+                    'cmp': 225.70,
+                    'change_pct': -0.57,
+                    'inv': 45400.00,
+                    'tp': 254.26,
+                    'tva': 45140.00,
+                    'tpr': 5452,
+                    'pl': -260.00,
+                    'ed': '22-Nov-2024',
                     'exp': '-',
                     'pr': '220-235',
                     'pp': '★★',
                     'iv': 'Med',
                     'ip': '-0.57%',
                     'nt': 'Index ETF',
-                    'qt': '15:30'
+                    'qt': '15:30',
+                    'seven': '0.5%',
+                    'change2': -0.57,
+                    'signal': 'HOLD',
+                    'strength': 'WEAK',
+                    'target_price': 254.26,
+                    'stop_loss': 215.65,
+                    'sector': 'INDEX',
+                    'confidence': 75.0,
+                    'last_updated': datetime.now().isoformat()
                 },
                 {
                     'symbol': 'GOLDBEES',
-                    'qty': 500,
-                    'entry_price': 40.23,
-                    'current_price': 40.00,
-                    'pnl': -115.00,
-                    'pnl_percent': -0.57,
-                    'investment': 20115.00,
-                    'current_value': 20000.00,
-                    'signal': 'BUY',
-                    'strength': 'MEDIUM',
-                    'target_price': 45.79,
-                    'stop_loss': 38.22,
-                    'sector': 'GOLD',
-                    'confidence': 80.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
+                    'thirty': '3.2%',
+                    'dh': 32,
                     'date': '13-Dec-2024',
+                    'pos': 1,
+                    'qty': 500,
+                    'ep': 40.23,
+                    'cmp': 40.00,
+                    'change_pct': -0.57,
+                    'inv': 20115.00,
+                    'tp': 45.79,
+                    'tva': 20000.00,
+                    'tpr': 2780,
+                    'pl': -115.00,
+                    'ed': '13-Dec-2024',
                     'exp': '-',
                     'pr': '38-42',
                     'pp': '★',
                     'iv': 'Low',
                     'ip': '-0.57%',
                     'nt': 'Gold ETF',
-                    'qt': '15:29'
+                    'qt': '15:29',
+                    'seven': '1.2%',
+                    'change2': -0.57,
+                    'signal': 'BUY',
+                    'strength': 'MEDIUM',
+                    'target_price': 45.79,
+                    'stop_loss': 38.22,
+                    'sector': 'GOLD',
+                    'confidence': 80.0,
+                    'last_updated': datetime.now().isoformat()
                 },
                 {
                     'symbol': 'BANKBEES',
-                    'qty': 100,
-                    'entry_price': 46.15,
-                    'current_price': 45.00,
-                    'pnl': -115.00,
-                    'pnl_percent': -2.49,
-                    'investment': 4615.00,
-                    'current_value': 4500.00,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 52.26,
-                    'stop_loss': 43.84,
-                    'sector': 'BANKING',
-                    'confidence': 65.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 0,
+                    'thirty': '4.5%',
+                    'dh': 28,
                     'date': '20-Dec-2024',
+                    'pos': 0,
+                    'qty': 100,
+                    'ep': 46.15,
+                    'cmp': 45.00,
+                    'change_pct': -2.49,
+                    'inv': 4615.00,
+                    'tp': 52.26,
+                    'tva': 4500.00,
+                    'tpr': 611,
+                    'pl': -115.00,
+                    'ed': '20-Dec-2024',
                     'exp': '-',
                     'pr': '44-48',
                     'pp': '★★',
                     'iv': 'Med',
                     'ip': '-2.49%',
                     'nt': 'Bank ETF',
-                    'qt': '15:28'
+                    'qt': '15:28',
+                    'seven': '2.1%',
+                    'change2': -2.49,
+                    'signal': 'HOLD',
+                    'strength': 'WEAK',
+                    'target_price': 52.26,
+                    'stop_loss': 43.84,
+                    'sector': 'BANKING',
+                    'confidence': 65.0,
+                    'last_updated': datetime.now().isoformat()
                 },
                 {
                     'symbol': 'SILVERBEES',
-                    'qty': 607,
-                    'entry_price': 93.00,
-                    'current_price': 104.29,
-                    'pnl': 6850.03,
-                    'pnl_percent': 12.13,
-                    'investment': 56451.00,
-                    'current_value': 63301.03,
-                    'signal': 'SELL',
-                    'strength': 'STRONG',
-                    'target_price': 97.70,
-                    'stop_loss': 88.35,
-                    'sector': 'SILVER',
-                    'confidence': 90.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
+                    'thirty': '1.8%',
+                    'dh': 38,
                     'date': '22-Nov-2024',
+                    'pos': 1,
+                    'qty': 607,
+                    'ep': 93.00,
+                    'cmp': 104.29,
+                    'change_pct': 12.13,
+                    'inv': 56451.00,
+                    'tp': 97.70,
+                    'tva': 63301.03,
+                    'tpr': 2869,
+                    'pl': 6850.03,
+                    'ed': '22-Nov-2024',
                     'exp': '-',
                     'pr': '92-97',
                     'pp': '★★★',
                     'iv': 'High',
                     'ip': '+12.13%',
                     'nt': 'Silver ETF',
-                    'qt': '15:27'
+                    'qt': '15:27',
+                    'seven': '3.2%',
+                    'change2': 12.13,
+                    'signal': 'SELL',
+                    'strength': 'STRONG',
+                    'target_price': 97.70,
+                    'stop_loss': 88.35,
+                    'sector': 'SILVER',
+                    'confidence': 90.0,
+                    'last_updated': datetime.now().isoformat()
                 },
                 {
                     'symbol': 'ITBEES',
-                    'qty': 1560,
-                    'entry_price': 64.25,
-                    'current_price': 62.36,
-                    'pnl': -2948.40,
-                    'pnl_percent': -2.94,
-                    'investment': 100230.00,
-                    'current_value': 97281.60,
-                    'signal': 'BUY',
-                    'strength': 'MEDIUM',
-                    'target_price': 69.00,
-                    'stop_loss': 61.04,
-                    'sector': 'IT',
-                    'confidence': 70.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
+                    'thirty': '5.2%',
+                    'dh': 25,
                     'date': '16-Dec-2024',
+                    'pos': 1,
+                    'qty': 1560,
+                    'ep': 64.25,
+                    'cmp': 62.36,
+                    'change_pct': -2.94,
+                    'inv': 100230.00,
+                    'tp': 69.00,
+                    'tva': 97281.60,
+                    'tpr': 7410,
+                    'pl': -2948.40,
+                    'ed': '16-Dec-2024',
                     'exp': '-',
                     'pr': '62-67',
                     'pp': '★',
                     'iv': 'Med',
                     'ip': '-2.94%',
                     'nt': 'IT ETF',
-                    'qt': '15:26'
+                    'qt': '15:26',
+                    'seven': '1.8%',
+                    'change2': -2.94,
+                    'signal': 'BUY',
+                    'strength': 'MEDIUM',
+                    'target_price': 69.00,
+                    'stop_loss': 61.04,
+                    'sector': 'IT',
+                    'confidence': 70.0,
+                    'last_updated': datetime.now().isoformat()
                 }
             ]
 
         # Calculate summary data
-        total_investment = sum(item.get('investment', 0) for item in etf_data)
-        total_current_value = sum(item.get('current_value', 0) for item in etf_data)
-        total_pnl = sum(item.get('pnl', 0) for item in etf_data)
-        active_positions = len([item for item in etf_data if item.get('pnl', 0) != 0])
+        total_investment = sum(item.get('inv', 0) for item in etf_data)
+        total_current_value = sum(item.get('tva', 0) for item in etf_data)
+        total_pnl = sum(item.get('pl', 0) for item in etf_data)
+        active_positions = len([item for item in etf_data if item.get('pl', 0) != 0])
         closed_positions = len(etf_data) - active_positions
         return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
 
@@ -235,66 +270,105 @@ def parse_etf_csv_data():
                     csv_files.append(os.path.join(assets_dir, file))
 
         if not csv_files:
+            logging.warning("No CSV files found in attached_assets")
             return []
 
         # Use the latest CSV file
         latest_csv = max(csv_files, key=os.path.getctime)
+        logging.info(f"Using CSV file: {latest_csv}")
 
         etf_data = []
         with open(latest_csv, 'r', encoding='utf-8') as file:
-            # Skip the first few header rows and find the actual data
-            lines = file.readlines()
+            content = file.read()
+            lines = content.split('\n')
 
             # Find the header row with ETF data
-            header_found = False
-            headers = []
-
             for i, line in enumerate(lines):
-                if 'ETF' in line and 'Date' in line and 'Pos' in line:
-                    # This is our header row
-                    headers = [col.strip() for col in line.split(',')]
-                    header_found = True
-
-                    # Process data rows
+                if 'ETF' in line and 'Date' in line and 'Pos' in line and 'Qty' in line:
+                    logging.info(f"Found header at line {i}: {line}")
+                    
+                    # Process data rows starting from the next line
                     for j in range(i + 1, len(lines)):
                         data_line = lines[j].strip()
-                        if not data_line or data_line.startswith(','):
+                        if not data_line or data_line.count(',') < 10:
                             continue
 
-                        values = [val.strip().replace('"', '').replace('₹', '').replace(',', '') for val in data_line.split(',')]
+                        # Split by comma and clean values
+                        values = []
+                        for val in data_line.split(','):
+                            clean_val = val.strip().replace('"', '').replace('₹', '').replace(',', '')
+                            values.append(clean_val)
 
-                        if len(values) >= 8 and values[0]:  # Ensure we have enough data
+                        if len(values) >= 14 and values[0] and values[0] != 'ETF':
                             try:
+                                # Parse numeric values safely
+                                def safe_float(val, default=0.0):
+                                    try:
+                                        if not val or val == '-' or val == '':
+                                            return default
+                                        # Remove any non-numeric characters except minus and decimal
+                                        clean_val = ''.join(c for c in val if c.isdigit() or c in '.-')
+                                        return float(clean_val) if clean_val else default
+                                    except:
+                                        return default
+
+                                def safe_int(val, default=0):
+                                    try:
+                                        if not val or val == '-' or val == '':
+                                            return default
+                                        clean_val = ''.join(c for c in val if c.isdigit())
+                                        return int(clean_val) if clean_val else default
+                                    except:
+                                        return default
+
+                                symbol = values[0]
+                                qty = safe_int(values[5])
+                                ep = safe_float(values[6])
+                                cmp = safe_float(values[7])
+                                inv = safe_float(values[9])
+                                pl = safe_float(values[13])
+
+                                # Calculate percentage change
+                                change_pct = 0.0
+                                if ep > 0:
+                                    change_pct = ((cmp - ep) / ep) * 100
+
                                 row_data = {
-                                    'symbol': values[0] if values[0] else '',
+                                    'symbol': symbol,
+                                    'thirty': values[1] if len(values) > 1 else '-',
+                                    'dh': safe_int(values[2]) if len(values) > 2 else 0,
                                     'date': values[3] if len(values) > 3 else '',
-                                    'pos': int(values[4]) if len(values) > 4 and values[4].isdigit() else 1,
-                                    'qty': int(values[5]) if len(values) > 5 and values[5].replace('.', '').isdigit() else 0,
-                                    'ep': float(values[6]) if len(values) > 6 and values[6].replace('.', '').isdigit() else 0,
-                                    'cmp': float(values[7]) if len(values) > 7 and values[7].replace('.', '').isdigit() else 0,
-                                    'change_pct': float(values[8].replace('%', '')) if len(values) > 8 and '%' in values[8] else 0,
-                                    'inv': float(values[9]) if len(values) > 9 and values[9].replace('.', '').isdigit() else 0,
-                                    'tp': float(values[10]) if len(values) > 10 and values[10].replace('.', '').isdigit() else 0,
-                                    'tva': float(values[11]) if len(values) > 11 and values[11].replace('.', '').isdigit() else 0,
-                                    'tpr': values[12] if len(values) > 12 else '',
-                                    'pl': float(values[13]) if len(values) > 13 and values[13].replace('-', '').replace('.', '').isdigit() else 0,
-                                    'exp': values[15] if len(values) > 15 else '',
-                                    'pr': values[16] if len(values) > 16 else '',
-                                    'pp': values[17] if len(values) > 17 else '',
-                                    'iv': values[18] if len(values) > 18 else '',
-                                    'ip': values[19] if len(values) > 19 else '',
-                                    'nt': values[20] if len(values) > 20 else '',
-                                    'qt': values[21] if len(values) > 21 else '',
+                                    'pos': safe_int(values[4], 1) if len(values) > 4 else 1,
+                                    'qty': qty,
+                                    'ep': ep,
+                                    'cmp': cmp,
+                                    'change_pct': change_pct,
+                                    'inv': inv,
+                                    'tp': safe_float(values[10]) if len(values) > 10 else 0,
+                                    'tva': safe_float(values[11]) if len(values) > 11 else 0,
+                                    'tpr': safe_float(values[12]) if len(values) > 12 else 0,
+                                    'pl': pl,
+                                    'ed': values[14] if len(values) > 14 else '',
+                                    'exp': values[15] if len(values) > 15 else '-',
+                                    'pr': values[16] if len(values) > 16 else '-',
+                                    'pp': values[17] if len(values) > 17 else '-',
+                                    'iv': values[18] if len(values) > 18 else 'Low',
+                                    'ip': values[19] if len(values) > 19 else '-',
+                                    'nt': values[20] if len(values) > 20 else '-',
+                                    'qt': values[21] if len(values) > 21 else '-',
+                                    'seven': values[22] if len(values) > 22 else '-',
+                                    'change2': change_pct
                                 }
 
-                                if row_data['symbol'] and row_data['symbol'] != 'ETF':
-                                    etf_data.append(row_data)
+                                etf_data.append(row_data)
+                                logging.info(f"Parsed ETF: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}, P&L: {pl}")
 
-                            except (ValueError, IndexError) as e:
-                                logging.warning(f"Error parsing row: {e}")
+                            except Exception as e:
+                                logging.warning(f"Error parsing row {j}: {e}")
                                 continue
                     break
 
+        logging.info(f"Successfully parsed {len(etf_data)} ETF records")
         return etf_data
 
     except Exception as e:

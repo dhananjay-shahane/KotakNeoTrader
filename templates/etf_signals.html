@@ -709,7 +709,7 @@ class ETFSignalsManager {
 
                 switch(columnKey) {
                     case 'etf':
-                        cellContent = `<strong>${position.etf || ''}</strong>`;
+                        cellContent = `<strong>${position.symbol || position.etf || ''}</strong>`;
                         break;
                     case 'thirty':
                         cellContent = position.thirty || '-';
@@ -793,7 +793,7 @@ class ETFSignalsManager {
                         break;
                     case 'actions':
                         cellContent = `
-                            <button class="btn btn-sm btn-success" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
+                            <button class="btn btn-sm btn-success" onclick="addDealFromSignal('${position.symbol || position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
                                 <i class="fas fa-plus me-1"></i>Add Deal
                             </button>
                         `;
