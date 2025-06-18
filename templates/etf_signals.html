@@ -377,7 +377,8 @@ class ETFSignalsManager {
             'nt': { label: 'NT', default: false, width: '100px' },
             'qt': { label: 'Qt', default: false, width: '60px' },
             'seven': { label: '7', default: false, width: '40px' },
-            'change2': { label: '%Ch', default: false, width: '60px' }
+            'change2': { label: '%Ch', default: false, width: '60px' },
+            'actions': { label: 'Actions', default: true, width: '100px' }
         };
 
         this.selectedColumns = this.getDefaultColumns();
@@ -667,10 +668,9 @@ class ETFSignalsManager {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                    <i class="fas fa-info-circle fa-3x mb-3 text-primary"></i>
-                    <h6 class="text-light">ETF Signals Dashboard</h6>
-                    <p class="text-muted mb-0">Trading signals and analytics interface for ETF trading</p>
-                    <small class="text-muted">Position data display has been disabled</small>
+                    <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
+                    <h6 class="text-light">No ETF Data Available</h6>
+                    <p class="text-muted mb-0">No ETF positions found to display</p>
                 </td>
             `;
             tbody.appendChild(row);
@@ -698,7 +698,7 @@ class ETFSignalsManager {
                         cellContent = position.thirty || '-';
                         break;
                     case 'dh':
-                        cellContent = position.dh !== undefined ? position.dh + 'd' : '0d';
+                        cellContent = position.dh !== undefined && position.dh !== '#N/A' ? (typeof position.dh === 'number' ? position.dh + 'd' : position.dh) : '#N/A';
                         break;
                     case 'date':
                         cellContent = position.date || '';
@@ -716,9 +716,12 @@ class ETFSignalsManager {
                         cellContent = position.cmp ? '₹' + position.cmp.toFixed(2) : '';
                         break;
                     case 'change_pct':
-                        if (position.change_pct !== undefined) {
-                            bgColor = position.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-                            cellContent = `${position.change_pct >= 0 ? '+' : ''}${position.change_pct.toFixed(2)}%`;
+                        if (position.change_pct && position.change_pct !== '0.00%') {
+                            const isPositive = position.change_pct.includes('-') ? false : true;
+                            bgColor = isPositive ? 'var(--success-color)' : 'var(--danger-color)';
+                            cellContent = position.change_pct;
+                        } else {
+                            cellContent = '0.00%';
                         }
                         break;
                     case 'inv':
@@ -731,12 +734,14 @@ class ETFSignalsManager {
                         cellContent = position.tva ? '₹' + position.tva.toLocaleString('en-IN') : '';
                         break;
                     case 'tpr':
-                        cellContent = position.tpr ? '₹' + position.tpr.toFixed(0) : '0';
+                        cellContent = position.tpr || '₹0';
                         break;
                     case 'pl':
-                        if (position.pl !== undefined) {
+                        if (position.pl !== undefined && position.pl !== 0) {
                             bgColor = position.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-                            cellContent = `₹${position.pl >= 0 ? '+' : ''}${position.pl.toFixed(0)}`;
+                            cellContent = `₹${position.pl >= 0 ? '+' : ''}${position.pl.toLocaleString('en-IN')}`;
+                        } else {
+                            cellContent = '₹0';
                         }
                         break;
                     case 'ed':
@@ -752,15 +757,10 @@ class ETFSignalsManager {
                         cellContent = position.pp || '-';
                         break;
                     case 'iv':
-                        cellContent = `<span class="badge bg-info">${position.iv || 'Low'}</span>`;
+                        cellContent = position.iv ? position.iv.toLocaleString('en-IN') : '0';
                         break;
                     case 'ip':
                         cellContent = position.ip || '-';
-                        if (position.change_pct > 0) {
-                            cell.style.color = 'var(--success-color)';
-                        } else if (position.change_pct < 0) {
-                            cell.style.color = 'var(--danger-color)';
-                        }
                         break;
                     case 'nt':
                         cellContent = `<small>${position.nt || '-'}</small>`;
@@ -769,18 +769,15 @@ class ETFSignalsManager {
                         cellContent = `<small>${position.qt || '-'}</small>`;
                         break;
                     case 'seven':
-                        cellContent = position.seven || '-';
+                        cellContent = position.seven || '#N/A';
                         break;
                     case 'change2':
-                        if (position.change2 !== undefined) {
-                            bgColor = position.change2 >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-                            cellContent = `${position.change2 >= 0 ? '+' : ''}${position.change2.toFixed(2)}%`;
-                        }
+                        cellContent = position.change2 || '#N/A';
                         break;
                     case 'actions':
                         cellContent = `
-                            <button class="btn btn-xs btn-outline-success" onclick="addDeal('${position.symbol}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || position.cmp}, ${position.cmp})" title="Add Deal">
-                                <i class="fas fa-plus"></i> Deal
+                            <button class="btn btn-sm btn-success" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
+                                <i class="fas fa-plus me-1"></i>Add Deal
                             </button>
                         `;
                         break;
@@ -809,15 +806,22 @@ class ETFSignalsManager {
     updateSummaryCards(summary) {
         if (!summary) return;
 
-        console.log('ETF Signals Dashboard Summary:', {
-            totalPositions: summary.total_positions || 0,
-            totalInvestment: summary.total_investment || 0,
-            currentValue: summary.current_value || 0,
-            totalPnL: summary.total_pnl || 0,
-            returnPercent: summary.return_percent || 0,
-            profitPositions: summary.profit_positions || 0,
-            lossPositions: summary.loss_positions || 0
-        });
+        document.getElementById('totalPositions').textContent = summary.total_positions || 0;
+        document.getElementById('totalInvestment').textContent = `₹${(summary.total_investment || 0).toLocaleString('en-IN')}`;
+        document.getElementById('currentValue').textContent = `₹${(summary.current_value || 0).toLocaleString('en-IN')}`;
+        
+        const totalPnl = summary.total_pnl || 0;
+        const pnlElement = document.getElementById('totalPnl');
+        pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
+        pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        
+        const returnPercent = summary.return_percent || 0;
+        const returnElement = document.getElementById('returnPercent');
+        returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
+        returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        
+        document.getElementById('activePositions').textContent = summary.active_positions || 0;
+        document.getElementById('closedPositions').textContent = summary.closed_positions || 0;
     }
 
     updatePagination() {
@@ -988,6 +992,65 @@ function exportSignals() {
 document.addEventListener('DOMContentLoaded', function() {
     window.etfManager = new ETFSignalsManager();
 });
+
+// Function to add deal from ETF signal
+function addDealFromSignal(symbol, pos, qty, ep, tp, cmp) {
+    // Create deal object matching the deals page format
+    const dealEP = parseFloat(ep);
+    const dealCMP = parseFloat(cmp);
+    const dealTP = parseFloat(tp) || dealEP * 1.1;
+    const dealQty = parseInt(qty);
+    const dealPos = parseInt(pos);
+    
+    const investment = dealEP * dealQty;
+    const currentValue = dealCMP * dealQty;
+    const pnl = (dealCMP - dealEP) * dealQty * (dealPos === 1 ? 1 : -1);
+    const percentChange = ((dealCMP - dealEP) / dealEP) * 100 * (dealPos === 1 ? 1 : -1);
+    const targetValue = dealTP * dealQty;
+    const targetProfit = (dealTP - dealEP) * dealQty;
+
+    const newDeal = {
+        symbol: symbol,
+        thirty: '-',
+        dh: 0,
+        date: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+        pos: dealPos,
+        qty: dealQty,
+        ep: dealEP,
+        cmp: dealCMP,
+        change_pct: percentChange,
+        inv: investment,
+        tp: dealTP,
+        tva: targetValue,
+        tpr: targetProfit,
+        pl: pnl,
+        ed: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+        pr: `${(dealCMP * 0.95).toFixed(1)}-${(dealCMP * 1.05).toFixed(1)}`,
+        pp: percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-',
+        iv: Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low',
+        ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
+        nt: `Deal from ETF signal: ${symbol}`,
+        qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+        seven: '-',
+        change2: percentChange,
+        id: 'DEAL' + Date.now(),
+        position_type: dealPos === 1 ? 'LONG' : 'SHORT',
+        status: 'EXECUTED'
+    };
+
+    // Get existing user deals from localStorage
+    let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+    userDeals.unshift(newDeal);
+    localStorage.setItem('userDeals', JSON.stringify(userDeals));
+
+    // Show success message
+    alert(`✅ Deal added successfully for ${symbol}!\n\nDetails:\n- Position: ${dealPos === 1 ? 'LONG' : 'SHORT'}\n- Quantity: ${dealQty}\n- Entry Price: ₹${dealEP}\n- Current Price: ₹${dealCMP}\n- P&L: ₹${pnl.toFixed(2)}\n\nView it in the Deals page.`);
+
+    // Optionally redirect to deals page
+    if (confirm('Would you like to view the deal in the Deals page?')) {
+        window.location.href = '/deals';
+    }
+}
 
 // Function to open Add Deal modal with pre-filled data
 function addDeal(symbol, pos, qty, ep, tp, cmp) {
