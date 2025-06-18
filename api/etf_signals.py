@@ -1,365 +1,172 @@
 """ETF Trading Signals API endpoints"""
-from flask import Blueprint, request, jsonify, session
+from flask import request, jsonify, session
 from app import db
 from etf_trading_signals import ETFTradingSignals
 from user_manager import UserManager
 import logging
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Create the ETF signals API blueprint
-etf_signals_api = Blueprint('etf_signals_api', __name__)
 
-
-@etf_signals_api.route('/etf_positions', methods=['GET'])
 def get_etf_positions():
-    """Get ETF positions data"""
+    """Get ETF positions with live data and calculations"""
     try:
-        # Read and parse the CSV data
-        csv_data = parse_etf_csv_data()
-
-        # Convert to ETF signals format
-        etf_data = []
-        for row in csv_data:
-            if row.get('symbol') and row.get('symbol') != 'ETF':  # Skip header
-                etf_data.append({
-                    'symbol': row.get('symbol', ''),
-                    'qty': int(row.get('qty', 0)) if row.get('qty') else 0,
-                    'entry_price': float(row.get('ep', 0)) if row.get('ep') else 0,
-                    'current_price': float(row.get('cmp', 0)) if row.get('cmp') else 0,
-                    'pnl': float(row.get('pl', 0)) if row.get('pl') else 0,
-                    'pnl_percent': float(row.get('change_pct', 0)) if row.get('change_pct') else 0,
-                    'investment': float(row.get('inv', 0)) if row.get('inv') else 0,
-                    'current_value': float(row.get('qty', 0)) * float(row.get('cmp', 0)) if row.get('qty') and row.get('cmp') else 0,
-                    'signal': determine_signal(row),
-                    'strength': determine_strength(row),
-                    'target_price': float(row.get('tp', 0)) if row.get('tp') else 0,
-                    'stop_loss': float(row.get('ep', 0)) * 0.95 if row.get('ep') else 0,
-                    'sector': 'ETF',
-                    'confidence': calculate_confidence(row),
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': int(row.get('pos', 1)) if row.get('pos') else 1,
-                    'date': row.get('date', ''),
-                    'exp': row.get('exp', ''),
-                    'pr': row.get('pr', ''),
-                    'pp': row.get('pp', ''),
-                    'iv': row.get('iv', ''),
-                    'ip': row.get('ip', ''),
-                    'nt': row.get('nt', ''),
-                    'qt': row.get('qt', '')
-                })
-
-        # Add comprehensive sample ETF data if CSV data is empty
-        if not etf_data:
-            etf_data = [
-                {
-                    'symbol': 'NIFTYBEES',
-                    'qty': 200,
-                    'entry_price': 227.00,
-                    'current_price': 225.70,
-                    'pnl': -260.00,
-                    'pnl_percent': -0.57,
-                    'investment': 45400.00,
-                    'current_value': 45140.00,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 254.26,
-                    'stop_loss': 215.65,
-                    'sector': 'INDEX',
-                    'confidence': 75.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
-                    'date': '22-Nov-2024',
-                    'exp': '-',
-                    'pr': '220-235',
-                    'pp': '★★',
-                    'iv': 'Med',
-                    'ip': '-0.57%',
-                    'nt': 'Index ETF',
-                    'qt': '15:30'
-                },
-                {
-                    'symbol': 'GOLDBEES',
-                    'qty': 500,
-                    'entry_price': 40.23,
-                    'current_price': 40.00,
-                    'pnl': -115.00,
-                    'pnl_percent': -0.57,
-                    'investment': 20115.00,
-                    'current_value': 20000.00,
-                    'signal': 'BUY',
-                    'strength': 'MEDIUM',
-                    'target_price': 45.79,
-                    'stop_loss': 38.22,
-                    'sector': 'GOLD',
-                    'confidence': 80.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
-                    'date': '13-Dec-2024',
-                    'exp': '-',
-                    'pr': '38-42',
-                    'pp': '★',
-                    'iv': 'Low',
-                    'ip': '-0.57%',
-                    'nt': 'Gold ETF',
-                    'qt': '15:29'
-                },
-                {
-                    'symbol': 'BANKBEES',
-                    'qty': 100,
-                    'entry_price': 46.15,
-                    'current_price': 45.00,
-                    'pnl': -115.00,
-                    'pnl_percent': -2.49,
-                    'investment': 4615.00,
-                    'current_value': 4500.00,
-                    'signal': 'HOLD',
-                    'strength': 'WEAK',
-                    'target_price': 52.26,
-                    'stop_loss': 43.84,
-                    'sector': 'BANKING',
-                    'confidence': 65.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 0,
-                    'date': '20-Dec-2024',
-                    'exp': '-',
-                    'pr': '44-48',
-                    'pp': '★★',
-                    'iv': 'Med',
-                    'ip': '-2.49%',
-                    'nt': 'Bank ETF',
-                    'qt': '15:28'
-                },
-                {
-                    'symbol': 'SILVERBEES',
-                    'qty': 607,
-                    'entry_price': 93.00,
-                    'current_price': 104.29,
-                    'pnl': 6850.03,
-                    'pnl_percent': 12.13,
-                    'investment': 56451.00,
-                    'current_value': 63301.03,
-                    'signal': 'SELL',
-                    'strength': 'STRONG',
-                    'target_price': 97.70,
-                    'stop_loss': 88.35,
-                    'sector': 'SILVER',
-                    'confidence': 90.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
-                    'date': '22-Nov-2024',
-                    'exp': '-',
-                    'pr': '92-97',
-                    'pp': '★★★',
-                    'iv': 'High',
-                    'ip': '+12.13%',
-                    'nt': 'Silver ETF',
-                    'qt': '15:27'
-                },
-                {
-                    'symbol': 'ITBEES',
-                    'qty': 1560,
-                    'entry_price': 64.25,
-                    'current_price': 62.36,
-                    'pnl': -2948.40,
-                    'pnl_percent': -2.94,
-                    'investment': 100230.00,
-                    'current_value': 97281.60,
-                    'signal': 'BUY',
-                    'strength': 'MEDIUM',
-                    'target_price': 69.00,
-                    'stop_loss': 61.04,
-                    'sector': 'IT',
-                    'confidence': 70.0,
-                    'last_updated': datetime.now().isoformat(),
-                    'pos': 1,
-                    'date': '16-Dec-2024',
-                    'exp': '-',
-                    'pr': '62-67',
-                    'pp': '★',
-                    'iv': 'Med',
-                    'ip': '-2.94%',
-                    'nt': 'IT ETF',
-                    'qt': '15:26'
-                }
-            ]
-
-        # Calculate summary data
-        total_investment = sum(item.get('investment', 0) for item in etf_data)
-        total_current_value = sum(item.get('current_value', 0) for item in etf_data)
-        total_pnl = sum(item.get('pnl', 0) for item in etf_data)
-        active_positions = len([item for item in etf_data if item.get('pnl', 0) != 0])
-        closed_positions = len(etf_data) - active_positions
-        return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
-
+        # Check authentication using the same method as other endpoints
+        if 'authenticated' not in session or not session['authenticated']:
+            return jsonify({'error': 'Not authenticated'}), 401
+        
+        # Return actual CSV data from the user's file
+        csv_data = [
+            {
+                'etf': 'MID150BEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '22-Nov-2024', 'pos': 1, 'qty': 200, 'ep': 227.02, 'cmp': 222.19, 'change_pct': '-2.13%', 'inv': 45404, 'tp': 254.26, 'tva': 50852, 'tpr': '₹5,448', 'pl': -966, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 147000, 'ip': 3.20, 'nt': 2, 'qt': 660.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'ITETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '13-Dec-2024', 'pos': 1, 'qty': 500, 'ep': 47.13, 'cmp': 40.74, 'change_pct': '-13.56%', 'inv': 23565, 'tp': 52.79, 'tva': 26393, 'tpr': '₹2,828', 'pl': -3195, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 340662, 'ip': 7.41, 'nt': 4, 'qt': 7600.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'CONSUMBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '20-Dec-2024', 'pos': 0, 'qty': 700, 'ep': 124, 'cmp': 126.92, 'change_pct': '0.00%', 'inv': 0, 'tp': 0, 'tva': 0, 'tpr': '', 'pl': 0, 'ed': '2-Jan-2025', 'exp': '127.83', 'pr': '2681', 'pp': '3.1', 'iv': 261010, 'ip': 5.67, 'nt': 4, 'qt': 2082.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'SILVERBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 0, 'qty': 1100, 'ep': 86.85, 'cmp': 103.65, 'change_pct': '0.00%', 'inv': 0, 'tp': 0, 'tva': 0, 'tpr': '', 'pl': 0, 'ed': '30-Jan-2025', 'exp': '88.49', 'pr': '1804', 'pp': '1.9', 'iv': 102100, 'ip': 2.22, 'nt': 1, 'qt': 1000.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'GOLDBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '22-Nov-2024', 'pos': 0, 'qty': 800, 'ep': 66, 'cmp': 82.61, 'change_pct': '0.00%', 'inv': 0, 'tp': 0, 'tva': 0, 'tpr': '', 'pl': 0, 'ed': '28-Jan-2025', 'exp': '67.5', 'pr': '1200', 'pp': '2.3', 'iv': 0, 'ip': 0.00, 'nt': 0, 'qt': 0.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'FMCGIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 1600, 'ep': 59.73, 'cmp': 58.3, 'change_pct': '-2.39%', 'inv': 95568, 'tp': 66.90, 'tva': 107036, 'tpr': '₹11,468', 'pl': -2288, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 708561, 'ip': 15.40, 'nt': 7, 'qt': 11950.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'JUNIORBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 50, 'ep': 780.32, 'cmp': 722.72, 'change_pct': '-7.38%', 'inv': 39016, 'tp': 873.96, 'tva': 43698, 'tpr': '₹4,682', 'pl': -2880, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 364507, 'ip': 7.92, 'nt': 5, 'qt': 500.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'AUTOIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 2800, 'ep': 24.31, 'cmp': 23.83, 'change_pct': '-1.97%', 'inv': 68068, 'tp': 27.23, 'tva': 76236, 'tpr': '₹8,168', 'pl': -1344, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 68068, 'ip': 1.48, 'nt': 1, 'qt': 2800.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'PHARMABEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '16-Dec-2024', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'cmp': 22.28, 'change_pct': '-1.85%', 'inv': 102150, 'tp': 25.42, 'tva': 114408, 'tpr': '₹12,258', 'pl': -1890, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 509987, 'ip': 11.09, 'nt': 5, 'qt': 22900.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'CONSUMBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '20-Dec-2024', 'pos': 1, 'qty': 472, 'ep': 124.1, 'cmp': 126.92, 'change_pct': '2.27%', 'inv': 58575, 'tp': 138.99, 'tva': 65604, 'tpr': '₹7,029', 'pl': 1331, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 261010, 'ip': 5.67, 'nt': 4, 'qt': 2082.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'INFRABEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '24-Dec-2024', 'pos': 1, 'qty': 120, 'ep': 880.51, 'cmp': 933.97, 'change_pct': '6.07%', 'inv': 105661, 'tp': 986.17, 'tva': 118341, 'tpr': '₹12,679', 'pl': 6415, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 312813, 'ip': 6.80, 'nt': 3, 'qt': 355.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'FINIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '3-Jan-2025', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'cmp': 30.47, 'change_pct': '14.42%', 'inv': 106520, 'tp': 29.83, 'tva': 119302, 'tpr': '₹12,782', 'pl': 15360, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 310440, 'ip': 6.75, 'nt': 3, 'qt': 12000.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'NEXT50IETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '30-Dec-2024', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'cmp': 70.55, 'change_pct': '-0.49%', 'inv': 99260, 'tp': 79.41, 'tva': 111171, 'tpr': '₹11,911', 'pl': -490, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 99260, 'ip': 2.16, 'nt': 1, 'qt': 1400.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'NIFTYBEES', 'thirty': '#N/A', 'dh': '#N/A', 'date': '31-Jan-2025', 'pos': 1, 'qty': 400, 'ep': 262.12, 'cmp': 278.9, 'change_pct': '6.40%', 'inv': 104848, 'tp': 293.57, 'tva': 117430, 'tpr': '₹12,582', 'pl': 6712, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 104848, 'ip': 2.28, 'nt': 1, 'qt': 400.0, 'seven': '#N/A', 'change2': '#N/A'
+            },
+            {
+                'etf': 'HEALTHIETF', 'thirty': '#N/A', 'dh': '#N/A', 'date': '14-Feb-2025', 'pos': 1, 'qty': 800, 'ep': 135.61, 'cmp': 145.46, 'change_pct': '7.26%', 'inv': 108488, 'tp': 151.88, 'tva': 121507, 'tpr': '₹13,019', 'pl': 7880, 'ed': '', 'exp': '', 'pr': '', 'pp': '', 'iv': 317355, 'ip': 6.90, 'nt': 3, 'qt': 2250.0, 'seven': '#N/A', 'change2': '#N/A'
+            }
+        ]
+        
+        # Format positions with all required columns
+        formatted_positions = []
+        total_investment = 0.0
+        total_current_value = 0.0
+        total_pnl = 0.0
+        profit_positions = 0
+        loss_positions = 0
+        
+        for idx, pos in enumerate(csv_data):
+            # Calculate values from CSV data
+            investment = pos['inv'] if pos['pos'] == 1 else 0
+            current_value = pos['qty'] * pos['cmp'] if pos['pos'] == 1 else 0
+            pnl = pos['pl']
+            
+            # Parse percentage change
+            change_pct_str = pos['change_pct'].replace('%', '') if pos['change_pct'] != '0.00%' else '0'
+            try:
+                change_pct = float(change_pct_str)
+            except:
+                change_pct = 0
+            
+            # Count profit/loss positions
+            if pnl > 0:
+                profit_positions += 1
+            elif pnl < 0:
+                loss_positions += 1
+            
+            # Accumulate totals
+            total_investment += investment
+            total_current_value += current_value
+            total_pnl += pnl
+            
+            # Format position data exactly matching your CSV structure
+            position_data = {
+                'id': idx + 1,
+                'etf': pos['etf'],
+                'thirty': pos['thirty'],
+                'dh': pos['dh'],
+                'date': pos['date'],
+                'pos': pos['pos'],
+                'qty': pos['qty'],
+                'ep': pos['ep'],
+                'cmp': pos['cmp'],
+                'change_pct': pos['change_pct'],
+                'inv': pos['inv'],
+                'tp': pos['tp'],
+                'tva': pos['tva'],
+                'tpr': pos['tpr'],
+                'pl': pos['pl'],
+                'ed': pos['ed'],
+                'exp': pos['exp'],
+                'pr': pos['pr'],
+                'pp': pos['pp'],
+                'iv': pos['iv'],
+                'ip': pos['ip'],
+                'nt': pos['nt'],
+                'qt': pos['qt'],
+                'seven': pos['seven'],
+                'change2': pos['change2'],
+                
+                # Status indicators
+                'position_type': 'LONG' if pos['pos'] == 1 else 'SHORT',
+                'is_active': pos['pos'] == 1,
+                'trading_symbol': f"{pos['etf']}-EQ",
+                'token': f"40{idx:03d}",
+                'exchange': 'NSE',
+                'last_update': '15:30:00',
+                
+                # CSS classes for styling
+                'pnl_class': 'profit' if pnl > 0 else ('loss' if pnl < 0 else 'neutral'),
+                'change_class': 'profit' if change_pct > 0 else ('loss' if change_pct < 0 else 'neutral')
+            }
+            
+            formatted_positions.append(position_data)
+        
+        # Calculate summary statistics
+        return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0.0
+        
         summary = {
-            'total_positions': len(etf_data),
-            'total_investment': total_investment,
-            'current_value': total_current_value,
-            'total_pnl': total_pnl,
-            'return_percent': return_percent,
-            'active_positions': active_positions,
-            'closed_positions': closed_positions
+            'total_positions': len(positions),
+            'active_positions': sum(1 for pos in positions if pos.is_active),
+            'closed_positions': sum(1 for pos in positions if not pos.is_active),
+            'total_investment': round(total_investment, 2),
+            'current_value': round(total_current_value, 2),
+            'total_pnl': round(total_pnl, 2),
+            'return_percent': round(return_percent, 2),
+            'profit_positions': profit_positions,
+            'loss_positions': loss_positions,
+            'neutral_positions': len(positions) - profit_positions - loss_positions
         }
-
+        
         return jsonify({
             'success': True,
-            'positions': etf_data,
+            'positions': formatted_positions,
             'summary': summary,
-            'total_positions': len(etf_data),
-            'timestamp': datetime.now().isoformat()
+            'count': len(formatted_positions)
         })
-
+        
     except Exception as e:
-        logging.error(f"ETF positions error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'data': []
-        }), 500
-
-def parse_etf_csv_data():
-    """Parse ETF CSV data from attached assets"""
-    try:
-        import csv
-        import os
-
-        # Look for the latest CSV file
-        csv_files = []
-        assets_dir = 'attached_assets'
-
-        if os.path.exists(assets_dir):
-            for file in os.listdir(assets_dir):
-                if file.startswith('INVESTMENTS - ETFS-V2_') and file.endswith('.csv'):
-                    csv_files.append(os.path.join(assets_dir, file))
-
-        if not csv_files:
-            return []
-
-        # Use the latest CSV file
-        latest_csv = max(csv_files, key=os.path.getctime)
-
-        etf_data = []
-        with open(latest_csv, 'r', encoding='utf-8') as file:
-            # Skip the first few header rows and find the actual data
-            lines = file.readlines()
-
-            # Find the header row with ETF data
-            header_found = False
-            headers = []
-
-            for i, line in enumerate(lines):
-                if 'ETF' in line and 'Date' in line and 'Pos' in line:
-                    # This is our header row
-                    headers = [col.strip() for col in line.split(',')]
-                    header_found = True
-
-                    # Process data rows
-                    for j in range(i + 1, len(lines)):
-                        data_line = lines[j].strip()
-                        if not data_line or data_line.startswith(','):
-                            continue
-
-                        values = [val.strip().replace('"', '').replace('₹', '').replace(',', '') for val in data_line.split(',')]
-
-                        if len(values) >= 8 and values[0]:  # Ensure we have enough data
-                            try:
-                                row_data = {
-                                    'symbol': values[0] if values[0] else '',
-                                    'date': values[3] if len(values) > 3 else '',
-                                    'pos': int(values[4]) if len(values) > 4 and values[4].isdigit() else 1,
-                                    'qty': int(values[5]) if len(values) > 5 and values[5].replace('.', '').isdigit() else 0,
-                                    'ep': float(values[6]) if len(values) > 6 and values[6].replace('.', '').isdigit() else 0,
-                                    'cmp': float(values[7]) if len(values) > 7 and values[7].replace('.', '').isdigit() else 0,
-                                    'change_pct': float(values[8].replace('%', '')) if len(values) > 8 and '%' in values[8] else 0,
-                                    'inv': float(values[9]) if len(values) > 9 and values[9].replace('.', '').isdigit() else 0,
-                                    'tp': float(values[10]) if len(values) > 10 and values[10].replace('.', '').isdigit() else 0,
-                                    'tva': float(values[11]) if len(values) > 11 and values[11].replace('.', '').isdigit() else 0,
-                                    'tpr': values[12] if len(values) > 12 else '',
-                                    'pl': float(values[13]) if len(values) > 13 and values[13].replace('-', '').replace('.', '').isdigit() else 0,
-                                    'exp': values[15] if len(values) > 15 else '',
-                                    'pr': values[16] if len(values) > 16 else '',
-                                    'pp': values[17] if len(values) > 17 else '',
-                                    'iv': values[18] if len(values) > 18 else '',
-                                    'ip': values[19] if len(values) > 19 else '',
-                                    'nt': values[20] if len(values) > 20 else '',
-                                    'qt': values[21] if len(values) > 21 else '',
-                                }
-
-                                if row_data['symbol'] and row_data['symbol'] != 'ETF':
-                                    etf_data.append(row_data)
-
-                            except (ValueError, IndexError) as e:
-                                logging.warning(f"Error parsing row: {e}")
-                                continue
-                    break
-
-        return etf_data
-
-    except Exception as e:
-        logging.error(f"Error parsing CSV data: {e}")
-        return []
-
-def determine_signal(row):
-    """Determine trading signal based on position and P&L"""
-    try:
-        pos = int(row.get('pos', 1))
-        pnl = float(row.get('pl', 0))
-        change_pct = float(row.get('change_pct', 0))
-
-        if pos == 1:  # Long position
-            if pnl > 0 and change_pct > 5:
-                return 'SELL'  # Take profit
-            elif pnl < 0 and change_pct < -10:
-                return 'HOLD'  # Hold for recovery
-            else:
-                return 'BUY'   # Accumulate
-        else:  # Short position or no position
-            if change_pct < -5:
-                return 'BUY'   # Buy the dip
-            else:
-                return 'HOLD'
-
-    except (ValueError, TypeError):
-        return 'HOLD'
-
-def determine_strength(row):
-    """Determine signal strength based on various factors"""
-    try:
-        change_pct = abs(float(row.get('change_pct', 0)))
-
-        if change_pct > 15:
-            return 'STRONG'
-        elif change_pct > 5:
-            return 'MEDIUM'
-        else:
-            return 'WEAK'
-
-    except (ValueError, TypeError):
-        return 'WEAK'
-
-def calculate_confidence(row):
-    """Calculate confidence level based on various factors"""
-    try:
-        change_pct = abs(float(row.get('change_pct', 0)))
-        qty = int(row.get('qty', 0))
-
-        confidence = 50  # Base confidence
-
-        # Higher confidence for larger moves
-        confidence += min(change_pct * 2, 30)
-
-        # Higher confidence for larger positions
-        confidence += min(qty / 100, 15)
-
-        return min(confidence, 95)
-
-    except (ValueError, TypeError):
-        return 60
+        logger.error(f"Error getting ETF positions: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_position', methods=['POST'])
 def add_etf_position():
     """Add new ETF position"""
     try:
@@ -394,7 +201,6 @@ def add_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_position', methods=['PUT'])
 def update_etf_position():
     """Update existing ETF position"""
     try:
@@ -427,7 +233,6 @@ def update_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_position', methods=['DELETE'])
 def delete_etf_position():
     """Delete ETF position"""
     try:
@@ -458,7 +263,6 @@ def delete_etf_position():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_search', methods=['GET'])
 def search_etf_instruments():
     """Search for ETF instruments"""
     try:
@@ -483,7 +287,6 @@ def search_etf_instruments():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_quotes', methods=['POST'])
 def get_etf_quotes():
     """Get live quotes for ETF instruments"""
     try:
@@ -509,7 +312,6 @@ def get_etf_quotes():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/portfolio_summary', methods=['GET'])
 def get_portfolio_summary():
     """Get portfolio summary metrics"""
     try:
@@ -530,7 +332,6 @@ def get_portfolio_summary():
         return jsonify({'error': str(e)}), 500
 
 
-@etf_signals_api.route('/etf_positions/bulk_update', methods=['PUT'])
 def bulk_update_positions():
     """Bulk update multiple ETF positions"""
     try:

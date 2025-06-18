@@ -495,69 +495,52 @@ class ETFSignalsManager {
         this.showLoading();
 
         console.log('Loading ETF positions...');
-        try {
-            const response = await fetch('/api/etf_positions', {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            console.log('Response status:', response.status);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        fetch('/api/etf_positions', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
-            
-            const data = await response.json();
-            console.log('ETF positions response:', data);
-            
-            if (data.success && data.positions) {
-                this.positions = data.positions;
-                this.filteredPositions = [...this.positions];
+        })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('ETF positions response:', data);
+                if (data.success) {
+                    this.positions = data.positions || [];
+                    this.filteredPositions = [...this.positions];
+                    this.renderPositionsTable();
+                    this.updatePagination();
+                    this.updateSummaryCards(data.summary || {});
+                    console.log(`Loaded ${this.positions.length} ETF positions`);
+                } else {
+                    console.error('API returned error:', data.error);
+                    // Show empty state
+                    this.positions = [];
+                    this.filteredPositions = [];
+                    this.renderPositionsTable();
+                    this.updatePagination();
+                    this.updateSummaryCards({});
+                }
+            })
+            .catch(error => {
+                console.error('Error loading ETF positions:', error);
+                // Show empty state
+                this.positions = [];
+                this.filteredPositions = [];
                 this.renderPositionsTable();
                 this.updatePagination();
-                this.updateSummaryCards(data.summary || {});
-                console.log(`✅ Loaded ${this.positions.length} ETF positions`);
-            } else {
-                console.error('API returned error:', data.error || 'No positions data');
-                this.showEmptyState();
-            }
-        } catch (error) {
-            console.error('❌ Error loading ETF positions:', error);
-            this.showEmptyState();
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    showEmptyState() {
-        this.positions = [];
-        this.filteredPositions = [];
-        this.renderPositionsTable();
-        this.updatePagination();
-        this.updateSummaryCards({});
-    }
-
-    showLoading() {
-        const tbody = document.getElementById('signalsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                        <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary"></i>
-                        <h6 class="text-light">Loading ETF Positions...</h6>
-                        <p class="text-muted mb-0">Please wait while we fetch your data</p>
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    hideLoading() {
-        // Loading state will be replaced by actual data or empty state
+                this.updateSummaryCards({});
+            })
+            .finally(() => {
+                this.hideLoading();
+            });
     }
 
     getSampleETFData() {
