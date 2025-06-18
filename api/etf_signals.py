@@ -50,34 +50,35 @@ def get_etf_positions():
             total_current_value += current_value
             total_pnl += pnl
             
-            # Format position data according to your specifications
+            # Format position data exactly like your CSV structure
             position_data = {
                 'id': pos.id,
-                'etf_name': pos.etf_symbol,  # ETF Name
-                'symbol': pos.etf_symbol,
-                'date': pos.entry_date.strftime('%d/%m/%y') if pos.entry_date else '',  # Date
+                'etf': pos.etf_symbol,  # ETF column
+                'thirty': '#N/A',  # 30 day performance (not available)
+                'dh': '#N/A',  # Days held (not calculated)
+                'date': pos.entry_date.strftime('%d-%b-%Y') if pos.entry_date else '',  # Date format: 22-Nov-2024
                 'pos': 1 if pos.is_active else 0,  # Pos (1 = active/holding, 0 = closed)
                 'qty': pos.quantity,  # Qty
                 'ep': float(pos.entry_price) if pos.entry_price else 0.0,  # EP (Entry Price)
                 'cmp': float(pos.current_price) if pos.current_price else 0.0,  # CMP (Current Market Price)
-                'change_pct': round(change_pct, 2),  # %Chan (% Change)
-                'inv': round(investment, 2),  # Inv. (Invested Amount)
+                'change_pct': f"{change_pct:.2f}%" if change_pct != 0 else "0.00%",  # %Chan formatted as percentage
+                'inv': round(investment, 0),  # Inv. (Invested Amount) - no decimals like CSV
                 'tp': float(pos.target_price) if pos.target_price else 0.0,  # TP (Target Price)
-                'tva': round(pos.target_value_amount, 2),  # TVA (Target Value Amount)
-                'tpr': round(pos.target_profit_return, 2),  # TPR (Target Profit Return)
-                'pl': round(pnl, 2),  # PL (Profit/Loss)
+                'tva': round(pos.target_value_amount, 0) if pos.target_price else '',  # TVA (Target Value Amount)
+                'tpr': f"₹{round(pos.target_profit_return, 0):,}" if pos.target_price else '',  # TPR formatted with rupee symbol
+                'pl': round(pnl, 0),  # PL (Profit/Loss)
                 
-                # Additional columns for advanced tracking
-                'ed': pos.entry_date.strftime('%d/%m/%y') if pos.entry_date else '',  # ED (Entry Date)
-                'exp': '',  # EXP (Expiry - not applicable for ETFs)
-                'pr': round(current_value, 2),  # PR (Present Rate/Current Value)
-                'pp': round(change_pct, 2),  # PP (Present Percent)
-                'iv': round(investment, 2),  # IV (Investment Value)
-                'ip': round(pnl, 2),  # IP (Investment Profit)
+                # Additional columns matching CSV structure
+                'ed': pos.entry_date.strftime('%d-%b-%Y') if pos.entry_date else '',  # ED (Entry Date)
+                'exp': '',  # EXP (Expiry date for closed positions)
+                'pr': round(current_value, 0),  # PR (Present Rate/Current Value)
+                'pp': f"{change_pct:.2f}" if change_pct != 0 else '0.00',  # PP (Present Percent)
+                'iv': round(investment, 0),  # IV (Investment Value)
+                'ip': f"{change_pct:.2f}" if change_pct != 0 else '0.00',  # IP (Investment Profit %)
                 'nt': pos.notes or '',  # NT (Notes)
-                'qt': pos.quantity,  # Qt (Quantity)
-                'seven': '',  # 7 (Custom field)
-                'change2': round(change_pct, 2),  # %Ch (Alternative % Change)
+                'qt': f"{pos.quantity}.0",  # Qt (Quantity with decimal)
+                'seven': '#N/A',  # 7 (Custom field)
+                'change2': '#N/A',  # %Ch (Alternative % Change)
                 
                 # Status indicators
                 'position_type': pos.position_type,

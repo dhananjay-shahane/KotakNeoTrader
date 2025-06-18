@@ -352,11 +352,13 @@ class ETFSignalsManager {
         this.refreshInterval = null;
         this.searchTimeout = null;
 
-        // Available columns configuration based on your specifications
+        // Column configuration matching your CSV structure exactly
         this.availableColumns = {
-            'etf_name': { label: 'ETF Name', default: true, width: '80px' },
-            'date': { label: 'Date', default: true, width: '70px' },
-            'pos': { label: 'Pos', default: true, width: '50px' },
+            'etf': { label: 'ETF', default: true, width: '90px' },
+            'thirty': { label: '30', default: false, width: '50px' },
+            'dh': { label: 'DH', default: false, width: '50px' },
+            'date': { label: 'Date', default: true, width: '90px' },
+            'pos': { label: 'Pos', default: true, width: '45px' },
             'qty': { label: 'Qty', default: true, width: '60px' },
             'ep': { label: 'EP', default: true, width: '70px' },
             'cmp': { label: 'CMP', default: true, width: '70px' },
@@ -364,18 +366,18 @@ class ETFSignalsManager {
             'inv': { label: 'Inv.', default: true, width: '80px' },
             'tp': { label: 'TP', default: true, width: '70px' },
             'tva': { label: 'TVA', default: true, width: '80px' },
-            'pl': { label: 'PL', default: true, width: '80px' },
-            'ed': { label: 'ED', default: false, width: '70px' },
-            'exp': { label: 'EXP', default: false, width: '60px' },
-            'pr': { label: 'PR', default: false, width: '80px' },
-            'pp': { label: 'PP', default: false, width: '60px' },
+            'tpr': { label: 'TPR', default: true, width: '80px' },
+            'pl': { label: 'PL', default: true, width: '70px' },
+            'ed': { label: 'ED', default: false, width: '90px' },
+            'exp': { label: 'EXP', default: false, width: '70px' },
+            'pr': { label: 'PR', default: false, width: '70px' },
+            'pp': { label: 'PP', default: false, width: '50px' },
             'iv': { label: 'IV', default: false, width: '80px' },
-            'ip': { label: 'IP', default: false, width: '80px' },
+            'ip': { label: 'IP', default: false, width: '50px' },
             'nt': { label: 'NT', default: false, width: '100px' },
             'qt': { label: 'Qt', default: false, width: '60px' },
-            'seven': { label: '7', default: false, width: '50px' },
-            'change2': { label: '%Ch', default: false, width: '70px' },
-            'actions': { label: 'Actions', default: true, width: '100px' }
+            'seven': { label: '7', default: false, width: '40px' },
+            'change2': { label: '%Ch', default: false, width: '60px' }
         };
 
         this.selectedColumns = this.getDefaultColumns();
@@ -668,8 +670,8 @@ class ETFSignalsManager {
                 let bgColor = '';
 
                 switch(columnKey) {
-                    case 'symbol':
-                        cellContent = `<strong>${position.symbol || ''}</strong>`;
+                    case 'etf':
+                        cellContent = `<strong>${position.etf || ''}</strong>`;
                         break;
                     case 'thirty':
                         cellContent = position.thirty || '-';
