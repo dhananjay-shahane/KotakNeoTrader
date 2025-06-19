@@ -6,172 +6,183 @@ from etf_trading_signals import ETFTradingSignals
 from user_manager import UserManager
 from models_etf import ETFSignalTrade
 import logging
+from datetime import datetime
+from flask import Blueprint
 
+etf_bp = Blueprint('etf', __name__, url_prefix='/etf')
 logger = logging.getLogger(__name__)
 
-
+@etf_bp.route('/positions', methods=['GET'])
 def get_etf_positions():
-    """Get ETF signal trades for current user from database"""
+    """Get ETF positions/trades for current user"""
     try:
-        # Check authentication using the same method as other endpoints
-        if 'authenticated' not in session or not session['authenticated']:
-            return jsonify({'error': 'Not authenticated'}), 401
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
-        # Get user_id from session - try multiple ways
-        user_id = session.get('user_id')
-        if not user_id:
-            # Try to get from UCC if user_id not available
-            ucc = session.get('ucc')
-            if ucc:
-                from models import User
-                user = User.query.filter_by(ucc=ucc).first()
-                if user:
-                    user_id = user.id
-                    session['user_id'] = user_id  # Store for future use
+        # Get current user from database
+        from models import User
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        if not user_id:
-            return jsonify({'error': 'User ID not found in session'}), 401
+        # Get ETF signal trades for current user
+        trades = ETFSignalTrade.query.filter_by(user_id=current_user.id).order_by(ETFSignalTrade.created_at.desc()).all()
 
-        # Get ETF signal trades for the current user
-        trades = ETFSignalTrade.query.filter_by(user_id=user_id).order_by(ETFSignalTrade.created_at.desc()).all()
+        # Calculate portfolio summary
+        total_invested = 0
+        current_value = 0
+        total_pnl = 0
+        profit_trades = 0
+        loss_trades = 0
 
-        logger.info(f"Found {len(trades)} ETF signal trades for user_id: {user_id}")
+        trades_data = []
+        for trade in trades:
+            trade_dict = trade.to_dict()
+            trades_data.append(trade_dict)
 
-        # If no trades found, return empty but successful response
-        if not trades:
-            logger.warning(f"No ETF signal trades found for user_id: {user_id}")
-            return jsonify({
-                'success': True,
-                'positions': [],
-                'summary': {
-                    'total_positions': 0,
-                    'active_positions': 0,
-                    'closed_positions': 0,
-                    'total_investment': 0.0,
-                    'current_value': 0.0,
-                    'total_pnl': 0.0,
-                    'return_percent': 0.0,
-                    'profit_positions': 0,
-                    'loss_positions': 0,
-                    'neutral_positions': 0
-                },
-                'count': 0
-            })
-
-        # Format trades with all required columns
-        formatted_positions = []
-        total_investment = 0.0
-        total_current_value = 0.0
-        total_pnl = 0.0
-        profit_positions = 0
-        loss_positions = 0
-        active_positions = 0
-
-        for idx, trade in enumerate(trades):
-            # Update P&L calculations
-            trade.calculate_pnl()
-
-            # Calculate values from database trade
-            investment = float(trade.invested_amount) if trade.invested_amount else 0
-            current_value = float(trade.current_value) if trade.current_value else 0
-            pnl = float(trade.pnl_amount) if trade.pnl_amount else 0
-
-            # Parse percentage change
-            change_pct_str = trade.change_pct.replace('%', '') if trade.change_pct and trade.change_pct != '0.00%' else '0'
-            try:
-                change_pct = float(change_pct_str)
-            except:
-                change_pct = float(trade.pnl_percent) if trade.pnl_percent else 0
-
-            # Count profit/loss positions
-            if pnl > 0:
-                profit_positions += 1
-            elif pnl < 0:
-                loss_positions += 1
-
-            # Count active positions
-            is_active = trade.status == 'ACTIVE'
-            if is_active:
-                active_positions += 1
-
-            # Accumulate totals for active positions only
-            if is_active:
-                total_investment += investment
-                total_current_value += current
+            # Update calculations
+            if trade.invested_amount:
+                total_invested += float(trade.invested_amount)
+            if trade.current_value:
+                current_value += float(trade.current_value)
+            if trade.pnl_amount:
+                pnl = float(trade.pnl_amount)
                 total_pnl += pnl
+                if pnl > 0:
+                    profit_trades += 1
+                elif pnl < 0:
+                    loss_trades += 1
 
-            # Format position data matching CSV structure
-            position_data = {
-                'id': trade.id,
-                'etf': trade.symbol,
-                'thirty': '#N/A',
-                'dh': '#N/A',
-                'date': trade.entry_date.strftime('%d-%b-%Y') if trade.entry_date else '',
-                'pos': 1 if is_active else 0,
-                'qty': trade.quantity,
-                'ep': float(trade.entry_price) if trade.entry_price else 0,
-                'cmp': float(trade.current_price) if trade.current_price else 0,
-                'change_pct': trade.change_pct or f"{change_pct:.2f}%",
-                'inv': int(investment),
-                'tp': float(trade.target_price) if trade.target_price else 0,
-                'tva': int(current_value),
-                'tpr': trade.tp_return or f"₹{pnl:,.0f}" if pnl > 0 else '',
-                'pl': int(pnl),
-                'ed': trade.exit_date.strftime('%d-%b-%Y') if trade.exit_date else '',
-                'exp': '',
-                'pr': '',
-                'pp': '',
-                'iv': int(investment * 3),  # Simulated IV value
-                'ip': float(trade.pnl_percent) if trade.pnl_percent else 0,
-                'nt': 1,  # Simulated number of trades
-                'qt': float(trade.quantity),
-                'seven': '#N/A',
-                'change2': '#N/A',
+        # Calculate return percentage
+        return_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
 
-                # Status indicators
-                'position_type': trade.position_type,
-                'is_active': is_active,
-                'trading_symbol': trade.trading_symbol or f"{trade.symbol}-EQ",
-                'token': trade.token or f"40{idx:03d}",
-                'exchange': trade.exchange,
-                'last_update': '15:30:00',
-                'trade_title': trade.trade_title,
-                'trade_description': trade.trade_description,
-                'priority': trade.priority,
-
-                # CSS classes for styling
-                'pnl_class': 'profit' if pnl > 0 else ('loss' if pnl < 0 else 'neutral'),
-                'change_class': 'profit' if change_pct > 0 else ('loss' if change_pct < 0 else 'neutral')
-            }
-
-            formatted_positions.append(position_data)
-
-        # Calculate summary statistics
-        return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0.0
-
-        summary = {
-            'total_positions': len(formatted_positions),
-            'active_positions': active_positions,
-            'closed_positions': len(formatted_positions) - active_positions,
-            'total_investment': round(total_investment, 2),
-            'current_value': round(total_current_value, 2),
-            'total_pnl': round(total_pnl, 2),
-            'return_percent': round(return_percent, 2),
-            'profit_positions': profit_positions,
-            'loss_positions': loss_positions,
-            'neutral_positions': len(formatted_positions) - profit_positions - loss_positions
+        portfolio_summary = {
+            'total_invested': total_invested,
+            'current_value': current_value,
+            'total_pnl': total_pnl,
+            'return_percent': return_percent,
+            'profit_trades': profit_trades,
+            'loss_trades': loss_trades,
+            'total_trades': len(trades_data)
         }
 
         return jsonify({
             'success': True,
-            'positions': formatted_positions,
-            'summary': summary,
-            'count': len(formatted_positions)
+            'trades': trades_data,
+            'portfolio': portfolio_summary
         })
 
     except Exception as e:
-        logger.error(f"Error getting ETF positions: {e}")
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Error fetching ETF positions: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching data: {str(e)}'}), 500
+
+@etf_bp.route('/user-deals', methods=['GET'])
+def get_user_deals():
+    """Get deals created by current user"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        from models import User
+        from models_etf import UserDeal
+
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        # Get user deals
+        deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
+
+        deals_data = []
+        total_invested = 0
+        total_current_value = 0
+
+        for deal in deals:
+            deal_dict = deal.to_dict()
+            deals_data.append(deal_dict)
+
+            if deal.invested_amount:
+                total_invested += float(deal.invested_amount)
+            if deal.current_value:
+                total_current_value += float(deal.current_value)
+
+        summary = {
+            'total_deals': len(deals_data),
+            'total_invested': total_invested,
+            'total_current_value': total_current_value,
+            'total_pnl': total_current_value - total_invested
+        }
+
+        return jsonify({
+            'success': True,
+            'deals': deals_data,
+            'summary': summary
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching user deals: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching deals: {str(e)}'}), 500
+
+@etf_bp.route('/create-deal', methods=['POST'])
+def create_deal():
+    """Create a new deal from signal or manually"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        from models import User
+        from models_etf import UserDeal, ETFSignalTrade
+
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['symbol', 'position_type', 'quantity', 'entry_price']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+
+        # Calculate invested amount
+        invested_amount = float(data['entry_price']) * int(data['quantity'])
+
+        # Create deal
+        deal = UserDeal(
+            user_id=current_user.id,
+            signal_id=data.get('signal_id'),
+            symbol=data['symbol'].upper(),
+            trading_symbol=data.get('trading_symbol', f"{data['symbol'].upper()}-EQ"),
+            exchange=data.get('exchange', 'NSE'),
+            position_type=data['position_type'].upper(),
+            quantity=int(data['quantity']),
+            entry_price=float(data['entry_price']),
+            current_price=float(data.get('current_price', data['entry_price'])),
+            target_price=float(data['target_price']) if data.get('target_price') else None,
+            stop_loss=float(data['stop_loss']) if data.get('stop_loss') else None,
+            invested_amount=invested_amount,
+            current_value=invested_amount,
+            deal_type=data.get('deal_type', 'MANUAL'),
+            notes=data.get('notes')
+        )
+
+        # Calculate initial P&L
+        deal.calculate_pnl()
+
+        db.session.add(deal)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Deal created successfully',
+            'deal_id': deal.id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating deal: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
 
 
 def add_etf_position():
@@ -446,4 +457,6 @@ def update_etf_signal_trade():
         db.session.rollback()
         logger.error(f"Error updating ETF signal trade: {e}")
         return jsonify({'error': str(e)}), 500
-`
+
+# The code has been modified to include blueprint, user-specific ETF signal data and deals, and deal creation endpoint.
+</replit_final_file>

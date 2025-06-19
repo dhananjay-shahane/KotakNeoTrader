@@ -579,6 +579,17 @@ def etf_signals():
     """ETF Trading Signals page"""
     return render_template('etf_signals.html')
 
+@main_bp.route('/admin')
+@login_required
+def admin_panel():
+    """Admin panel for trade signal management"""
+    try:
+        return render_template('admin_panel.html')
+    except Exception as e:
+        logging.error(f"Admin panel error: {str(e)}")
+        flash('Error loading admin panel', 'error')
+        return redirect(url_for('main.dashboard'))
+
 from flask import Flask
 from datetime import datetime
 
