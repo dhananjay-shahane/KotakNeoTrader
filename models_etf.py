@@ -255,3 +255,57 @@ class ETFPosition(db.Model):
             'exit_date': self.exit_date.isoformat() if self.exit_date else None,
             'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
         }
+
+class ETFWatchlist(db.Model):
+    __tablename__ = 'etf_watchlist'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # ETF Information
+    symbol = db.Column(db.String(50), nullable=False)
+    etf_name = db.Column(db.String(200), nullable=True)
+    trading_symbol = db.Column(db.String(100), nullable=True)
+    token = db.Column(db.String(50), nullable=True)
+    exchange = db.Column(db.String(20), default='NSE')
+
+    # Market Data
+    current_price = db.Column(db.Numeric(10, 2), nullable=True)
+    change_percent = db.Column(db.Numeric(5, 2), nullable=True)
+    last_update_time = db.Column(db.DateTime, nullable=True)
+
+    # Settings
+    price_alert_enabled = db.Column(db.Boolean, default=False)
+    target_price = db.Column(db.Numeric(10, 2), nullable=True)
+    alert_price_above = db.Column(db.Numeric(10, 2), nullable=True)
+    alert_price_below = db.Column(db.Numeric(10, 2), nullable=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    user = db.relationship('User', backref='etf_watchlist')
+
+    def __repr__(self):
+        return f'<ETFWatchlist {self.symbol}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'symbol': self.symbol,
+            'etf_name': self.etf_name,
+            'trading_symbol': self.trading_symbol,
+            'token': self.token,
+            'exchange': self.exchange,
+            'current_price': float(self.current_price) if self.current_price else None,
+            'change_percent': float(self.change_percent) if self.change_percent else None,
+            'price_alert_enabled': self.price_alert_enabled,
+            'target_price': float(self.target_price) if self.target_price else None,
+            'alert_price_above': float(self.alert_price_above) if self.alert_price_above else None,
+            'alert_price_below': float(self.alert_price_below) if self.alert_price_below else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
+        }
