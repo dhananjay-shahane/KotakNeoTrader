@@ -1,20 +1,14 @@
 import logging
 import os
 
-# Setup library path for neo_api_client dependencies
-def setup_neo_library_path():
-    """Setup LD_LIBRARY_PATH specifically for neo_api_client"""
-    lib_paths = [
-        '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib',
-        '/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
-    ]
-    valid_paths = [path for path in lib_paths if os.path.exists(path)]
-    if valid_paths:
-        current_path = os.environ.get('LD_LIBRARY_PATH', '')
-        new_path = ':'.join(valid_paths + ([current_path] if current_path else []))
-        os.environ['LD_LIBRARY_PATH'] = new_path
-        
-setup_neo_library_path()
+# Critical: Preload libraries before any pandas/numpy operations
+import ctypes
+try:
+    # Direct library loading to ensure availability
+    ctypes.CDLL('/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib/libstdc++.so.6')
+    ctypes.CDLL('/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib/libz.so.1')
+except Exception as e:
+    print(f"Library preload warning in neo_client: {e}")
 
 class NeoClient:
     

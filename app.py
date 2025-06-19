@@ -9,22 +9,22 @@ load_dotenv()
 # Setup library paths for pandas/numpy dependencies
 def setup_library_paths():
     """Setup LD_LIBRARY_PATH for required libraries"""
-    # Use known library paths for both libstdc++ and zlib
-    lib_paths = [
-        '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib',
-        '/nix/store/sm14bmd3l61p5m0q7wa5g7rz2bl6azqf-gcc-12.2.0-lib/lib'
-    ]
+    # Critical: Set library paths before any imports that might use them
+    import os
+    os.environ['LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    print(f"Set LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
     
-    # Add known zlib path
-    lib_paths.append('/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib')
-    
-    # Build library path
-    valid_paths = [path for path in lib_paths if os.path.exists(path)]
-    if valid_paths:
-        current_path = os.environ.get('LD_LIBRARY_PATH', '')
-        new_path = ':'.join(valid_paths + ([current_path] if current_path else []))
-        os.environ['LD_LIBRARY_PATH'] = new_path
-        print(f"Set LD_LIBRARY_PATH with {len(valid_paths)} paths: {new_path}")
+    # Force reload of dynamic libraries by importing ctypes
+    try:
+        import ctypes
+        import ctypes.util
+        # Preload essential libraries
+        libstdc = ctypes.util.find_library('stdc++')
+        if libstdc:
+            ctypes.CDLL(libstdc)
+            print("Preloaded libstdc++")
+    except Exception as e:
+        print(f"Library preload warning: {e}")
 
 # Setup environment before importing other modules
 setup_library_paths()
