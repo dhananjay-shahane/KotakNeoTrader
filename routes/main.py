@@ -8,9 +8,6 @@ from utils.auth import login_required, validate_current_session
 from trading_functions import TradingFunctions
 from neo_client import NeoClient
 
-# Import ETF API functions
-from api.etf_signals import get_etf_positions
-
 main_bp = Blueprint('main', __name__)
 
 # Initialize components
@@ -389,7 +386,67 @@ def etf_signals():
 @login_required
 def api_etf_positions():
     """API endpoint for ETF positions"""
-    return get_etf_positions()
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        # Get current user from database
+        from models import User
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        # Get ETF signal trades for current user
+        from models_etf import ETFSignalTrade
+        trades = ETFSignalTrade.query.filter_by(user_id=current_user.id).order_by(ETFSignalTrade.created_at.desc()).all()
+
+        # Calculate portfolio summary
+        total_invested = 0
+        current_value = 0
+        total_pnl = 0
+        profit_trades = 0
+        loss_trades = 0
+
+        trades_data = []
+        for trade in trades:
+            trade_dict = trade.to_dict()
+            trades_data.append(trade_dict)
+
+            # Update calculations
+            if trade.invested_amount:
+                total_invested += float(trade.invested_amount)
+            if trade.current_value:
+                current_value += float(trade.current_value)
+            if trade.pnl_amount:
+                pnl = float(trade.pnl_amount)
+                total_pnl += pnl
+                if pnl > 0:
+                    profit_trades += 1
+                elif pnl < 0:
+                    loss_trades += 1
+
+        # Calculate return percentage
+        return_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
+
+        portfolio_summary = {
+            'total_invested': total_invested,
+            'current_value': current_value,
+            'total_pnl': total_pnl,
+            'return_percent': return_percent,
+            'profit_trades': profit_trades,
+            'loss_trades': loss_trades,
+            'total_trades': len(trades_data)
+        }
+
+        return jsonify({
+            'success': True,
+            'trades': trades_data,
+            'portfolio': portfolio_summary
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching ETF positions: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching data: {str(e)}'}), 500
 
 @main_bp.route('/api/user_profile')
 @login_required
