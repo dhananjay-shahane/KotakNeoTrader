@@ -573,3 +573,23 @@ def api_get_portfolio_summary():
 @require_auth
 def api_bulk_update_positions():
     return bulk_update_positions()
+
+# Register blueprints
+try:
+    from api.trading import trading_bp
+    from api.dashboard import dashboard_bp
+    from api.etf_signals import etf_signals_bp
+    from api.admin import admin_bp
+    from api.notifications import notifications_bp
+
+    app.register_blueprint(trading_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(etf_signals_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(notifications_bp)
+    print("✓ All blueprints registered successfully")
+except ImportError as e:
+    print(f"Warning: Could not import blueprint: {e}")
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
