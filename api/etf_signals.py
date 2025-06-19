@@ -1,13 +1,12 @@
-"""Fix ETF signals API to properly fetch and return database data"""
+
 """ETF Trading Signals API endpoints"""
-from flask import request, jsonify, session
+from flask import request, jsonify, session, Blueprint
 from app import db
 from etf_trading_signals import ETFTradingSignals
 from user_manager import UserManager
 from models_etf import ETFSignalTrade
 import logging
 from datetime import datetime
-from flask import Blueprint
 
 etf_bp = Blueprint('etf', __name__, url_prefix='/etf')
 logger = logging.getLogger(__name__)
@@ -184,7 +183,7 @@ def create_deal():
         logging.error(f"Error creating deal: {str(e)}")
         return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
 
-
+@etf_bp.route('/add-position', methods=['POST'])
 def add_etf_position():
     """Add new ETF position"""
     try:
@@ -218,7 +217,7 @@ def add_etf_position():
         logger.error(f"Error adding ETF position: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/update-position', methods=['PUT'])
 def update_etf_position():
     """Update existing ETF position"""
     try:
@@ -250,7 +249,7 @@ def update_etf_position():
         logger.error(f"Error updating ETF position: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/delete-position', methods=['DELETE'])
 def delete_etf_position():
     """Delete ETF position"""
     try:
@@ -280,7 +279,7 @@ def delete_etf_position():
         logger.error(f"Error deleting ETF position: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/search-instruments', methods=['GET'])
 def search_etf_instruments():
     """Search for ETF instruments"""
     try:
@@ -304,7 +303,7 @@ def search_etf_instruments():
         logger.error(f"Error searching ETF instruments: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/quotes', methods=['POST'])
 def get_etf_quotes():
     """Get live quotes for ETF instruments"""
     try:
@@ -329,7 +328,7 @@ def get_etf_quotes():
         logger.error(f"Error getting ETF quotes: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/portfolio-summary', methods=['GET'])
 def get_portfolio_summary():
     """Get portfolio summary metrics"""
     try:
@@ -349,7 +348,7 @@ def get_portfolio_summary():
         logger.error(f"Error getting portfolio summary: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/bulk-update', methods=['PUT'])
 def bulk_update_positions():
     """Bulk update multiple ETF positions"""
     try:
@@ -394,7 +393,7 @@ def bulk_update_positions():
         logger.error(f"Error bulk updating positions: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/signal-trades', methods=['GET'])
 def get_user_etf_signal_trades():
     """Get ETF signal trades for current user"""
     try:
@@ -414,7 +413,7 @@ def get_user_etf_signal_trades():
         logger.error(f"Error getting user ETF signal trades: {e}")
         return jsonify({'error': str(e)}), 500
 
-
+@etf_bp.route('/update-signal-trade', methods=['PUT'])
 def update_etf_signal_trade():
     """Update ETF signal trade status"""
     try:
@@ -457,6 +456,3 @@ def update_etf_signal_trade():
         db.session.rollback()
         logger.error(f"Error updating ETF signal trade: {e}")
         return jsonify({'error': str(e)}), 500
-
-# The code has been modified to include blueprint, user-specific ETF signal data and deals, and deal creation endpoint.
-</replit_final_file>
