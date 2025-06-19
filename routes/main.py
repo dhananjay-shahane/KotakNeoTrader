@@ -573,12 +573,6 @@ def deals():
     """Deals page for placed orders from signals"""
     return render_template('deals.html')
 
-@main_bp.route('/etf-signals')
-@login_required
-def etf_signals():
-    """ETF Trading Signals page"""
-    return render_template('etf_signals.html')
-
 @main_bp.route('/admin')
 @login_required
 def admin_panel():
@@ -589,43 +583,3 @@ def admin_panel():
         logging.error(f"Admin panel error: {str(e)}")
         flash('Error loading admin panel', 'error')
         return redirect(url_for('main.dashboard'))
-
-from flask import Flask
-from datetime import datetime
-
-app = Flask(__name__)
-
-@app.route('/api/user_profile')
-def get_user_profile():
-    """Get user profile information"""
-    # Ensure session is available, using a default if needed
-    session_data = session if 'session' in locals() else {}
-
-    # Ensure validate_current_session is available
-    def validate_current_session():
-        return True  # Or your actual validation logic
-
-    if not validate_current_session():
-        return jsonify({'success': False, 'error': 'Session expired'}), 401
-
-    # Get login time from session or use current time
-    login_time = session_data.get('login_time')
-    if not login_time or login_time == 'N/A':
-        login_time = datetime.now().isoformat()
-
-    profile_data = {
-        'ucc': session_data.get('ucc', 'N/A'),
-        'greeting_name': f"User {session_data.get('ucc', 'N/A')}",
-        'access_token': session_data.get('access_token', 'N/A')[:30] + '...' if session_data.get('access_token') else 'N/A',
-        'session_token': session_data.get('session_token', 'N/A')[:30] + '...' if session_data.get('session_token') else 'N/A',
-        'sid': session_data.get('sid', 'N/A')[:20] + '...' if session_data.get('sid') else 'N/A',
-        'login_time': login_time,
-        'token_status': 'Valid' if validate_current_session() else 'Invalid',
-        'needs_reauth': False
-    }
-
-    return jsonify({'success': True, 'profile': profile_data})
-
-if __name__ == '__main__':
-    app.secret_key = 'your_secret_key'  # Set a secret key for session management
-    app.run(debug=True)
