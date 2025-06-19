@@ -16,13 +16,46 @@ def get_etf_positions():
         if 'authenticated' not in session or not session['authenticated']:
             return jsonify({'error': 'Not authenticated'}), 401
         
-        # Get user_id from session
+        # Get user_id from session - try multiple ways
         user_id = session.get('user_id')
+        if not user_id:
+            # Try to get from UCC if user_id not available
+            ucc = session.get('ucc')
+            if ucc:
+                from models import User
+                user = User.query.filter_by(ucc=ucc).first()
+                if user:
+                    user_id = user.id
+                    session['user_id'] = user_id  # Store for future use
+            
         if not user_id:
             return jsonify({'error': 'User ID not found in session'}), 401
         
         # Get ETF signal trades for the current user
         trades = ETFSignalTrade.query.filter_by(user_id=user_id).order_by(ETFSignalTrade.created_at.desc()).all()
+        
+        logger.info(f"Found {len(trades)} ETF signal trades for user_id: {user_id}")
+        
+        # If no trades found, return empty but successful response
+        if not trades:
+            logger.warning(f"No ETF signal trades found for user_id: {user_id}")
+            return jsonify({
+                'success': True,
+                'positions': [],
+                'summary': {
+                    'total_positions': 0,
+                    'active_positions': 0,
+                    'closed_positions': 0,
+                    'total_investment': 0.0,
+                    'current_value': 0.0,
+                    'total_pnl': 0.0,
+                    'return_percent': 0.0,
+                    'profit_positions': 0,
+                    'loss_positions': 0,
+                    'neutral_positions': 0
+                },
+                'count': 0
+            })
         
         # Format trades with all required columns
         formatted_positions = []
