@@ -31,6 +31,8 @@ class NeoClient:
     def initialize_neo_client(self, ucc):
         """Initialize the Kotak Neo API client - following Jupyter notebook implementation"""
         try:
+            from neo_api_client import NeoAPI
+            
             # Get credentials from environment or defaults
             consumer_key = os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
             consumer_secret = os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
@@ -59,6 +61,8 @@ class NeoClient:
     def initialize_client_with_tokens(self, access_token, session_token, sid=None):
         """Initialize the Kotak Neo API client with existing tokens"""
         try:
+            from neo_api_client import NeoAPI
+            
             # Use credentials from environment
             consumer_key = os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
             consumer_secret = os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')

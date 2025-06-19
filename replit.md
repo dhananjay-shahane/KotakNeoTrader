@@ -104,14 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 18, 2025** - Completed migration from Replit Agent to standard Replit environment
-  - Set up PostgreSQL database with proper environment variables
-  - Configured Flask application with secure session management
-  - Updated ETF Trading Signals page with proper column structure and calculations
-  - Implemented comprehensive ETF position tracking with live P&L calculations
-  - Added portfolio summary dashboard with key metrics
-  - Enhanced table display with proper formatting for all required columns (ETF Name, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, PL, etc.)
-  - Integrated real-time data fetching from database with proper error handling
+- **June 19, 2025** - Successfully completed migration from Replit Agent to standard Replit environment
+  - Resolved pandas/libstdc++.so.6 dependency issues by installing proper system libraries
+  - Fixed NeoAPI import issues with lazy loading approach
+  - Generated secure session secret for Flask application security
+  - Application now running successfully on port 5000 with Gunicorn
+  - Fixed JavaScript theme toggle errors for better user experience
+  - Database properly connected with PostgreSQL environment variables
+  - All core dependencies installed and configured correctly
 
 ## Changelog
 
