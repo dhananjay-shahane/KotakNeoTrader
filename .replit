@@ -2,7 +2,7 @@ modules = ["web", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["gcc-unwrapped", "glibcLocales", "libstdcxx5", "openssl", "postgresql"]
+packages = ["gcc-unwrapped", "glibcLocales", "libstdcxx5", "openssl", "postgresql", "zlib", "libffi"]
 
 [deployment]
 deploymentTarget = "autoscale"
