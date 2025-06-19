@@ -1,5 +1,5 @@
 import logging
-import pandas as pd
+# pandas will be imported lazily when needed
 from datetime import datetime
 
 class TradingFunctions:

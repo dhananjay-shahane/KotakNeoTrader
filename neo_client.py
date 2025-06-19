@@ -1,6 +1,5 @@
 import logging
 import os
-from neo_api_client import NeoAPI
 
 class NeoClient:
     
