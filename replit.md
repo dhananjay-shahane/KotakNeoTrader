@@ -112,6 +112,9 @@ The application follows a modern Flask architecture with clear separation of con
   - Login functionality now working with proper library dependencies
   - Database properly connected with PostgreSQL environment variables
   - All core dependencies installed and configured correctly
+  - Enhanced ETF signals page with clean, focused interface
+  - Removed bulky admin panels and notification sections per user preference
+  - Maintained core ETF position tracking and portfolio summary functionality
 
 ## Changelog
 
