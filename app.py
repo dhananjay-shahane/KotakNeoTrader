@@ -1,8 +1,39 @@
 import os
+import subprocess
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Setup library paths for pandas/numpy dependencies
+def setup_library_paths():
+    """Setup LD_LIBRARY_PATH for required libraries"""
+    # Use known library paths for both libstdc++ and zlib
+    lib_paths = [
+        '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib',
+        '/nix/store/sm14bmd3l61p5m0q7wa5g7rz2bl6azqf-gcc-12.2.0-lib/lib'
+    ]
+    
+    # Find zlib path
+    try:
+        import glob
+        zlib_paths = glob.glob('/nix/store/*zlib*/lib')
+        if zlib_paths:
+            lib_paths.extend(zlib_paths[:2])
+    except:
+        pass
+    
+    # Build library path
+    valid_paths = [path for path in lib_paths if os.path.exists(path)]
+    if valid_paths:
+        current_path = os.environ.get('LD_LIBRARY_PATH', '')
+        new_path = ':'.join(valid_paths + ([current_path] if current_path else []))
+        os.environ['LD_LIBRARY_PATH'] = new_path
+        print(f"Set LD_LIBRARY_PATH with {len(valid_paths)} paths: {new_path}")
+
+# Setup environment before importing other modules
+setup_library_paths()
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
