@@ -8,9 +8,9 @@
         text-align: center;
         padding: 1rem;
     }
-    
 
-    
+
+
     .signals-table {
         font-size: 0.75rem;
         background: var(--card-bg);
@@ -513,14 +513,14 @@ class ETFSignalsManager {
             });
 
             console.log('Response status:', response.status);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('ETF positions response:', data);
-            
+
             if (data.success && data.positions) {
                 this.positions = data.positions;
                 this.filteredPositions = [...this.positions];
@@ -621,7 +621,8 @@ class ETFSignalsManager {
             },
             {
                 symbol: 'HDFCNIFETF', thirty: '2.5%', dh: 28, date: '24-Dec-2024', pos: 1, qty: 400, ep: 265.43, cmp: 278.55, 
-                change_pct: 0.00, inv: 106172, tp: 285.0, tva: 114000, tpr: 7828, pl: 5248, ed: '24-Dec-2024', exp: '-',
+                change_pct: 0.00, inv: 106172, tp: 2```python
+85.0, tva: 114000, tpr: 7828, pl: 5248, ed: '24-Dec-2024', exp: '-',
                 pr: '260-270', pp: '★★', iv: 'Med', ip: '4.94%', nt: 'HDFC Nifty ETF', qt: '15:20', seven: '1.8%', change2: 4.94, id: 11
             },
             {
@@ -833,17 +834,17 @@ class ETFSignalsManager {
         document.getElementById('totalPositions').textContent = summary.total_positions || 0;
         document.getElementById('totalInvestment').textContent = `₹${(summary.total_investment || 0).toLocaleString('en-IN')}`;
         document.getElementById('currentValue').textContent = `₹${(summary.current_value || 0).toLocaleString('en-IN')}`;
-        
+
         const totalPnl = summary.total_pnl || 0;
         const pnlElement = document.getElementById('totalPnl');
         pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
         pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
-        
+
         const returnPercent = summary.return_percent || 0;
         const returnElement = document.getElementById('returnPercent');
         returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
         returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
-        
+
         document.getElementById('activePositions').textContent = summary.active_positions || 0;
         document.getElementById('closedPositions').textContent = summary.closed_positions || 0;
     }
@@ -1025,7 +1026,7 @@ function addDealFromSignal(symbol, pos, qty, ep, tp, cmp) {
     const dealTP = parseFloat(tp) || dealEP * 1.1;
     const dealQty = parseInt(qty);
     const dealPos = parseInt(pos);
-    
+
     const investment = dealEP * dealQty;
     const currentValue = dealCMP * dealQty;
     const pnl = (dealCMP - dealEP) * dealQty * (dealPos === 1 ? 1 : -1);

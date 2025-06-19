@@ -1,3 +1,4 @@
+"""Fix ETF signals API to properly fetch and return database data"""
 """ETF Trading Signals API endpoints"""
 from flask import request, jsonify, session
 from app import db
@@ -15,7 +16,7 @@ def get_etf_positions():
         # Check authentication using the same method as other endpoints
         if 'authenticated' not in session or not session['authenticated']:
             return jsonify({'error': 'Not authenticated'}), 401
-        
+
         # Get user_id from session - try multiple ways
         user_id = session.get('user_id')
         if not user_id:
@@ -27,15 +28,15 @@ def get_etf_positions():
                 if user:
                     user_id = user.id
                     session['user_id'] = user_id  # Store for future use
-            
+
         if not user_id:
             return jsonify({'error': 'User ID not found in session'}), 401
-        
+
         # Get ETF signal trades for the current user
         trades = ETFSignalTrade.query.filter_by(user_id=user_id).order_by(ETFSignalTrade.created_at.desc()).all()
-        
+
         logger.info(f"Found {len(trades)} ETF signal trades for user_id: {user_id}")
-        
+
         # If no trades found, return empty but successful response
         if not trades:
             logger.warning(f"No ETF signal trades found for user_id: {user_id}")
@@ -56,7 +57,7 @@ def get_etf_positions():
                 },
                 'count': 0
             })
-        
+
         # Format trades with all required columns
         formatted_positions = []
         total_investment = 0.0
@@ -65,40 +66,40 @@ def get_etf_positions():
         profit_positions = 0
         loss_positions = 0
         active_positions = 0
-        
+
         for idx, trade in enumerate(trades):
             # Update P&L calculations
             trade.calculate_pnl()
-            
+
             # Calculate values from database trade
             investment = float(trade.invested_amount) if trade.invested_amount else 0
             current_value = float(trade.current_value) if trade.current_value else 0
             pnl = float(trade.pnl_amount) if trade.pnl_amount else 0
-            
+
             # Parse percentage change
             change_pct_str = trade.change_pct.replace('%', '') if trade.change_pct and trade.change_pct != '0.00%' else '0'
             try:
                 change_pct = float(change_pct_str)
             except:
                 change_pct = float(trade.pnl_percent) if trade.pnl_percent else 0
-            
+
             # Count profit/loss positions
             if pnl > 0:
                 profit_positions += 1
             elif pnl < 0:
                 loss_positions += 1
-                
+
             # Count active positions
             is_active = trade.status == 'ACTIVE'
             if is_active:
                 active_positions += 1
-            
+
             # Accumulate totals for active positions only
             if is_active:
                 total_investment += investment
-                total_current_value += current_value
+                total_current_value += current
                 total_pnl += pnl
-            
+
             # Format position data matching CSV structure
             position_data = {
                 'id': trade.id,
@@ -126,7 +127,7 @@ def get_etf_positions():
                 'qt': float(trade.quantity),
                 'seven': '#N/A',
                 'change2': '#N/A',
-                
+
                 # Status indicators
                 'position_type': trade.position_type,
                 'is_active': is_active,
@@ -137,17 +138,17 @@ def get_etf_positions():
                 'trade_title': trade.trade_title,
                 'trade_description': trade.trade_description,
                 'priority': trade.priority,
-                
+
                 # CSS classes for styling
                 'pnl_class': 'profit' if pnl > 0 else ('loss' if pnl < 0 else 'neutral'),
                 'change_class': 'profit' if change_pct > 0 else ('loss' if change_pct < 0 else 'neutral')
             }
-            
+
             formatted_positions.append(position_data)
-        
+
         # Calculate summary statistics
         return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0.0
-        
+
         summary = {
             'total_positions': len(formatted_positions),
             'active_positions': active_positions,
@@ -160,14 +161,14 @@ def get_etf_positions():
             'loss_positions': loss_positions,
             'neutral_positions': len(formatted_positions) - profit_positions - loss_positions
         }
-        
+
         return jsonify({
             'success': True,
             'positions': formatted_positions,
             'summary': summary,
             'count': len(formatted_positions)
         })
-        
+
     except Exception as e:
         logger.error(f"Error getting ETF positions: {e}")
         return jsonify({'error': str(e)}), 500
@@ -411,13 +412,13 @@ def update_etf_signal_trade():
 
         data = request.get_json()
         trade_id = data.get('trade_id')
-        
+
         if not trade_id:
             return jsonify({'error': 'Trade ID required'}), 400
 
         user_id = session['user_id']
         trade = ETFSignalTrade.query.filter_by(id=trade_id, user_id=user_id).first()
-        
+
         if not trade:
             return jsonify({'error': 'Trade not found'}), 404
 
@@ -445,3 +446,4 @@ def update_etf_signal_trade():
         db.session.rollback()
         logger.error(f"Error updating ETF signal trade: {e}")
         return jsonify({'error': str(e)}), 500
+`
