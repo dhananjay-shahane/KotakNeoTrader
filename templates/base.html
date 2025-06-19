@@ -952,8 +952,7 @@
             function setupThemeToggle() {
                 const themeToggle = document.getElementById('themeToggle');
                 if (!themeToggle) {
-                    // Element might not exist on all pages - this is normal
-                    console.log('Theme toggle element not found on this page');
+                    // Element doesn't exist on this page - skip silently
                     return;
                 }
 
