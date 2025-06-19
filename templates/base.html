@@ -1143,12 +1143,14 @@
             // Convert flash messages to toasters
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
-                const message = alert.textContent.trim();
-                const type = alert.classList.contains('alert-success') ? 'success' : 'error';
-                if (typeof showToaster === 'function') {
-                    showToaster('System Message', message, type);
+                if (alert && alert.textContent) {
+                    const message = alert.textContent.trim();
+                    const type = alert.classList && alert.classList.contains('alert-success') ? 'success' : 'error';
+                    if (typeof showToaster === 'function') {
+                        showToaster('System Message', message, type);
+                    }
+                    alert.remove();
                 }
-                alert.remove();
             });
         });
     </script>
