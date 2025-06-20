@@ -468,6 +468,12 @@ def etf_signals():
     """ETF Trading Signals page"""
     return render_template('etf_signals.html')
 
+@app.route('/admin-signals')
+@require_auth
+def admin_signals():
+    """Admin Panel for sending trading signals"""
+    return render_template('admin_signals.html')
+
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
