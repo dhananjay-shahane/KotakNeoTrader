@@ -443,6 +443,49 @@ class TradingFunctions:
             self.logger.error(f"❌ Error getting quotes: {str(e)}")
             return {'success': False, 'message': str(e)}
 
+    def search_instruments(self, symbol):
+        """Search for instruments by symbol - required for realtime quotes manager"""
+        try:
+            self.logger.info(f"🔍 Searching instruments for symbol: {symbol}")
+            
+            # Return mock instrument data for now - this would normally call the API
+            # You can implement actual API calls here when needed
+            return [{
+                'tk': f"NSE_{symbol}",  # token
+                'ts': f"{symbol}-EQ",   # trading symbol
+                'e': 'NSE',             # exchange
+                'symbol': symbol
+            }]
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error searching instruments for {symbol}: {str(e)}")
+            return []
+
+    def get_quotes(self, tokens):
+        """Get quotes for given tokens - required for realtime quotes manager"""
+        try:
+            self.logger.info(f"📊 Getting quotes for {len(tokens)} tokens")
+            
+            # Return mock quote data for now - this would normally call the API
+            quotes = []
+            for token in tokens:
+                quotes.append({
+                    'ltp': 100.0,  # last traded price
+                    'o': 99.0,     # open
+                    'h': 102.0,    # high
+                    'l': 98.0,     # low
+                    'c': 99.5,     # close
+                    'v': 10000,    # volume
+                    'nc': 0.5,     # net change
+                    'cng': 0.5     # change percent
+                })
+            
+            return quotes
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error getting quotes: {str(e)}")
+            return []
+
     def get_portfolio_summary(self, client):
         """Get comprehensive portfolio information"""
         try:

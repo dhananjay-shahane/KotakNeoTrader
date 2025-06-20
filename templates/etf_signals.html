@@ -571,7 +571,7 @@ class ETFSignalsManager {
             const currentPrice = parseFloat(signal.current_price) || entryPrice;
             const quantity = parseInt(signal.quantity) || 0;
             const changePercent = parseFloat(signal.change_percent) || 0;
-            
+
             // Calculate investment and values
             const investment = entryPrice * quantity;
             const currentValue = currentPrice * quantity;
@@ -579,12 +579,12 @@ class ETFSignalsManager {
             const targetPrice = parseFloat(signal.target_price) || 0;
             const targetValue = targetPrice * quantity;
             const targetProfit = targetValue - investment;
-            
+
             // Calculate days held
             const createdDate = new Date(signal.created_at);
             const today = new Date();
             const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-            
+
             return {
                 id: signal.id,
                 etf: signal.symbol,
@@ -627,7 +627,7 @@ class ETFSignalsManager {
             const currentPrice = parseFloat(signal.current_price) || entryPrice;
             const quantity = parseInt(signal.quantity) || 0;
             const changePercent = parseFloat(signal.change_percent) || 0;
-            
+
             // Calculate investment and values
             const investment = entryPrice * quantity;
             const currentValue = currentPrice * quantity;
@@ -635,12 +635,12 @@ class ETFSignalsManager {
             const targetPrice = parseFloat(signal.target_price) || 0;
             const targetValue = targetPrice * quantity;
             const targetProfit = targetValue - investment;
-            
+
             // Calculate days held
             const createdDate = new Date(signal.created_at);
             const today = new Date();
             const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-            
+
             return {
                 id: signal.id,
                 etf: signal.symbol,
@@ -746,7 +746,7 @@ class ETFSignalsManager {
     showNoDataMessage() {
         this.positions = [];
         this.filteredPositions = [];
-        
+
         const tbody = document.getElementById('signalsTableBody');
         if (tbody) {
             tbody.innerHTML = `
@@ -769,7 +769,7 @@ class ETFSignalsManager {
                 </tr>
             `;
         }
-        
+
         this.updatePagination();
         this.updateSummaryCards({
             total_positions: 0,
@@ -785,7 +785,7 @@ class ETFSignalsManager {
     showErrorMessage(message) {
         this.positions = [];
         this.filteredPositions = [];
-        
+
         const tbody = document.getElementById('signalsTableBody');
         if (tbody) {
             tbody.innerHTML = `
@@ -803,7 +803,7 @@ class ETFSignalsManager {
                 </tr>
             `;
         }
-        
+
         this.updatePagination();
         this.updateSummaryCards({
             total_positions: 0,
@@ -1097,7 +1097,7 @@ class ETFSignalsManager {
             totalInvestment += position.inv || 0;
             currentValue += (position.cmp * position.qty) || position.inv || 0;
             totalPnl += position.pl || 0;
-            
+
             if (position.status === 'ACTIVE') {
                 activePositions++;
             } else {
@@ -1288,7 +1288,7 @@ function refreshSignals() {
         refreshBtn.disabled = true;
         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
     }
-    
+
     if (window.etfManager) {
         window.etfManager.loadPositions().finally(() => {
             if (refreshBtn) {
@@ -1530,7 +1530,7 @@ function saveDeal() {
         thirty: '-',
         dh: daysHeld,
         date: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-        pos: dealPos,
+        pos:dealPos,
         qty: dealQty,
         ep: dealEP,
         cmp: dealCMP,
@@ -1687,7 +1687,7 @@ function saveDeal() {
                 <td id="price-${signal.id}" class="fw-bold">${currentPrice}</td>
                 <td>${targetPrice}</td>
                 <td>${stopLoss}</td>
-                <td class="${pnlClass} fw-bold">${pnlAmount >= 0 ? '+' : ''}${pnlAmountFormatted}</td>
+                <td class="${pnlClass} fw-bold" data-profit-loss="${pnlAmount}">${pnlAmount >= 0 ? '+' : ''}${pnlAmountFormatted}</td>
                 <td class="${pnlClass} fw-bold">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</td>
                 <td><span class="badge ${statusClass}">${signal.status}</span></td>
                 <td class="text-muted small">${lastUpdated}</td>
@@ -1695,6 +1695,39 @@ function saveDeal() {
 
             tbody.appendChild(row);
         });
+
+// Add profit/loss color styling
+            function updateProfitLossColors() {
+                const profitLossCells = document.querySelectorAll('[data-profit-loss]');
+                if (profitLossCells) {
+                    profitLossCells.forEach(cell => {
+                        if (cell && cell.dataset && cell.dataset.profitLoss) {
+                            const value = parseFloat(cell.dataset.profitLoss);
+                            if (value > 0) {
+                                cell.classList.add('text-success');
+                                cell.classList.remove('text-danger');
+                            } else if (value < 0) {
+                                cell.classList.add('text-danger');
+                                cell.classList.remove('text-success');
+                            }
+                        }
+                    });
+                }
+            }
+
+// Update live indicators
+            function updateLiveIndicators() {
+                const indicators = document.querySelectorAll('.live-indicator');
+                if (indicators) {
+                    indicators.forEach(indicator => {
+                        if (indicator && indicator.classList) {
+                            indicator.classList.toggle('animate-pulse');
+                        }
+                    });
+                }
+            }
+        updateProfitLossColors();
+        updateLiveIndicators();
     }
 
     function isRecentlyUpdated(lastUpdated) {
