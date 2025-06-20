@@ -1035,68 +1035,65 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('currentInterval').textContent = savedDisplay;
     }
     
-    // Fix dropdown positioning
+    // Fix dropdown positioning using fixed positioning
     document.addEventListener('shown.bs.dropdown', function(e) {
         const dropdown = e.target.closest('.dropdown');
+        const toggle = dropdown.querySelector('.dropdown-toggle');
         const menu = dropdown.querySelector('.dropdown-menu');
         
-        if (menu) {
-            // Reset any previous positioning
-            menu.style.top = '';
-            menu.style.bottom = '';
-            menu.style.left = '';
-            menu.style.right = '';
-            menu.style.transform = '';
+        if (menu && toggle) {
+            // Get button position relative to viewport
+            const rect = toggle.getBoundingClientRect();
+            const menuHeight = 200; // Estimated menu height
+            const menuWidth = 160;
             
-            // Force absolute positioning
-            menu.style.position = 'absolute';
-            menu.style.zIndex = '9999';
+            // Reset positioning
+            menu.style.position = 'fixed';
+            menu.style.zIndex = '10000';
+            menu.style.transform = 'none';
+            menu.style.margin = '0';
             
-            const rect = dropdown.getBoundingClientRect();
-            const menuRect = menu.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const viewportWidth = window.innerWidth;
+            // Calculate position
+            let top = rect.bottom + 2; // 2px gap below button
+            let left = rect.left;
             
-            // Check if dropdown would overflow bottom of viewport
-            if (rect.bottom + menuRect.height > viewportHeight - 20) {
-                menu.classList.add('dropup');
-                menu.style.top = 'auto';
-                menu.style.bottom = '100%';
-                menu.style.marginTop = '0';
-                menu.style.marginBottom = '0.125rem';
-            } else {
-                menu.classList.remove('dropup');
-                menu.style.top = '100%';
-                menu.style.bottom = 'auto';
-                menu.style.marginTop = '0.125rem';
-                menu.style.marginBottom = '0';
+            // Check if menu would overflow bottom of viewport
+            if (top + menuHeight > window.innerHeight - 20) {
+                top = rect.top - menuHeight - 2; // Position above button
             }
             
-            // Check if dropdown would overflow right of viewport
-            if (rect.right + menuRect.width > viewportWidth - 20) {
-                menu.style.left = 'auto';
-                menu.style.right = '0';
-            } else {
-                menu.style.left = '0';
-                menu.style.right = 'auto';
+            // Check if menu would overflow right of viewport
+            if (left + menuWidth > window.innerWidth - 20) {
+                left = rect.right - menuWidth; // Align to right edge of button
             }
+            
+            // Ensure menu doesn't go off left edge
+            if (left < 10) {
+                left = 10;
+            }
+            
+            // Apply positioning
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+            menu.style.right = 'auto';
+            menu.style.bottom = 'auto';
         }
     });
 
-    // Reset dropdown positioning when hidden
+    // Clean up when dropdown is hidden
     document.addEventListener('hidden.bs.dropdown', function(e) {
         const dropdown = e.target.closest('.dropdown');
         const menu = dropdown.querySelector('.dropdown-menu');
         
         if (menu) {
-            menu.classList.remove('dropup');
+            menu.style.position = '';
             menu.style.top = '';
-            menu.style.bottom = '';
             menu.style.left = '';
             menu.style.right = '';
+            menu.style.bottom = '';
             menu.style.transform = '';
-            menu.style.marginTop = '';
-            menu.style.marginBottom = '';
+            menu.style.margin = '';
+            menu.style.zIndex = '';
         }
     });
 });

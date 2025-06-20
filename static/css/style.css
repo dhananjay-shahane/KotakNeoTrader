@@ -74,20 +74,18 @@ body {
 .table-responsive {
     overflow-x: auto;
     overflow-y: visible !important;
+    position: relative;
 }
 
 .dropdown {
-    position: relative;
-    z-index: 1000;
+    position: static !important;
 }
 
 .dropdown-menu {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    z-index: 9999 !important;
+    position: fixed !important;
+    z-index: 10000 !important;
     min-width: 160px;
-    margin: 0.125rem 0 0;
+    margin: 0;
     font-size: 0.875rem;
     color: #212529;
     text-align: left;
@@ -103,8 +101,8 @@ body {
 
 .dropdown-menu.show {
     display: block !important;
-    position: absolute !important;
-    z-index: 9999 !important;
+    position: fixed !important;
+    z-index: 10000 !important;
 }
 
 .dropdown-menu.dropdown-menu-dark {
@@ -129,19 +127,6 @@ body {
 .dropdown-menu.dropdown-menu-dark .dropdown-divider {
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     margin: 0.5rem 0;
-}
-
-/* Fix dropdown positioning for last rows */
-.table tbody tr:nth-last-child(-n+3) .dropdown-menu {
-    top: auto !important;
-    bottom: 100% !important;
-    margin: 0 0 0.125rem !important;
-}
-
-/* Fix dropdown for rightmost columns */
-.table td:nth-last-child(-n+2) .dropdown-menu {
-    left: auto !important;
-    right: 0 !important;
 }
 
 /* Ensure dropdown button is properly styled */
