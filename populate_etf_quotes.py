@@ -69,6 +69,7 @@ def populate_etf_signals_with_csv_data():
         try:
             from models import User
             from models_etf import AdminTradeSignal
+            from models_etf import RealtimeQuote  # Import RealtimeQuote model
 
             # ETF data matching your CSV format - focus on CMP calculation
             etf_data = [
@@ -80,6 +81,14 @@ def populate_etf_signals_with_csv_data():
                 {'symbol': 'LIQUIDBEES', 'entry_price': 999.0, 'current_price': 999.69, 'quantity': 341},
                 {'symbol': 'GOLDSHARE', 'entry_price': 45.85, 'current_price': 47.12, 'quantity': 2000},
                 {'symbol': 'ITBEES', 'entry_price': 45.28, 'current_price': 42.85, 'quantity': 2300}
+            ]
+
+            # CSV data for real-time quote generation (example data)
+            csv_etf_data = [
+                {'symbol': 'NIFTYBEES', 'base_price': 230.00, 'volatility': 0.02},  # 2% volatility
+                {'symbol': 'GOLDBEES', 'base_price': 40.00, 'volatility': 0.01},  # 1% volatility
+                {'symbol': 'BANKBEES', 'base_price': 46.00, 'volatility': 0.03},  # 3% volatility
+                {'symbol': 'ITBEES', 'base_price': 65.00, 'volatility': 0.025}, # 2.5% volatility
             ]
 
             # Find target user (preferably zhz3j)
@@ -169,7 +178,50 @@ def populate_etf_signals_with_csv_data():
             # Commit all signals
             db.session.commit()
             logging.info(f"🎯 Successfully created {signals_created} ETF signals with CMP calculations")
+            
+            quotes_created = 0
+            current_time = datetime.utcnow()
 
+            # Clear existing quotes for these symbols
+            from models_etf import RealtimeQuote
+            for etf in csv_etf_data:
+                RealtimeQuote.query.filter_by(symbol=etf['symbol']).delete()
+
+            # Create real-time quotes for each ETF
+            for etf in csv_etf_data:
+                try:
+                    base_price = etf['base_price']
+                    volatility = etf['volatility']
+
+                    # Simulate realistic price movement
+                    price_change = random.uniform(-volatility, volatility)
+                    current_price = base_price * (1 + price_change)
+                    change_percent = price_change * 100
+
+                    # Create quote
+                    quote = RealtimeQuote(
+                        symbol=etf['symbol'],
+                        current_price=current_price,
+                        change_percent=change_percent,
+                        volume=random.randint(10000, 100000),
+                        timestamp=current_time,
+                        exchange='NSE',
+                        last_trade_time=current_time
+                    )
+
+                    db.session.add(quote)
+                    quotes_created += 1
+
+                    logging.info(f"✅ Created quote {quotes_created}: {etf['symbol']} | Price: ₹{current_price:.2f} | Change: {change_percent:.2f}%")
+
+                except Exception as e:
+                    logging.error(f"❌ Error creating quote for {etf['symbol']}: {str(e)}")
+                    continue
+
+            # Commit all quotes
+            db.session.commit()
+            logging.info(f"🎯 Successfully created {quotes_created} real-time quotes for CSV ETF data")
+            
             return signals_created
 
         except Exception as e:

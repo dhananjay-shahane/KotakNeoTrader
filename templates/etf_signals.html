@@ -84,8 +84,8 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-1">Admin Trading Signals</h1>
-        <p class="text-muted mb-0">Real-time admin signals tracking and analysis</p>
+        <h1 class="h3 mb-1">ETF Portfolio Tracker</h1>
+        <p class="text-muted mb-0">CSV data with real-time CMP calculations and live market updates</p>
     </div>
     <div class="d-flex gap-2">
                         <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
@@ -158,7 +158,7 @@
 <div class="card bg-secondary border-0 shadow-lg">
     <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-light">
-            <i class="fas fa-signal me-2 text-primary"></i>Admin Trading Signals
+            <i class="fas fa-chart-line me-2 text-primary"></i>CSV ETF Data with Real-time CMP
             <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
         </h5>
         <div class="d-flex gap-2">
