@@ -554,10 +554,14 @@ def get_etf_signals_data():
     try:
         from models_etf import AdminTradeSignal, RealtimeQuote
         from models import User
+        from datetime import datetime
         
         user_id = session.get('user_id')
         if not user_id:
+            logger.warning("ETF Signals API: No user_id in session")
             return jsonify({'error': 'User not authenticated'}), 401
+        
+        logger.info(f"ETF Signals API: Request from user_id {user_id}")
         
         # Get current user info
         current_user = User.query.get(user_id)
@@ -658,6 +662,8 @@ def get_etf_signals_data():
             'active_positions': len([s for s in signals_data if s.get('status') == 'ACTIVE']),
             'closed_positions': len([s for s in signals_data if s.get('status') == 'CLOSED'])
         }
+        
+        logger.info(f"ETF Signals API: Returning {len(signals_data)} signals for user {user_id}")
         
         return jsonify({
             'success': True,

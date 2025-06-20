@@ -540,13 +540,22 @@ class ETFSignalsManager {
                 this.updateSummaryCards(data.portfolio || {});
                 this.updateLiveIndicator(true);
                 console.log(`✅ Loaded ${this.positions.length} ETF trading signals`);
-            } else {
-                console.log('No ETF signals found, showing message');
+            } else if (data.success && (!data.signals || data.signals.length === 0)) {
+                console.log('No ETF signals found in response, showing message');
                 this.showNoDataMessage();
+            } else {
+                console.error('API returned error or invalid format:', data);
+                this.showErrorMessage(data.error || 'Invalid response format');
             }
         } catch (error) {
             console.error('❌ Error loading ETF signals:', error);
-            this.showErrorMessage(error.message);
+            if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                this.showErrorMessage('Authentication required. Please refresh the page and try again.');
+            } else if (error.message.includes('404')) {
+                this.showErrorMessage('API endpoint not found. Please check server configuration.');
+            } else {
+                this.showErrorMessage(error.message);
+            }
             this.updateLiveIndicator(false);
         } finally {
             this.hideLoading();
