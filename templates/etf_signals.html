@@ -514,21 +514,15 @@ class ETFSignalsManager {
 
         console.log('Loading admin trade signals...');
         try {
-            console.log('Fetching admin signals from DataTables API...');
-            const response = await fetch('/api/datatable/admin-signals', {
-                method: 'POST',
+            // First try the ETF signals API
+            console.log('Fetching from ETF signals API...');
+            const response = await fetch('/etf/signals', {
+                method: 'GET',
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    draw: 1,
-                    start: 0,
-                    length: 1000,
-                    search: { value: '' },
-                    order: [{ column: 0, dir: 'asc' }]
-                })
+                }
             });
 
             console.log('Response status:', response.status);
@@ -538,25 +532,25 @@ class ETFSignalsManager {
             }
 
             const data = await response.json();
-            console.log('Admin signals response:', data);
+            console.log('ETF signals response:', data);
 
-            if (data.data && data.data.length > 0) {
-                this.positions = this.convertAdminSignalsToPositions(data.data);
+            if (data.success && data.signals && data.signals.length > 0) {
+                this.positions = this.convertETFSignalsToPositions(data.signals);
                 this.filteredPositions = [...this.positions];
                 this.renderPositionsTable();
                 this.updatePagination();
                 this.calculateAndUpdateSummary();
                 this.updateLiveIndicator(true);
-                console.log(`✅ Loaded ${this.positions.length} admin trade signals`);
-            } else if (data.data && data.data.length === 0) {
-                console.log('No admin signals found in response, showing message');
+                console.log(`✅ Loaded ${this.positions.length} ETF signals`);
+            } else if (data.success && data.signals && data.signals.length === 0) {
+                console.log('No signals found in response, showing message');
                 this.showNoDataMessage();
             } else {
                 console.error('API returned error or invalid format:', data);
-                this.showErrorMessage(data.error || 'Invalid response format');
+                this.showErrorMessage(data.message || 'Invalid response format');
             }
         } catch (error) {
-            console.error('❌ Error loading admin signals:', error);
+            console.error('❌ Error loading ETF signals:', error);
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                 this.showErrorMessage('Authentication required. Please refresh the page and try again.');
             } else if (error.message.includes('404')) {
@@ -568,6 +562,62 @@ class ETFSignalsManager {
         } finally {
             this.hideLoading();
         }
+    }
+
+    convertETFSignalsToPositions(signals) {
+        return signals.map((signal, index) => {
+            // Convert ETF signals data to position format
+            const entryPrice = parseFloat(signal.entry_price) || 0;
+            const currentPrice = parseFloat(signal.current_price) || entryPrice;
+            const quantity = parseInt(signal.quantity) || 0;
+            const changePercent = parseFloat(signal.change_percent) || 0;
+            
+            // Calculate investment and values
+            const investment = entryPrice * quantity;
+            const currentValue = currentPrice * quantity;
+            const pnl = parseFloat(signal.profit_loss) || (currentValue - investment);
+            const targetPrice = parseFloat(signal.target_price) || 0;
+            const targetValue = targetPrice * quantity;
+            const targetProfit = targetValue - investment;
+            
+            // Calculate days held
+            const createdDate = new Date(signal.created_at);
+            const today = new Date();
+            const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+            
+            return {
+                id: signal.id,
+                etf: signal.symbol,
+                symbol: signal.symbol,
+                trading_symbol: signal.trading_symbol || signal.symbol + '-EQ',
+                thirty: '',
+                dh: daysHeld,
+                date: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                pos: signal.signal_type === 'BUY' ? 1 : 0,
+                qty: quantity,
+                ep: entryPrice,
+                cmp: currentPrice,
+                change_pct: changePercent,
+                inv: investment,
+                tp: targetPrice,
+                tva: targetValue,
+                tpr: targetProfit,
+                pl: pnl,
+                ed: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}) : '',
+                pr: `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}`,
+                pp: this.getPerformanceStars(changePercent),
+                iv: Math.abs(changePercent) > 3 ? 'High' : Math.abs(changePercent) > 1 ? 'Med' : 'Low',
+                ip: changePercent > 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`,
+                nt: signal.signal_description || signal.signal_title || '',
+                qt: signal.last_updated || '',
+                seven: '',
+                change2: changePercent,
+                signal_type: signal.signal_type,
+                status: signal.status,
+                priority: signal.priority || 'MEDIUM'
+            };
+        });
     }
 
     convertAdminSignalsToPositions(signals) {
@@ -777,6 +827,25 @@ class ETFSignalsManager {
                 indicator.className = 'badge bg-danger me-2';
             }
         }
+    }
+
+    showLoading() {
+        const tbody = document.getElementById('signalsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary"></i>
+                        <h6 class="text-light">Loading Admin Signals...</h6>
+                        <p class="text-muted mb-0">Please wait while we fetch your data</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    hideLoading() {
+        // Loading state will be replaced by actual data or empty state
     }
 
     showLoading() {
