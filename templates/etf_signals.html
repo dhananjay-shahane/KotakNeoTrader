@@ -514,7 +514,7 @@ class ETFSignalsManager {
 
         console.log('Loading ETF trading signals...');
         try {
-            const response = await fetch('/etf/signals', {
+            const response = await fetch('/api/etf-signals-data', {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: {
@@ -555,40 +555,38 @@ class ETFSignalsManager {
 
     convertSignalsToPositions(signals) {
         return signals.map((signal, index) => {
-            const entryDate = new Date(signal.created_at);
-            const daysHeld = Math.floor((new Date() - entryDate) / (1000 * 60 * 60 * 24));
-
+            // Use the data structure returned from the API
             return {
                 id: signal.id,
-                etf: signal.symbol || signal.trading_symbol,
-                symbol: signal.symbol || signal.trading_symbol,
-                trading_symbol: signal.trading_symbol,
-                thirty: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
-                dh: daysHeld,
-                date: entryDate.toLocaleDateString('en-GB'),
-                pos: signal.signal_type === 'BUY' ? 1 : 0,
-                qty: signal.quantity,
-                ep: parseFloat(signal.entry_price || 0),
-                cmp: parseFloat(signal.current_price || signal.entry_price || 0),
-                change_pct: signal.profit_loss_percent || signal.pnl_percent || 0,
-                inv: parseFloat(signal.entry_price || 0) * signal.quantity,
-                tp: parseFloat(signal.target_price || 0),
-                tva: signal.target_price ? parseFloat(signal.target_price) * signal.quantity : 0,
-                tpr: signal.target_price ? (parseFloat(signal.target_price) - parseFloat(signal.entry_price || 0)) * signal.quantity : 0,
-                pl: signal.profit_loss || signal.pnl_amount || 0,
-                ed: entryDate.toLocaleDateString('en-GB'),
-                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB') : '-',
-                pr: signal.stop_loss ? `${signal.stop_loss}-${signal.target_price || signal.entry_price}` : '-',
-                pp: this.getPerformanceStars(signal.profit_loss_percent || signal.pnl_percent || 0),
-                iv: signal.priority || 'MED',
-                ip: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
-                nt: signal.signal_title || signal.signal_description || 'Trading Signal',
-                qt: signal.last_update_time ? new Date(signal.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                seven: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
-                change2: signal.profit_loss_percent || signal.pnl_percent || 0,
+                etf: signal.etf,
+                symbol: signal.etf,
+                trading_symbol: signal.etf + '-EQ',
+                thirty: signal.thirty || '',
+                dh: signal.dh || '',
+                date: signal.date,
+                pos: signal.pos,
+                qty: signal.qty,
+                ep: signal.ep,
+                cmp: signal.cmp,
+                change_pct: signal.change_pct,
+                inv: signal.inv,
+                tp: signal.tp,
+                tva: signal.tva,
+                tpr: signal.tpr,
+                pl: signal.pl,
+                ed: signal.ed,
+                exp: signal.exp,
+                pr: signal.pr,
+                pp: this.getPerformanceStars(signal.pr),
+                iv: signal.iv,
+                ip: signal.ip,
+                nt: signal.nt,
+                qt: signal.qt,
+                seven: signal.seven,
+                change2: signal.change2,
                 signal_type: signal.signal_type,
                 status: signal.status,
-                priority: signal.priority
+                priority: signal.priority || 'MEDIUM'
             };
         });
     }

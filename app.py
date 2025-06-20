@@ -466,7 +466,14 @@ def charts():
 @require_auth
 def etf_signals():
     """ETF Trading Signals page"""
-    return render_template('etf_signals.html')
+    # Get user's ETF signal trades from database
+    user_id = session.get('user_id')
+    if user_id:
+        from models_etf import ETFSignalTrade
+        signals = ETFSignalTrade.query.filter_by(user_id=user_id).all()
+        return render_template('etf_signals.html', signals=signals)
+    else:
+        return render_template('etf_signals.html', signals=[])
 
 @app.route('/etf-signals-advanced')
 @require_auth
@@ -538,6 +545,75 @@ def get_holdings_api():
         return jsonify(holdings)
     except Exception as e:
         logging.error(f"Holdings API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/etf-signals-data')
+@require_auth
+def get_etf_signals_data():
+    """API endpoint to get ETF signals data from database"""
+    try:
+        from models_etf import ETFSignalTrade, RealtimeQuote
+        from models import User
+        
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'User not authenticated'}), 401
+        
+        # Get user's ETF signal trades
+        signals = db.session.query(ETFSignalTrade).filter_by(user_id=user_id).all()
+        
+        signals_data = []
+        for signal in signals:
+            # Get latest quote for current price
+            latest_quote = RealtimeQuote.query.filter_by(
+                symbol=signal.symbol
+            ).order_by(RealtimeQuote.timestamp.desc()).first()
+            
+            if latest_quote:
+                signal.current_price = latest_quote.current_price
+                signal.calculate_pnl()
+                db.session.commit()
+            
+            # Format data for frontend
+            signal_dict = {
+                'id': signal.id,
+                'etf': signal.symbol,
+                'date': signal.entry_date.strftime('%Y-%m-%d') if signal.entry_date else '',
+                'pos': 1 if signal.position_type == 'LONG' else 0,
+                'qty': signal.quantity,
+                'ep': float(signal.entry_price) if signal.entry_price else 0,
+                'cmp': float(signal.current_price) if signal.current_price else 0,
+                'change_pct': round(((float(signal.current_price) - float(signal.entry_price)) / float(signal.entry_price)) * 100, 2) if signal.current_price and signal.entry_price else 0,
+                'inv': float(signal.invested_amount) if signal.invested_amount else 0,
+                'tp': float(signal.target_price) if signal.target_price else 0,
+                'tva': float(signal.current_value) if signal.current_value else 0,
+                'tpr': round(((float(signal.target_price) - float(signal.entry_price)) / float(signal.entry_price)) * 100, 2) if signal.target_price and signal.entry_price else 0,
+                'pl': float(signal.pnl_amount) if signal.pnl_amount else 0,
+                'ed': '',  # Exit date
+                'exp': '',  # Expiry
+                'pr': round(float(signal.pnl_percent), 2) if signal.pnl_percent else 0,
+                'pp': '',  # Price percent
+                'iv': float(signal.invested_amount) if signal.invested_amount else 0,
+                'ip': '',  # Investment percent
+                'nt': signal.trade_description or '',
+                'qt': signal.quantity,
+                'seven': '',
+                'change2': round(((float(signal.current_price) - float(signal.entry_price)) / float(signal.entry_price)) * 100, 2) if signal.current_price and signal.entry_price else 0,
+                'thirty': '',
+                'dh': '',
+                'status': signal.status,
+                'signal_type': signal.signal_type
+            }
+            signals_data.append(signal_dict)
+        
+        return jsonify({
+            'success': True,
+            'signals': signals_data,
+            'total': len(signals_data)
+        })
+        
+    except Exception as e:
+        logging.error(f"Error fetching ETF signals data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 from routes.auth import auth_bp

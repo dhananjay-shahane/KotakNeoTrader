@@ -134,3 +134,4 @@ The application follows a modern Flask architecture with clear separation of con
 
 Preferred communication style: Simple, everyday language.
 UI Preferences: Keep original ETF signals page UI unchanged - user prefers existing design.
+Data Preferences: No demo data - fetch and display real data from database only.
