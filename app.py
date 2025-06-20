@@ -13,7 +13,7 @@ def setup_library_paths():
     import os
     os.environ['LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
     print(f"Set LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
-    
+
     # Force reload of dynamic libraries by importing ctypes
     try:
         import ctypes
@@ -130,7 +130,7 @@ def validate_current_session():
 def require_auth(f):
     """Decorator to require authentication for routes"""
     from functools import wraps
-    
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not validate_current_session():
@@ -200,7 +200,7 @@ def login():
                 session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 session['greeting_name'] = session_data.get('greetingName', ucc)
                 session.permanent = True
-                
+
                 # Set session expiration (24 hours from now)
                 expiry_time = datetime.now() + timedelta(hours=24)
                 session['session_expires_at'] = expiry_time.isoformat()
@@ -366,7 +366,7 @@ def positions():
 
         # Fetch positions data
         positions_data = trading_functions.get_positions(client)
-        
+
         # Ensure positions_data is a list
         if isinstance(positions_data, dict):
             if 'data' in positions_data:
@@ -379,9 +379,9 @@ def positions():
             positions_list = positions_data
         else:
             positions_list = []
-            
+
         return render_template('positions.html', positions=positions_list)
-        
+
     except Exception as e:
         logging.error(f"Positions page error: {e}")
         flash(f'Error loading positions: {str(e)}', 'error')
@@ -400,7 +400,7 @@ def holdings():
 
         # Fetch holdings data
         holdings_data = trading_functions.get_holdings(client)
-        
+
         # Ensure holdings_data is a list
         if isinstance(holdings_data, dict):
             if 'data' in holdings_data:
@@ -413,9 +413,9 @@ def holdings():
             holdings_list = holdings_data
         else:
             holdings_list = []
-            
+
         return render_template('holdings.html', holdings=holdings_list)
-        
+
     except Exception as e:
         logging.error(f"Holdings page error: {e}")
         flash(f'Error loading holdings: {str(e)}', 'error')
@@ -434,7 +434,7 @@ def orders():
 
         # Fetch orders data
         orders_data = trading_functions.get_orders(client)
-        
+
         # Ensure orders_data is a list
         if isinstance(orders_data, dict):
             if 'data' in orders_data:
@@ -447,9 +447,9 @@ def orders():
             orders_list = orders_data
         else:
             orders_list = []
-            
+
         return render_template('orders.html', orders=orders_list)
-        
+
     except Exception as e:
         logging.error(f"Orders page error: {e}")
         flash(f'Error loading orders: {str(e)}', 'error')
@@ -556,4 +556,15 @@ except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    with app.app_context():
+        db.create_all()
+
+    # Start ETF data scheduler for real-time quotes
+    try:
+        from etf_data_scheduler import start_etf_data_scheduler
+        start_etf_data_scheduler()
+        logging.info("✅ ETF Data Scheduler initialized")
+    except Exception as e:
+        logging.error(f"❌ Failed to start ETF scheduler: {str(e)}")
+
+    app.run(host='0.0.0.0', port=5000, debug=True)

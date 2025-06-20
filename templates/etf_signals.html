@@ -549,7 +549,7 @@ class ETFSignalsManager {
         return signals.map((signal, index) => {
             const entryDate = new Date(signal.created_at);
             const daysHeld = Math.floor((new Date() - entryDate) / (1000 * 60 * 60 * 24));
-            
+
             return {
                 id: signal.id,
                 symbol: signal.symbol || signal.trading_symbol,
@@ -652,7 +652,8 @@ class ETFSignalsManager {
             },
             {
                 symbol: 'PHARMABEES', thirty: '3.7%', dh: 18, date: '16-Dec-2024', pos: 1, qty: 4500, ep: 22.7, cmp: 22.25, 
-                change_pct: -1.98, inv: 102150, tp: 25.42, tva: 114390, tpr: 12240, pl: -2025, ed: '16-Dec-2024', exp: '-',
+                change_pct: -1.98, inv: 102150, tp: 25.42, tva: 11```python
+4390, tpr: 12240, pl: -2025, ed: '16-Dec-2024', exp: '-',
                 pr: '21-24', pp: '★', iv: 'Low', ip: '-1.98%', nt: 'Pharma ETF', qt: '15:24', seven: '2.3%', change2: -1.98, id: 7
             },
             {
@@ -690,8 +691,8 @@ class ETFSignalsManager {
             const percentChange = position.percentage_change || 0;
             const pnl = position.profit_loss || 0;
             const investment = position.investment_amount || 0;
-            const targetValue = position.target_value_amount || 0;
-            const targetProfit = position.target_profit_return || 0;
+            const targetValue = position.target_value || 0;
+            const targetProfit = position.target_profit || 0;
 
             // Calculate performance metrics
             const priceRange = currentPrice ? `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}` : '-';
@@ -1224,5 +1225,199 @@ function saveDeal() {
         window.location.href = '/deals';
     }
 }
+</script>
+<script>
+    function loadSignals() {
+        showLoading();
+        fetch('/etf/signals', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+                if (data.success) {
+                    const signals = data.signals || [];
+                    const portfolio = data.portfolio || {};
+                    const lastUpdate = data.last_update;
+
+                    // Update last update time
+                    updateLastUpdateTime(lastUpdate);
+
+                    // Update portfolio summary
+                    updatePortfolioSummary(portfolio);
+
+                    if (signals.length > 0) {
+                        populateSignalsTable(signals);
+                        showContent();
+                    } else {
+                        showError();
+                    }
+                } else {
+                    showError(data.message);
+                }
+            })
+        .catch(error => {
+            console.error('Error fetching signals:', error);
+            showError('Failed to load signals.');
+        });
+    }
+
+    function showLoading() {
+        document.getElementById('signals-loading').classList.remove('d-none');
+        document.getElementById('signals-content').classList.add('d-none');
+        document.getElementById('signals-error').classList.add('d-none');
+    }
+
+    function showContent() {
+        document.getElementById('signals-loading').classList.add('d-none');
+        document.getElementById('signals-content').classList.remove('d-none');
+        document.getElementById('signals-error').classList.add('d-none');
+    }
+
+    function showError(message = 'Failed to load data.') {
+        document.getElementById('signals-loading').classList.add('d-none');
+        document.getElementById('signals-content').classList.add('d-none');
+        document.getElementById('signals-error').classList.remove('d-none');
+
+        // Optionally, set the error message
+        const errorDiv = document.getElementById('signals-error');
+        if (errorDiv && message) {
+            errorDiv.innerHTML = `<div class="alert alert-warning"><h6>Error:</h6><p>${message}</p></div>`;
+        }
+    }
+
+    function populateSignalsTable(signals) {
+        const tbody = document.getElementById('signals-table-body');
+        tbody.innerHTML = '';
+
+        signals.forEach(signal => {
+            const row = document.createElement('tr');
+
+            // Determine P&L color and formatting
+            const pnlPercent = signal.profit_loss_percent || 0;
+            const pnlAmount = signal.profit_loss || 0;
+            const pnlClass = pnlPercent > 0 ? 'text-success' : pnlPercent < 0 ? 'text-danger' : 'text-muted';
+
+            // Format prices
+            const entryPrice = signal.entry_price ? `₹${parseFloat(signal.entry_price).toFixed(2)}` : 'N/A';
+            const currentPrice = signal.current_price ? `₹${parseFloat(signal.current_price).toFixed(2)}` : 'N/A';
+            const targetPrice = signal.target_price ? `₹${parseFloat(signal.target_price).toFixed(2)}` : 'N/A';
+            const stopLoss = signal.stop_loss ? `₹${parseFloat(signal.stop_loss).toFixed(2)}` : 'N/A';
+            const pnlAmountFormatted = `₹${Math.abs(pnlAmount).toFixed(2)}`;
+
+            // Status badge
+            const statusClass = signal.status === 'ACTIVE' ? 'bg-success' : 
+                               signal.status === 'CLOSED' ? 'bg-secondary' : 'bg-warning';
+
+            // Signal type badge
+            const signalClass = signal.signal_type === 'BUY' ? 'bg-success' : 'bg-danger';
+
+            // Add blinking effect for recent updates
+            const lastUpdated = signal.last_updated || 'N/A';
+            const isRecentUpdate = lastUpdated !== 'N/A' && isRecentlyUpdated(lastUpdated);
+            const rowClass = isRecentUpdate ? 'table-warning' : '';
+
+            row.className = rowClass;
+            row.innerHTML = `
+                <td><strong>${signal.symbol}</strong></td>
+                <td><span class="badge ${signalClass}">${signal.signal_type}</span></td>
+                <td>${signal.quantity || 0}</td>
+                <td>${entryPrice}</td>
+                <td id="price-${signal.id}" class="fw-bold">${currentPrice}</td>
+                <td>${targetPrice}</td>
+                <td>${stopLoss}</td>
+                <td class="${pnlClass} fw-bold">${pnlAmount >= 0 ? '+' : ''}${pnlAmountFormatted}</td>
+                <td class="${pnlClass} fw-bold">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</td>
+                <td><span class="badge ${statusClass}">${signal.status}</span></td>
+                <td class="text-muted small">${lastUpdated}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function isRecentlyUpdated(lastUpdated) {
+        // Check if the update was within the last 2 minutes
+        const now = new Date();
+        const updateTime = new Date();
+        const timeParts = lastUpdated.split(':');
+        if (timeParts.length === 3) {
+            updateTime.setHours(parseInt(timeParts[0]));
+            updateTime.setMinutes(parseInt(timeParts[1]));
+            updateTime.setSeconds(parseInt(timeParts[2]));
+            return (now - updateTime) < 120000; // 2 minutes
+        }
+        return false;
+    }
+
+    function updateLastUpdateTime(timestamp) {
+        const badge = document.getElementById('last-update');
+        if (timestamp) {
+            const updateTime = new Date(timestamp);
+            badge.textContent = `Last Update: ${updateTime.toLocaleTimeString()}`;
+            badge.className = 'badge bg-success me-2';
+        }
+    }
+
+    function updatePortfolioSummary(portfolio) {
+        // Update total trades
+        const totalElement = document.getElementById('total-signals');
+        if (totalElement) {
+            totalElement.textContent = portfolio.total_trades || 0;
+        }
+
+        // Update active trades
+        const activeElement = document.getElementById('active-signals');
+        if (activeElement) {
+            activeElement.textContent = portfolio.active_trades || 0;
+        }
+
+        // Update profit trades
+        const profitElement = document.getElementById('profit-signals');
+        if (profitElement) {
+            profitElement.textContent = portfolio.profit_trades || 0;
+        }
+
+        // Update loss trades
+        const lossElement = document.getElementById('loss-signals');
+        if (lossElement) {
+            lossElement.textContent = portfolio.loss_trades || 0;
+        }
+
+        // Update investment metrics if elements exist
+        const investedElement = document.querySelector('.total-invested');
+        if (investedElement) {
+            investedElement.textContent = `₹${(portfolio.total_invested || 0).toFixed(2)}`;
+        }
+
+        const currentValueElement = document.querySelector('.current-value');
+        if (currentValueElement) {
+            currentValueElement.textContent = `₹${(portfolio.total_current_value || 0).toFixed(2)}`;
+        }
+
+        const totalPnlElement = document.querySelector('.total-pnl');
+        if (totalPnlElement) {
+            const pnl = portfolio.total_pnl || 0;
+            const pnlPercent = portfolio.total_pnl_percent || 0;
+            totalPnlElement.textContent = `₹${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`;
+            totalPnlElement.className = `fw-bold ${pnl >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSignals();
+
+        // Refresh signals every 60 seconds (adjust as needed)
+        setInterval(loadSignals, 60000);
+    });
 </script>
 {% endblock %}

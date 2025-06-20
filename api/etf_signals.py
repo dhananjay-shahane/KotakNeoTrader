@@ -13,92 +13,78 @@ logger = logging.getLogger(__name__)
 
 @etf_bp.route('/signals', methods=['GET'])
 def get_admin_signals():
-    """Get admin trading signals for current user with real-time prices"""
+    """Get ETF signal trades with real-time data from database"""
     try:
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
         # Get current user from database
         from models import User
-        from models_etf import AdminTradeSignal
-        from trading_functions import TradingFunctions
         
         current_user = User.query.get(session['user_id'])
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        # Get admin signals sent to this specific user
-        signals = AdminTradeSignal.query.filter_by(
-            target_user_id=current_user.id
-        ).order_by(AdminTradeSignal.created_at.desc()).all()
+        # Get all ETF signal trades for this user (real-time data from database)
+        etf_trades = ETFSignalTrade.query.filter_by(
+            user_id=current_user.id
+        ).order_by(ETFSignalTrade.updated_at.desc()).all()
 
-        # Initialize trading functions to get live quotes
-        trading_functions = TradingFunctions()
-        client = session.get('client')
-        
         signals_data = []
-        for signal in signals:
-            signal_dict = signal.to_dict()
+        total_invested = 0
+        total_current_value = 0
+        total_pnl = 0
+
+        for trade in etf_trades:
+            trade_dict = trade.to_dict()
             
-            # Get current market price from Kotak Neo API
-            if client and signal.token:
-                try:
-                    quote_data = trading_functions.get_quotes(client, [signal.token])
-                    if quote_data and len(quote_data) > 0:
-                        current_price = quote_data[0].get('ltp', 0)
-                        change_percent = quote_data[0].get('per_chg', 0)
-                        
-                        # Update signal with current price
-                        signal.current_price = current_price
-                        signal.change_percent = change_percent
-                        signal.last_update_time = datetime.utcnow()
-                        
-                        signal_dict['current_price'] = float(current_price)
-                        signal_dict['change_percent'] = float(change_percent)
-                        signal_dict['last_update_time'] = datetime.utcnow().isoformat()
-                        
-                        # Calculate P&L if signal type is available
-                        if signal.signal_type == 'BUY' and signal.entry_price:
-                            pnl_percent = ((current_price - float(signal.entry_price)) / float(signal.entry_price)) * 100
-                            signal_dict['pnl_percent'] = round(pnl_percent, 2)
-                        elif signal.signal_type == 'SELL' and signal.entry_price:
-                            pnl_percent = ((float(signal.entry_price) - current_price) / float(signal.entry_price)) * 100
-                            signal_dict['pnl_percent'] = round(pnl_percent, 2)
-                            
-                except Exception as e:
-                    logging.error(f"Error fetching quote for {signal.symbol}: {str(e)}")
-                    signal_dict['current_price'] = signal_dict.get('current_price', 0)
-                    signal_dict['change_percent'] = signal_dict.get('change_percent', 0)
+            # Add calculated fields for display
+            if trade.invested_amount:
+                total_invested += float(trade.invested_amount)
+            if trade.current_value:
+                total_current_value += float(trade.current_value)
+            if trade.pnl_amount:
+                total_pnl += float(trade.pnl_amount)
             
-            signals_data.append(signal_dict)
+            # Add additional display fields
+            trade_dict['entry_value'] = float(trade.invested_amount) if trade.invested_amount else 0
+            trade_dict['current_market_value'] = float(trade.current_value) if trade.current_value else 0
+            trade_dict['profit_loss'] = float(trade.pnl_amount) if trade.pnl_amount else 0
+            trade_dict['profit_loss_percent'] = float(trade.pnl_percent) if trade.pnl_percent else 0
+            
+            # Format timestamps for display
+            if trade.last_price_update:
+                trade_dict['last_updated'] = trade.last_price_update.strftime('%H:%M:%S')
+            else:
+                trade_dict['last_updated'] = 'N/A'
+                
+            signals_data.append(trade_dict)
 
-        # Commit any price updates to database
-        try:
-            db.session.commit()
-        except Exception as e:
-            logging.error(f"Error updating signal prices: {str(e)}")
-            db.session.rollback()
-
-        # Calculate portfolio summary for signals
-        active_signals = len([s for s in signals_data if s.get('status') == 'ACTIVE'])
-        profit_signals = len([s for s in signals_data if s.get('pnl_percent', 0) > 0])
-        loss_signals = len([s for s in signals_data if s.get('pnl_percent', 0) < 0])
-
+        # Calculate portfolio summary
+        active_trades = len([t for t in etf_trades if t.status == 'ACTIVE'])
+        profit_trades = len([t for t in etf_trades if t.pnl_amount and t.pnl_amount > 0])
+        loss_trades = len([t for t in etf_trades if t.pnl_amount and t.pnl_amount < 0])
+        
         portfolio_summary = {
-            'total_signals': len(signals_data),
-            'active_signals': active_signals,
-            'profit_signals': profit_signals,
-            'loss_signals': loss_signals
+            'total_trades': len(signals_data),
+            'active_trades': active_trades,
+            'profit_trades': profit_trades,
+            'loss_trades': loss_trades,
+            'total_invested': total_invested,
+            'total_current_value': total_current_value,
+            'total_pnl': total_pnl,
+            'total_pnl_percent': (total_pnl / total_invested * 100) if total_invested > 0 else 0
         }
 
         return jsonify({
             'success': True,
             'signals': signals_data,
-            'portfolio': portfolio_summary
+            'portfolio': portfolio_summary,
+            'last_update': datetime.utcnow().isoformat()
         })
 
     except Exception as e:
-        logging.error(f"Error fetching admin signals: {str(e)}")
+        logging.error(f"Error fetching ETF signals: {str(e)}")
         return jsonify({'success': False, 'message': f'Error fetching signals: {str(e)}'}), 500
 
 @etf_bp.route('/admin/send-signal', methods=['POST'])
