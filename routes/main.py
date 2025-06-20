@@ -630,6 +630,12 @@ def deals():
     """Deals page for placed orders from signals"""
     return render_template('deals.html')
 
+@main_bp.route('/default-deals')
+@login_required
+def default_deals():
+    """Default deals page showing all deals"""
+    return render_template('default_deals.html')
+
 @main_bp.route('/admin')
 @login_required
 def admin_panel():
