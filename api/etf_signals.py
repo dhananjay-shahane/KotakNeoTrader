@@ -11,69 +11,209 @@ from datetime import datetime
 etf_bp = Blueprint('etf', __name__, url_prefix='/etf')
 logger = logging.getLogger(__name__)
 
-@etf_bp.route('/positions', methods=['GET'])
-def get_etf_positions():
-    """Get ETF positions/trades for current user"""
+@etf_bp.route('/signals', methods=['GET'])
+def get_admin_signals():
+    """Get admin trading signals for current user with real-time prices"""
     try:
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
         # Get current user from database
         from models import User
+        from models_etf import AdminTradeSignal
+        from trading_functions import TradingFunctions
+        
         current_user = User.query.get(session['user_id'])
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        # Get ETF signal trades for current user
-        trades = ETFSignalTrade.query.filter_by(user_id=current_user.id).order_by(ETFSignalTrade.created_at.desc()).all()
+        # Get admin signals sent to this specific user
+        signals = AdminTradeSignal.query.filter_by(
+            target_user_id=current_user.id
+        ).order_by(AdminTradeSignal.created_at.desc()).all()
 
-        # Calculate portfolio summary
-        total_invested = 0
-        current_value = 0
-        total_pnl = 0
-        profit_trades = 0
-        loss_trades = 0
+        # Initialize trading functions to get live quotes
+        trading_functions = TradingFunctions()
+        client = session.get('client')
+        
+        signals_data = []
+        for signal in signals:
+            signal_dict = signal.to_dict()
+            
+            # Get current market price from Kotak Neo API
+            if client and signal.token:
+                try:
+                    quote_data = trading_functions.get_quotes(client, [signal.token])
+                    if quote_data and len(quote_data) > 0:
+                        current_price = quote_data[0].get('ltp', 0)
+                        change_percent = quote_data[0].get('per_chg', 0)
+                        
+                        # Update signal with current price
+                        signal.current_price = current_price
+                        signal.change_percent = change_percent
+                        signal.last_update_time = datetime.utcnow()
+                        
+                        signal_dict['current_price'] = float(current_price)
+                        signal_dict['change_percent'] = float(change_percent)
+                        signal_dict['last_update_time'] = datetime.utcnow().isoformat()
+                        
+                        # Calculate P&L if signal type is available
+                        if signal.signal_type == 'BUY' and signal.entry_price:
+                            pnl_percent = ((current_price - float(signal.entry_price)) / float(signal.entry_price)) * 100
+                            signal_dict['pnl_percent'] = round(pnl_percent, 2)
+                        elif signal.signal_type == 'SELL' and signal.entry_price:
+                            pnl_percent = ((float(signal.entry_price) - current_price) / float(signal.entry_price)) * 100
+                            signal_dict['pnl_percent'] = round(pnl_percent, 2)
+                            
+                except Exception as e:
+                    logging.error(f"Error fetching quote for {signal.symbol}: {str(e)}")
+                    signal_dict['current_price'] = signal_dict.get('current_price', 0)
+                    signal_dict['change_percent'] = signal_dict.get('change_percent', 0)
+            
+            signals_data.append(signal_dict)
 
-        trades_data = []
-        for trade in trades:
-            trade_dict = trade.to_dict()
-            trades_data.append(trade_dict)
+        # Commit any price updates to database
+        try:
+            db.session.commit()
+        except Exception as e:
+            logging.error(f"Error updating signal prices: {str(e)}")
+            db.session.rollback()
 
-            # Update calculations
-            if trade.invested_amount:
-                total_invested += float(trade.invested_amount)
-            if trade.current_value:
-                current_value += float(trade.current_value)
-            if trade.pnl_amount:
-                pnl = float(trade.pnl_amount)
-                total_pnl += pnl
-                if pnl > 0:
-                    profit_trades += 1
-                elif pnl < 0:
-                    loss_trades += 1
-
-        # Calculate return percentage
-        return_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
+        # Calculate portfolio summary for signals
+        active_signals = len([s for s in signals_data if s.get('status') == 'ACTIVE'])
+        profit_signals = len([s for s in signals_data if s.get('pnl_percent', 0) > 0])
+        loss_signals = len([s for s in signals_data if s.get('pnl_percent', 0) < 0])
 
         portfolio_summary = {
-            'total_invested': total_invested,
-            'current_value': current_value,
-            'total_pnl': total_pnl,
-            'return_percent': return_percent,
-            'profit_trades': profit_trades,
-            'loss_trades': loss_trades,
-            'total_trades': len(trades_data)
+            'total_signals': len(signals_data),
+            'active_signals': active_signals,
+            'profit_signals': profit_signals,
+            'loss_signals': loss_signals
         }
 
         return jsonify({
             'success': True,
-            'trades': trades_data,
+            'signals': signals_data,
             'portfolio': portfolio_summary
         })
 
     except Exception as e:
-        logging.error(f"Error fetching ETF positions: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error fetching data: {str(e)}'}), 500
+        logging.error(f"Error fetching admin signals: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching signals: {str(e)}'}), 500
+
+@etf_bp.route('/admin/send-signal', methods=['POST'])
+def send_admin_signal():
+    """Admin endpoint to send trading signals to specific users"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        # Get current user and verify admin privileges
+        from models import User
+        from models_etf import AdminTradeSignal
+        
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        # For now, allow any authenticated user to send signals (you can add admin check later)
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['target_user_ids', 'symbol', 'trading_symbol', 'signal_type', 'entry_price', 'quantity', 'signal_title']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+
+        # Get target users
+        target_user_ids = data['target_user_ids']
+        if not isinstance(target_user_ids, list):
+            target_user_ids = [target_user_ids]
+
+        signals_created = []
+        
+        for target_user_id in target_user_ids:
+            # Verify target user exists
+            target_user = User.query.get(target_user_id)
+            if not target_user:
+                continue
+
+            # Create new signal
+            signal = AdminTradeSignal(
+                admin_user_id=current_user.id,
+                target_user_id=target_user_id,
+                symbol=data['symbol'],
+                trading_symbol=data['trading_symbol'],
+                token=data.get('token'),
+                exchange=data.get('exchange', 'NSE'),
+                signal_type=data['signal_type'],
+                entry_price=data['entry_price'],
+                target_price=data.get('target_price'),
+                stop_loss=data.get('stop_loss'),
+                quantity=data['quantity'],
+                signal_title=data['signal_title'],
+                signal_description=data.get('signal_description'),
+                priority=data.get('priority', 'MEDIUM'),
+                expires_at=data.get('expires_at')
+            )
+            
+            db.session.add(signal)
+            signals_created.append({
+                'target_user_id': target_user_id,
+                'target_user_name': target_user.greeting_name or target_user.ucc,
+                'signal_id': None  # Will be set after commit
+            })
+
+        # Commit to database
+        db.session.commit()
+        
+        # Update signal IDs
+        for i, signal_info in enumerate(signals_created):
+            signal_info['signal_id'] = signals_created[i]['signal_id']
+
+        return jsonify({
+            'success': True,
+            'message': f'Signal sent to {len(signals_created)} users',
+            'signals_created': signals_created
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error sending admin signal: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error sending signal: {str(e)}'}), 500
+
+@etf_bp.route('/admin/users', methods=['GET'])
+def get_target_users():
+    """Get list of users to send signals to"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        from models import User
+        
+        # Get all active users except current user
+        users = User.query.filter(
+            User.is_active == True,
+            User.id != session['user_id']
+        ).all()
+
+        users_data = []
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'ucc': user.ucc,
+                'name': user.greeting_name or user.ucc,
+                'mobile': user.mobile_number
+            })
+
+        return jsonify({
+            'success': True,
+            'users': users_data
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching users: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching users: {str(e)}'}), 500
 
 @etf_bp.route('/user-deals', methods=['GET'])
 def get_user_deals():

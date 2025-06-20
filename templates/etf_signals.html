@@ -165,6 +165,9 @@
                     Auto Refresh
                 </label>
             </div>
+            <button class="btn btn-sm btn-outline-light" onclick="showAdminPanel()">
+                <i class="fas fa-user-shield me-1"></i>Admin Panel
+            </button>
             <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                 <i class="fas fa-download me-1"></i>Export
             </button>
@@ -345,6 +348,103 @@
     </div>
 </div>
 
+<!-- Admin Panel Modal -->
+<div class="modal fade" id="adminPanelModal" tabindex="-1" aria-labelledby="adminPanelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="adminPanelModalLabel">
+                    <i class="fas fa-user-shield me-2 text-primary"></i>Admin Panel - Send Trading Signal
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sendSignalForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="signalSymbol" class="form-label">Symbol</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" id="signalSymbol" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="signalTradingSymbol" class="form-label">Trading Symbol</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" id="signalTradingSymbol" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="signalType" class="form-label">Signal Type</label>
+                            <select class="form-control bg-secondary border-secondary text-light" id="signalType" required>
+                                <option value="BUY">BUY</option>
+                                <option value="SELL">SELL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="entryPrice" class="form-label">Entry Price</label>
+                            <input type="number" step="0.01" class="form-control bg-secondary border-secondary text-light" id="entryPrice" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control bg-secondary border-secondary text-light" id="quantity" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="targetPrice" class="form-label">Target Price (Optional)</label>
+                            <input type="number" step="0.01" class="form-control bg-secondary border-secondary text-light" id="targetPrice">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stopLoss" class="form-label">Stop Loss (Optional)</label>
+                            <input type="number" step="0.01" class="form-control bg-secondary border-secondary text-light" id="stopLoss">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="signalTitle" class="form-label">Signal Title</label>
+                        <input type="text" class="form-control bg-secondary border-secondary text-light" id="signalTitle" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="signalDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control bg-secondary border-secondary text-light" id="signalDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-control bg-secondary border-secondary text-light" id="priority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="token" class="form-label">Token (Optional)</label>
+                            <input type="text" class="form-control bg-secondary border-secondary text-light" id="token">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Target Users</label>
+                        <div id="usersList" class="border border-secondary rounded p-3 bg-secondary" style="max-height: 200px; overflow-y: auto;">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Loading users...
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendSignalToUsers()">
+                    <i class="fas fa-paper-plane me-1"></i>Send Signal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -501,9 +601,9 @@ class ETFSignalsManager {
         // Show loading state
         this.showLoading();
 
-        console.log('Loading ETF positions...');
+        console.log('Loading admin trading signals...');
         try {
-            const response = await fetch('/api/etf_positions', {
+            const response = await fetch('/etf/signals', {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: {
@@ -519,25 +619,71 @@ class ETFSignalsManager {
             }
 
             const data = await response.json();
-            console.log('ETF positions response:', data);
+            console.log('Admin signals response:', data);
 
-            if (data.success && data.positions) {
-                this.positions = data.positions;
+            if (data.success && data.signals) {
+                this.positions = this.convertSignalsToPositions(data.signals);
                 this.filteredPositions = [...this.positions];
                 this.renderPositionsTable();
                 this.updatePagination();
-                this.updateSummaryCards(data.summary || {});
-                console.log(`✅ Loaded ${this.positions.length} ETF positions`);
+                this.updateSummaryCards(data.portfolio || {});
+                console.log(`✅ Loaded ${this.positions.length} trading signals`);
             } else {
-                console.error('API returned error:', data.error || 'No positions data');
+                console.error('API returned error:', data.message || 'No signals data');
                 this.showEmptyState();
             }
         } catch (error) {
-            console.error('❌ Error loading ETF positions:', error);
+            console.error('❌ Error loading trading signals:', error);
             this.showEmptyState();
         } finally {
             this.hideLoading();
         }
+    }
+
+    convertSignalsToPositions(signals) {
+        return signals.map((signal, index) => {
+            const entryDate = new Date(signal.created_at);
+            const daysHeld = Math.floor((new Date() - entryDate) / (1000 * 60 * 60 * 24));
+            
+            return {
+                id: signal.id,
+                symbol: signal.symbol || signal.trading_symbol,
+                trading_symbol: signal.trading_symbol,
+                thirty: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
+                dh: daysHeld,
+                date: entryDate.toLocaleDateString('en-GB'),
+                pos: signal.signal_type === 'BUY' ? 1 : 0,
+                qty: signal.quantity,
+                ep: parseFloat(signal.entry_price || 0),
+                cmp: parseFloat(signal.current_price || signal.entry_price || 0),
+                change_pct: signal.pnl_percent || 0,
+                inv: parseFloat(signal.entry_price || 0) * signal.quantity,
+                tp: parseFloat(signal.target_price || 0),
+                tva: signal.target_price ? parseFloat(signal.target_price) * signal.quantity : 0,
+                tpr: signal.target_price ? (parseFloat(signal.target_price) - parseFloat(signal.entry_price || 0)) * signal.quantity : 0,
+                pl: signal.pnl_percent ? (parseFloat(signal.current_price || signal.entry_price || 0) - parseFloat(signal.entry_price || 0)) * signal.quantity : 0,
+                ed: entryDate.toLocaleDateString('en-GB'),
+                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB') : '-',
+                pr: signal.stop_loss ? `${signal.stop_loss}-${signal.target_price || signal.entry_price}` : '-',
+                pp: this.getPerformanceStars(signal.pnl_percent || 0),
+                iv: signal.priority || 'MED',
+                ip: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
+                nt: signal.signal_title || signal.signal_description || 'Trading Signal',
+                qt: signal.last_update_time ? new Date(signal.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                seven: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
+                change2: signal.pnl_percent || 0,
+                signal_type: signal.signal_type,
+                status: signal.status,
+                priority: signal.priority
+            };
+        });
+    }
+
+    getPerformanceStars(pnlPercent) {
+        if (pnlPercent > 5) return '★★★';
+        if (pnlPercent > 2) return '★★';
+        if (pnlPercent > 0) return '★';
+        return '☆';
     }
 
     showEmptyState() {
@@ -1010,6 +1156,149 @@ function exportSignals() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Admin Panel Functions
+async function showAdminPanel() {
+    const modal = new bootstrap.Modal(document.getElementById('adminPanelModal'));
+    await loadUsers();
+    modal.show();
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch('/etf/admin/users', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.users) {
+            displayUsers(data.users);
+        } else {
+            document.getElementById('usersList').innerHTML = '<div class="text-danger">Error loading users</div>';
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+        document.getElementById('usersList').innerHTML = '<div class="text-danger">Error loading users</div>';
+    }
+}
+
+function displayUsers(users) {
+    const usersList = document.getElementById('usersList');
+    
+    if (users.length === 0) {
+        usersList.innerHTML = '<div class="text-muted">No users found</div>';
+        return;
+    }
+
+    const usersHTML = users.map(user => `
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="${user.id}" id="user_${user.id}">
+            <label class="form-check-label" for="user_${user.id}">
+                <strong>${user.name}</strong> (${user.ucc})
+                <small class="text-muted d-block">${user.mobile}</small>
+            </label>
+        </div>
+    `).join('');
+
+    usersList.innerHTML = `
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAllUsers" onchange="toggleAllUsers(this)">
+                <label class="form-check-label fw-bold" for="selectAllUsers">
+                    Select All Users
+                </label>
+            </div>
+            <hr class="my-2">
+        </div>
+        ${usersHTML}
+    `;
+}
+
+function toggleAllUsers(checkbox) {
+    const userCheckboxes = document.querySelectorAll('#usersList input[type="checkbox"]:not(#selectAllUsers)');
+    userCheckboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+}
+
+async function sendSignalToUsers() {
+    try {
+        // Get selected users
+        const selectedUsers = Array.from(document.querySelectorAll('#usersList input[type="checkbox"]:checked:not(#selectAllUsers)'))
+            .map(cb => parseInt(cb.value));
+
+        if (selectedUsers.length === 0) {
+            alert('Please select at least one user');
+            return;
+        }
+
+        // Get form data
+        const formData = {
+            target_user_ids: selectedUsers,
+            symbol: document.getElementById('signalSymbol').value,
+            trading_symbol: document.getElementById('signalTradingSymbol').value,
+            signal_type: document.getElementById('signalType').value,
+            entry_price: parseFloat(document.getElementById('entryPrice').value),
+            quantity: parseInt(document.getElementById('quantity').value),
+            signal_title: document.getElementById('signalTitle').value,
+            target_price: document.getElementById('targetPrice').value ? parseFloat(document.getElementById('targetPrice').value) : null,
+            stop_loss: document.getElementById('stopLoss').value ? parseFloat(document.getElementById('stopLoss').value) : null,
+            signal_description: document.getElementById('signalDescription').value,
+            priority: document.getElementById('priority').value,
+            token: document.getElementById('token').value
+        };
+
+        // Validate required fields
+        if (!formData.symbol || !formData.trading_symbol || !formData.entry_price || !formData.quantity || !formData.signal_title) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const response = await fetch('/etf/admin/send-signal', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`Signal sent successfully to ${selectedUsers.length} users`);
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('adminPanelModal')).hide();
+            document.getElementById('sendSignalForm').reset();
+            
+            // Refresh signals data
+            if (window.etfManager) {
+                window.etfManager.loadPositions();
+            }
+        } else {
+            alert(`Error sending signal: ${data.message}`);
+        }
+    } catch (error) {
+        console.error('Error sending signal:', error);
+        alert('Error sending signal. Please try again.');
+    }
 }
 
 // Initialize ETF Signals Manager on page load
