@@ -109,8 +109,8 @@ websocket_handler = WebSocketHandler()
 def validate_current_session():
     """Validate current session and check expiration"""
     try:
-        # Demo mode - bypass authentication for testing navigation
-        demo_mode = os.environ.get('DEMO_MODE', 'true').lower() == 'true'
+        # Real-time mode - use actual Kotak Neo API authentication
+        demo_mode = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
         if demo_mode:
             if not session.get('authenticated'):
                 session['authenticated'] = True
@@ -169,6 +169,65 @@ def health_check():
 def index():
     """Home page - redirect to dashboard"""
     return redirect(url_for('dashboard'))
+
+@app.route('/test-csv')
+def test_csv():
+    """Test CSV data integration without authentication"""
+    try:
+        from trading_functions import TradingFunctions
+        trading_func = TradingFunctions()
+        
+        # Get dashboard data from CSV
+        dashboard_data = trading_func.get_dashboard_data(None)
+        
+        # Format for display
+        positions = dashboard_data.get('positions', [])
+        summary = dashboard_data.get('summary', {})
+        
+        html = f"""
+        <html>
+        <head><title>CSV Data Test</title></head>
+        <body>
+            <h1>ETF Trading Data from CSV</h1>
+            <h2>Portfolio Summary</h2>
+            <p>Total Positions: {summary.get('total_positions', 0)}</p>
+            <p>Total Investment: ₹{summary.get('total_investment', 0):,.2f}</p>
+            <p>Total P&L: ₹{summary.get('total_pnl', 0):,.2f}</p>
+            
+            <h2>Current Positions</h2>
+            <table border="1">
+                <tr>
+                    <th>Symbol</th>
+                    <th>Quantity</th>
+                    <th>Entry Price</th>
+                    <th>Current Price</th>
+                    <th>Investment</th>
+                    <th>P&L</th>
+                </tr>
+        """
+        
+        for pos in positions:
+            html += f"""
+                <tr>
+                    <td>{pos.get('symbol', '')}</td>
+                    <td>{pos.get('quantity', 0)}</td>
+                    <td>₹{pos.get('avg_price', 0):,.2f}</td>
+                    <td>₹{pos.get('ltp', 0):,.2f}</td>
+                    <td>₹{pos.get('value', 0):,.2f}</td>
+                    <td>₹{pos.get('pnl', 0):,.2f}</td>
+                </tr>
+            """
+        
+        html += """
+            </table>
+        </body>
+        </html>
+        """
+        
+        return html
+        
+    except Exception as e:
+        return f"<html><body><h1>Error testing CSV data</h1><p>{str(e)}</p></body></html>"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

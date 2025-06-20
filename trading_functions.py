@@ -1,39 +1,81 @@
 import logging
 # pandas will be imported lazily when needed
 from datetime import datetime
+from csv_data_fetcher import CSVDataFetcher
 
 class TradingFunctions:
-    """Trading functions for Kotak Neo API"""
+    """Trading functions for Kotak Neo API with CSV data integration"""
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.csv_fetcher = CSVDataFetcher()
 
     def get_dashboard_data(self, client):
         """Get dashboard data including positions, holdings, and portfolio summary"""
         try:
-            dashboard_data = {}
-            self.logger.info("📊 Fetching comprehensive dashboard data...")
+            self.logger.info("Fetching comprehensive dashboard data...")
 
-            # Get positions with better error handling
-            try:
-                self.logger.info("📈 Fetching positions...")
-                positions_response = client.positions()
-                if positions_response and isinstance(positions_response, dict) and 'data' in positions_response:
-                    dashboard_data['positions'] = positions_response['data']
-                    dashboard_data['total_positions'] = len(positions_response['data'])
-                    self.logger.info(f"✅ Found {len(positions_response['data'])} positions")
-                elif positions_response and isinstance(positions_response, list):
-                    dashboard_data['positions'] = positions_response
-                    dashboard_data['total_positions'] = len(positions_response)
-                    self.logger.info(f"✅ Found {len(positions_response)} positions")
-                else:
-                    dashboard_data['positions'] = []
-                    dashboard_data['total_positions'] = 0
-                    self.logger.info("📊 No positions found")
-            except Exception as e:
-                self.logger.warning(f"⚠️ Error fetching positions: {str(e)}")
+            # Use notebook data fetcher for real-time data
+            if hasattr(client, 'positions') and callable(getattr(client, 'positions')):
+                # Try API client first
+                try:
+                    dashboard_data = self._fetch_from_api_client(client)
+                    self.logger.info("Retrieved data from API client")
+                    return dashboard_data
+                except Exception as e:
+                    self.logger.warning(f"API client failed: {str(e)}, falling back to notebook data")
+            
+            # Use CSV data fetcher for real trading data
+            dashboard_data = self.csv_fetcher.get_comprehensive_dashboard_data()
+            self.logger.info("Retrieved data from CSV fetcher")
+            
+            return dashboard_data
+
+        except Exception as e:
+            self.logger.error(f"Error in get_dashboard_data: {str(e)}")
+            return self._get_default_dashboard_structure()
+
+    def _get_default_dashboard_structure(self):
+        """Return default dashboard structure when data fetch fails"""
+        return {
+            'positions': [],
+            'holdings': [],
+            'recent_orders': [],
+            'limits': {},
+            'summary': {
+                'total_positions': 0,
+                'total_holdings': 0,
+                'total_orders': 0,
+                'total_pnl': 0.0,
+                'total_value': 0.0,
+                'available_cash': 0.0
+            }
+        }
+
+    def _fetch_from_api_client(self, client):
+        """Fetch data from API client"""
+        dashboard_data = {}
+        
+        # Get positions with better error handling
+        try:
+            self.logger.info("Fetching positions...")
+            positions_response = client.positions()
+            if positions_response and isinstance(positions_response, dict) and 'data' in positions_response:
+                dashboard_data['positions'] = positions_response['data']
+                dashboard_data['total_positions'] = len(positions_response['data'])
+                self.logger.info(f"Found {len(positions_response['data'])} positions")
+            elif positions_response and isinstance(positions_response, list):
+                dashboard_data['positions'] = positions_response
+                dashboard_data['total_positions'] = len(positions_response)
+                self.logger.info(f"Found {len(positions_response)} positions")
+            else:
                 dashboard_data['positions'] = []
                 dashboard_data['total_positions'] = 0
+                self.logger.info("No positions found")
+        except Exception as e:
+            self.logger.warning(f"Error fetching positions: {str(e)}")
+            dashboard_data['positions'] = []
+            dashboard_data['total_positions'] = 0
 
             # Get holdings with better error handling
             try:
