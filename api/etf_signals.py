@@ -89,7 +89,7 @@ def get_admin_signals():
 
         # Initialize Kotak Neo client for real-time quotes
         session_manager = SessionManager()
-        stored_session = session_manager.load_session(current_user.ucc)
+        stored_session = session_manager.get_session(current_user.ucc)
         neo_client = None
 
         if stored_session and stored_session.get('access_token'):
