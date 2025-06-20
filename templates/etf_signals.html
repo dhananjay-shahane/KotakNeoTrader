@@ -84,8 +84,8 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-1">ETF Trading Signals</h1>
-        <p class="text-muted mb-0">Real-time position tracking and analysis</p>
+        <h1 class="h3 mb-1">Admin Trading Signals</h1>
+        <p class="text-muted mb-0">Real-time admin signals tracking and analysis</p>
     </div>
     <div class="d-flex gap-2">
                         <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
@@ -158,7 +158,7 @@
 <div class="card bg-secondary border-0 shadow-lg">
     <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-light">
-            <i class="fas fa-signal me-2 text-primary"></i>Trading Signals
+            <i class="fas fa-signal me-2 text-primary"></i>Admin Trading Signals
             <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
         </h5>
         <div class="d-flex gap-2">
@@ -512,16 +512,23 @@ class ETFSignalsManager {
         // Show loading state
         this.showLoading();
 
-        console.log('Loading ETF trading signals...');
+        console.log('Loading admin trade signals...');
         try {
-            console.log('Fetching ETF signals from API...');
-            const response = await fetch('/api/etf-signals-data', {
-                method: 'GET',
+            console.log('Fetching admin signals from DataTables API...');
+            const response = await fetch('/api/datatable/admin-signals', {
+                method: 'POST',
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                body: JSON.stringify({
+                    draw: 1,
+                    start: 0,
+                    length: 1000,
+                    search: { value: '' },
+                    order: [{ column: 0, dir: 'asc' }]
+                })
             });
 
             console.log('Response status:', response.status);
@@ -531,25 +538,25 @@ class ETFSignalsManager {
             }
 
             const data = await response.json();
-            console.log('ETF signals response:', data);
+            console.log('Admin signals response:', data);
 
-            if (data.success && data.signals && data.signals.length > 0) {
-                this.positions = this.convertSignalsToPositions(data.signals);
+            if (data.data && data.data.length > 0) {
+                this.positions = this.convertAdminSignalsToPositions(data.data);
                 this.filteredPositions = [...this.positions];
                 this.renderPositionsTable();
                 this.updatePagination();
-                this.updateSummaryCards(data.portfolio || {});
+                this.calculateAndUpdateSummary();
                 this.updateLiveIndicator(true);
-                console.log(`✅ Loaded ${this.positions.length} ETF trading signals`);
-            } else if (data.success && (!data.signals || data.signals.length === 0)) {
-                console.log('No ETF signals found in response, showing message');
+                console.log(`✅ Loaded ${this.positions.length} admin trade signals`);
+            } else if (data.data && data.data.length === 0) {
+                console.log('No admin signals found in response, showing message');
                 this.showNoDataMessage();
             } else {
                 console.error('API returned error or invalid format:', data);
                 this.showErrorMessage(data.error || 'Invalid response format');
             }
         } catch (error) {
-            console.error('❌ Error loading ETF signals:', error);
+            console.error('❌ Error loading admin signals:', error);
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                 this.showErrorMessage('Authentication required. Please refresh the page and try again.');
             } else if (error.message.includes('404')) {
@@ -561,6 +568,65 @@ class ETFSignalsManager {
         } finally {
             this.hideLoading();
         }
+    }
+
+    convertAdminSignalsToPositions(signals) {
+        return signals.map((signal, index) => {
+            // Convert admin_trade_signals data to position format
+            const entryPrice = parseFloat(signal.entry_price) || 0;
+            const currentPrice = parseFloat(signal.current_price) || entryPrice;
+            const quantity = parseInt(signal.quantity) || 0;
+            const changePercent = parseFloat(signal.change_percent) || 0;
+            
+            // Calculate investment and values
+            const investment = entryPrice * quantity;
+            const currentValue = currentPrice * quantity;
+            const pnl = currentValue - investment;
+            const targetPrice = parseFloat(signal.target_price) || 0;
+            const targetValue = targetPrice * quantity;
+            const targetProfit = targetValue - investment;
+            
+            // Calculate days held
+            const createdDate = new Date(signal.created_at);
+            const today = new Date();
+            const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+            
+            return {
+                id: signal.id,
+                etf: signal.symbol,
+                symbol: signal.symbol,
+                trading_symbol: signal.trading_symbol || signal.symbol + '-EQ',
+                thirty: '',
+                dh: daysHeld,
+                date: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                pos: signal.signal_type === 'BUY' ? 1 : 0,
+                qty: quantity,
+                ep: entryPrice,
+                cmp: currentPrice,
+                change_pct: changePercent,
+                inv: investment,
+                tp: targetPrice,
+                tva: targetValue,
+                tpr: targetProfit,
+                pl: pnl,
+                ed: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
+                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}) : '',
+                pr: `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}`,
+                pp: this.getPerformanceStars(changePercent),
+                iv: Math.abs(changePercent) > 3 ? 'High' : Math.abs(changePercent) > 1 ? 'Med' : 'Low',
+                ip: changePercent > 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`,
+                nt: signal.signal_description || signal.signal_title || '',
+                qt: signal.last_update ? new Date(signal.last_update).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '',
+                seven: '',
+                change2: changePercent,
+                signal_type: signal.signal_type,
+                status: signal.status,
+                priority: signal.priority || 'MEDIUM',
+                target_user_ucc: signal.target_user_ucc || '',
+                target_user_name: signal.target_user_name || '',
+                admin_name: signal.admin_name || ''
+            };
+        });
     }
 
     convertSignalsToPositions(signals) {
@@ -903,8 +969,11 @@ class ETFSignalsManager {
                         break;
                     case 'actions':
                         cellContent = `
-                            <button class="btn btn-sm btn-success" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
-                                <i class="fas fa-plus me-1"></i>Add Deal
+                            <button class="btn btn-sm btn-primary" onclick="viewSignalDetails(${position.id})" title="View Details">
+                                <i class="fas fa-eye me-1"></i>Details
+                            </button>
+                            <button class="btn btn-sm btn-success ms-1" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
+                                <i class="fas fa-plus me-1"></i>Deal
                             </button>
                         `;
                         break;
@@ -933,6 +1002,53 @@ class ETFSignalsManager {
 
         const totalCountEl = document.getElementById('totalCount');
         if (totalCountEl) totalCountEl.textContent = this.filteredPositions.length;
+    }
+
+    calculateAndUpdateSummary() {
+        if (!this.positions || this.positions.length === 0) {
+            this.updateSummaryCards({
+                total_positions: 0,
+                total_investment: 0,
+                current_value: 0,
+                total_pnl: 0,
+                return_percent: 0,
+                active_positions: 0,
+                closed_positions: 0
+            });
+            return;
+        }
+
+        let totalInvestment = 0;
+        let currentValue = 0;
+        let totalPnl = 0;
+        let activePositions = 0;
+        let closedPositions = 0;
+
+        this.positions.forEach(position => {
+            totalInvestment += position.inv || 0;
+            currentValue += (position.cmp * position.qty) || position.inv || 0;
+            totalPnl += position.pl || 0;
+            
+            if (position.status === 'ACTIVE') {
+                activePositions++;
+            } else {
+                closedPositions++;
+            }
+        });
+
+        const returnPercent = totalInvestment > 0 ? (totalPnl / totalInvestment) * 100 : 0;
+
+        const summary = {
+            total_positions: this.positions.length,
+            total_investment: totalInvestment,
+            current_value: currentValue,
+            total_pnl: totalPnl,
+            return_percent: returnPercent,
+            active_positions: activePositions,
+            closed_positions: closedPositions
+        };
+
+        this.updateSummaryCards(summary);
     }
 
     updateSummaryCards(summary) {
@@ -1163,6 +1279,80 @@ function exportSignals() {
 document.addEventListener('DOMContentLoaded', function() {
     window.etfManager = new ETFSignalsManager();
 });
+
+// Function to view signal details
+function viewSignalDetails(signalId) {
+    const signal = etfManager.positions.find(p => p.id === signalId);
+    if (!signal) {
+        alert('Signal not found');
+        return;
+    }
+
+    const modalHtml = `
+        <div class="modal fade" id="signalDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light">Signal Details - ${signal.symbol}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-light">Signal Information</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td><strong>Symbol:</strong></td><td>${signal.symbol}</td></tr>
+                                    <tr><td><strong>Signal Type:</strong></td><td><span class="badge ${signal.signal_type === 'BUY' ? 'bg-success' : 'bg-danger'}">${signal.signal_type}</span></td></tr>
+                                    <tr><td><strong>Status:</strong></td><td><span class="badge bg-info">${signal.status}</span></td></tr>
+                                    <tr><td><strong>Priority:</strong></td><td><span class="badge bg-warning">${signal.priority}</span></td></tr>
+                                    <tr><td><strong>Days Held:</strong></td><td>${signal.dh} days</td></tr>
+                                    <tr><td><strong>Target User:</strong></td><td>${signal.target_user_name || 'N/A'} (${signal.target_user_ucc || 'N/A'})</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-light">Price Information</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td><strong>Entry Price:</strong></td><td>₹${signal.ep.toFixed(2)}</td></tr>
+                                    <tr><td><strong>Current Price:</strong></td><td>₹${signal.cmp.toFixed(2)}</td></tr>
+                                    <tr><td><strong>Target Price:</strong></td><td>₹${signal.tp ? signal.tp.toFixed(2) : 'N/A'}</td></tr>
+                                    <tr><td><strong>Quantity:</strong></td><td>${signal.qty.toLocaleString()}</td></tr>
+                                    <tr><td><strong>Investment:</strong></td><td>₹${signal.inv.toLocaleString()}</td></tr>
+                                    <tr><td><strong>P&L:</strong></td><td class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">₹${signal.pl.toLocaleString()}</td></tr>
+                                    <tr><td><strong>Change %:</strong></td><td class="${signal.change_pct >= 0 ? 'text-success' : 'text-danger'}">${signal.change_pct.toFixed(2)}%</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="text-light">Notes</h6>
+                                <p class="text-light">${signal.nt || 'No notes available'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-success" onclick="addDealFromSignal('${signal.symbol}', ${signal.pos}, ${signal.qty}, ${signal.ep}, ${signal.tp || 0}, ${signal.cmp})" data-bs-dismiss="modal">
+                            <i class="fas fa-plus me-1"></i>Create Deal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('signalDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('signalDetailsModal'));
+    modal.show();
+}
 
 // Function to add deal from ETF signal
 function addDealFromSignal(symbol, pos, qty, ep, tp, cmp) {
