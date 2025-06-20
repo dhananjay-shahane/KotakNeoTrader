@@ -706,4 +706,13 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error(f"❌ Failed to start ETF scheduler: {str(e)}")
 
+    # Initialize Kotak data collector for admin signals (5-minute intervals)
+    try:
+        logging.info("Starting Kotak data collector for admin signals...")
+        from kotak_data_collector import start_kotak_data_collector
+        start_kotak_data_collector()
+        logging.info("✅ Kotak data collector started (5-minute intervals)")
+    except Exception as e:
+        logging.error(f"❌ Failed to start Kotak data collector: {e}")
+
     app.run(host='0.0.0.0', port=5000, debug=True)

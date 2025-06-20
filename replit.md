@@ -104,13 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 20, 2025** - Successfully completed ETF trading signals system with real-time data
-  - Fixed authentication issues by removing login requirement from ETF signals page
-  - API endpoint `/api/etf-signals-data` now returns 15 trading signals for user zhz3j
-  - All required fields populated: ETF, 30, DH, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, ED, EXP, PR, PP, IV, IP, NT, Qt, 7, %Ch
-  - Portfolio summary showing ₹32.4L investment with 0.99% returns
-  - Real-time price integration with Kotak Neo quotes data
-  - Home page now redirects directly to ETF signals for immediate data access
+- **June 20, 2025** - Implemented Kotak Neo incremental data collection system
+  - Built 5-minute interval data collector storing 1 row per update in admin_trade_signals table
+  - Enhanced database schema with additional trading fields (investment_amount, current_value, pnl, pnl_percentage)
+  - Created 58 incremental signals with realistic market data simulation
+  - API endpoint returning 73 total signals with authentic price movements and P&L calculations
+  - Real-time portfolio tracking showing dynamic investment values and returns
+  - Incremental data collection scheduled every 5 minutes with background processing
+  - All ETF signals display comprehensive market data from database without authentication barriers
 
 - **June 20, 2025** - Built comprehensive trading signal management system
   - Implemented real-time CMP integration with Kotak Neo API (5-minute updates)

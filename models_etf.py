@@ -11,7 +11,7 @@ class AdminTradeSignal(db.Model):
 
     # Signal Information
     symbol = db.Column(db.String(50), nullable=False)
-    trading_symbol = db.Column(db.String(100), nullable=False)
+    trading_symbol = db.Column(db.String(100), nullable=True)
     token = db.Column(db.String(50), nullable=True)
     exchange = db.Column(db.String(20), default='NSE')
 
@@ -23,8 +23,9 @@ class AdminTradeSignal(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
 
     # Signal Metadata
-    signal_title = db.Column(db.String(200), nullable=False)
+    signal_title = db.Column(db.String(200), nullable=True)
     signal_description = db.Column(db.Text, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
     priority = db.Column(db.String(20), default='MEDIUM')  # HIGH, MEDIUM, LOW
 
     # Status and Timestamps
@@ -32,11 +33,19 @@ class AdminTradeSignal(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=True)
+    signal_date = db.Column(db.Date, nullable=True)
+    expiry_date = db.Column(db.Date, nullable=True)
 
     # Current Market Data
     current_price = db.Column(db.Numeric(10, 2), nullable=True)
     change_percent = db.Column(db.Numeric(5, 2), nullable=True)
     last_update_time = db.Column(db.DateTime, nullable=True)
+    
+    # Additional Trading Data
+    investment_amount = db.Column(db.Numeric(12, 2), nullable=True)
+    current_value = db.Column(db.Numeric(12, 2), nullable=True)
+    pnl = db.Column(db.Numeric(12, 2), nullable=True)
+    pnl_percentage = db.Column(db.Numeric(5, 2), nullable=True)
 
     # Relationships
     admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='sent_signals')
