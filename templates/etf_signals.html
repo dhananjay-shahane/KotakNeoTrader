@@ -584,10 +584,10 @@ class ETFSignalsManager {
         // Show loading state
         this.showLoading();
 
-        console.log('Loading admin trade signals...');
+        console.log('Loading admin trade signals from database...');
         try {
-            // First try the ETF signals API
-            console.log('Fetching from ETF signals API...');
+            // Fetch ETF signals from admin_trade_signals table
+            console.log('Fetching from ETF signals API (admin_trade_signals)...');
             const response = await fetch('/etf/signals', {
                 method: 'GET',
                 credentials: 'same-origin',
@@ -607,13 +607,13 @@ class ETFSignalsManager {
             console.log('ETF signals response:', data);
 
             if (data.success && data.signals && data.signals.length > 0) {
-                this.positions = this.convertETFSignalsToPositions(data.signals);
+                this.positions = this.convertAdminSignalsToPositions(data.signals);
                 this.filteredPositions = [...this.positions];
                 this.renderPositionsTable();
                 this.updatePagination();
-                this.calculateAndUpdateSummary();
+                this.updatePortfolioSummary(data.portfolio);
                 this.updateLiveIndicator(true);
-                console.log(`✅ Loaded ${this.positions.length} ETF signals`);
+                console.log(`✅ Loaded ${this.positions.length} admin trade signals with real-time CMP`);
             } else if (data.success && data.signals && data.signals.length === 0) {
                 console.log('No signals found in response, showing message');
                 this.showNoDataMessage();
@@ -622,7 +622,7 @@ class ETFSignalsManager {
                 this.showErrorMessage(data.message || 'Invalid response format');
             }
         } catch (error) {
-            console.error('❌ Error loading ETF signals:', error);
+            console.error('❌ Error loading admin trade signals:', error);
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                 this.showErrorMessage('Authentication required. Please refresh the page and try again.');
             } else if (error.message.includes('404')) {
@@ -634,6 +634,53 @@ class ETFSignalsManager {
         } finally {
             this.hideLoading();
         }
+    }</old_str>
+
+    convertAdminSignalsToPositions(signals) {
+        return signals.map((signal, index) => {
+            // Use the signal data directly as it's already properly formatted from the API
+            return {
+                id: signal.id,
+                etf: signal.etf || signal.symbol,
+                symbol: signal.symbol,
+                trading_symbol: signal.trading_symbol || signal.symbol + '-EQ',
+                thirty: signal.thirty || '',
+                dh: signal.dh || 0,
+                date: signal.date || '',
+                pos: signal.pos !== undefined ? signal.pos : (signal.signal_type === 'BUY' ? 1 : 0),
+                qty: signal.qty || signal.quantity || 0,
+                ep: signal.ep || signal.entry_price || 0,
+                cmp: signal.cmp || signal.current_price || signal.ep || 0,
+                change_pct: signal.change_pct || signal.change_percent || 0,
+                inv: signal.inv || signal.investment || 0,
+                tp: signal.tp || signal.target_price || 0,
+                tva: signal.tva || signal.target_value || 0,
+                tpr: signal.tpr || signal.target_profit || 0,
+                pl: signal.pl || signal.pnl || 0,
+                ed: signal.ed || signal.entry_date || '',
+                exp: signal.exp || signal.expiry_date || '',
+                pr: signal.pr || '',
+                pp: signal.pp || this.getPerformanceStars(signal.change_pct || 0),
+                iv: signal.iv || (Math.abs(signal.change_pct || 0) > 3 ? 'High' : Math.abs(signal.change_pct || 0) > 1 ? 'Med' : 'Low'),
+                ip: signal.ip || ((signal.change_pct || 0) > 0 ? `+${(signal.change_pct || 0).toFixed(1)}%` : `${(signal.change_pct || 0).toFixed(1)}%`),
+                nt: signal.nt || signal.notes || signal.signal_description || '',
+                qt: signal.qt || signal.last_updated || '',
+                seven: signal.seven || '',
+                change2: signal.change2 || signal.change_pct || 0,
+                signal_type: signal.signal_type,
+                status: signal.status,
+                priority: signal.priority || 'MEDIUM',
+                data_source: signal.data_source || 'ADMIN_TRADE_SIGNALS',
+                open_price: signal.open_price || 0,
+                high_price: signal.high_price || 0,
+                low_price: signal.low_price || 0,
+                volume: signal.volume || 0,
+                bid_price: signal.bid_price || 0,
+                ask_price: signal.ask_price || 0,
+                week_52_high: signal.week_52_high || 0,
+                week_52_low: signal.week_52_low || 0
+            };
+        });
     }
 
     convertETFSignalsToPositions(signals) {
@@ -690,7 +737,7 @@ class ETFSignalsManager {
                 priority: signal.priority || 'MEDIUM'
             };
         });
-    }
+    }</old_str>
 
     convertAdminSignalsToPositions(signals) {
         return signals.map((signal, index) => {
@@ -1189,6 +1236,43 @@ class ETFSignalsManager {
         this.updateSummaryCards(summary);
     }
 
+    updatePortfolioSummary(portfolio) {
+        if (!portfolio) {
+            this.calculateAndUpdateSummary();
+            return;
+        }
+
+        // Use portfolio data from API response
+        const totalPositionsEl = document.getElementById('totalPositions');
+        if (totalPositionsEl) totalPositionsEl.textContent = portfolio.total_positions || 0;
+
+        const totalInvestmentEl = document.getElementById('totalInvestment');
+        if (totalInvestmentEl) totalInvestmentEl.textContent = `₹${(portfolio.total_investment || 0).toLocaleString('en-IN')}`;
+
+        const currentValueEl = document.getElementById('currentValue');
+        if (currentValueEl) currentValueEl.textContent = `₹${(portfolio.current_value || 0).toLocaleString('en-IN')}`;
+
+        const totalPnl = portfolio.total_pnl || 0;
+        const pnlElement = document.getElementById('totalPnl');
+        if (pnlElement) {
+            pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
+            pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        }
+
+        const returnPercent = portfolio.return_percent || 0;
+        const returnElement = document.getElementById('returnPercent');
+        if (returnElement) {
+            returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
+            returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        }
+
+        const activePositionsEl = document.getElementById('activePositions');
+        if (activePositionsEl) activePositionsEl.textContent = portfolio.active_positions || 0;
+
+        const closedPositionsEl = document.getElementById('closedPositions');
+        if (closedPositionsEl) closedPositionsEl.textContent = portfolio.closed_positions || 0;
+    }
+
     updateSummaryCards(summary) {
         if (!summary) return;
 
@@ -1221,7 +1305,7 @@ class ETFSignalsManager {
 
         const closedPositionsEl = document.getElementById('closedPositions');
         if (closedPositionsEl) closedPositionsEl.textContent = summary.closed_positions || 0;
-    }
+    }</old_str>
 
     updatePagination() {
         const totalPages = Math.ceil(this.filteredPositions.length / this.pageSize);

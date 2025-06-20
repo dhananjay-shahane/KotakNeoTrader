@@ -12,130 +12,252 @@ logger = logging.getLogger(__name__)
 
 @etf_bp.route('/signals', methods=['GET'])
 def get_admin_signals():
-    """Get ETF signals data in CSV format with real-time CMP calculations"""
+    """Get ETF signals data from admin_trade_signals table with real-time CMP from Kotak Neo"""
     try:
         from models import User
-        from models_etf import AdminTradeSignal, RealtimeQuote
-        from neo_client import NeoClient
-        from session_manager import SessionManager
-
-        # CSV data from the attached file - ETF positions with real calculations
-        csv_etf_data = [
-            {'etf': 'MID150BEES', 'pos': 1, 'qty': 200, 'ep': 227.02, 'cmp': 222.19, 'tp': 254.26, 'date': '22-Nov-2024'},
-            {'etf': 'ITETF', 'pos': 1, 'qty': 500, 'ep': 47.13, 'cmp': 40.74, 'tp': 52.79, 'date': '13-Dec-2024'},
-            {'etf': 'CONSUMBEES', 'pos': 0, 'qty': 700, 'ep': 124.0, 'cmp': 126.92, 'tp': 127.83, 'date': '20-Dec-2024'},
-            {'etf': 'SILVERBEES', 'pos': 0, 'qty': 1100, 'ep': 86.85, 'cmp': 103.65, 'tp': 88.49, 'date': '16-Dec-2024'},
-            {'etf': 'GOLDBEES', 'pos': 0, 'qty': 800, 'ep': 66.0, 'cmp': 82.61, 'tp': 67.5, 'date': '22-Nov-2024'},
-            {'etf': 'FMCGIETF', 'pos': 1, 'qty': 1600, 'ep': 59.73, 'cmp': 58.3, 'tp': 66.90, 'date': '16-Dec-2024'},
-            {'etf': 'JUNIORBEES', 'pos': 1, 'qty': 50, 'ep': 780.32, 'cmp': 722.72, 'tp': 873.96, 'date': '16-Dec-2024'},
-            {'etf': 'AUTOIETF', 'pos': 1, 'qty': 2800, 'ep': 24.31, 'cmp': 23.83, 'tp': 27.23, 'date': '16-Dec-2024'},
-            {'etf': 'PHARMABEES', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'cmp': 22.28, 'tp': 25.42, 'date': '16-Dec-2024'},
-            {'etf': 'INFRABEES', 'pos': 1, 'qty': 120, 'ep': 880.51, 'cmp': 933.97, 'tp': 986.17, 'date': '24-Dec-2024'},
-            {'etf': 'HDFCSML250', 'pos': 0, 'qty': 600, 'ep': 178.27, 'cmp': 174.2, 'tp': 149.26, 'date': '30-Dec-2024'},
-            {'etf': 'NEXT50IETF', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'cmp': 70.55, 'tp': 79.41, 'date': '30-Dec-2024'},
-            {'etf': 'NIF100BEES', 'pos': 1, 'qty': 400, 'ep': 259.64, 'cmp': 268.09, 'tp': 290.80, 'date': '30-Dec-2024'},
-            {'etf': 'FINIETF', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'cmp': 30.47, 'tp': 29.83, 'date': '3-Jan-2025'},
-            {'etf': 'TNIDETF', 'pos': 1, 'qty': 20, 'ep': 101.03, 'cmp': 93.75, 'tp': 113.15, 'date': '6-Jan-2025'},
-            {'etf': 'MOM30IETF', 'pos': 1, 'qty': 3200, 'ep': 31.34, 'cmp': 31.97, 'tp': 35.10, 'date': '13-Jan-2025'},
-            {'etf': 'MON100', 'pos': 0, 'qty': 550, 'ep': 192.0, 'cmp': 181.99, 'tp': 196.81, 'date': '13-Jan-2025'},
-            {'etf': 'HEALTHIETF', 'pos': 0, 'qty': 750, 'ep': 145.05, 'cmp': 145.46, 'tp': 149.01, 'date': '13-Jan-2025'},
-            {'etf': 'NIFTYBEES', 'pos': 0, 'qty': 400, 'ep': 265.43, 'cmp': 278.9, 'tp': 256.06, 'date': '24-Dec-2024'},
-            {'etf': 'HDFCPVTBAN', 'pos': 0, 'qty': 4000, 'ep': 25.19, 'cmp': 28.09, 'tp': 24.36, 'date': '24-Dec-2024'}
-        ]
+        from models_etf import AdminTradeSignal, KotakNeoQuote, RealtimeQuote
+        from trading_functions import TradingFunctions
+        
+        # Get target user (zhz3j or fallback to any user)
+        target_user = User.query.filter(
+            (User.ucc.ilike('%zhz3j%')) | 
+            (User.greeting_name.ilike('%zhz3j%')) | 
+            (User.user_id.ilike('%zhz3j%'))
+        ).first()
+        
+        if not target_user:
+            # Create demo user if not exists
+            target_user = User(
+                ucc='zhz3j',
+                mobile_number='1234567890',
+                greeting_name='Demo User',
+                user_id='zhz3j',
+                is_active=True
+            )
+            db.session.add(target_user)
+            db.session.commit()
+        
+        # Check if we need to populate initial data
+        existing_signals = AdminTradeSignal.query.filter_by(target_user_id=target_user.id).count()
+        
+        if existing_signals == 0:
+            # Create initial ETF signals data in admin_trade_signals table
+            csv_etf_data = [
+                {'etf': 'MID150BEES', 'pos': 1, 'qty': 200, 'ep': 227.02, 'tp': 254.26, 'date': '22-Nov-2024'},
+                {'etf': 'ITETF', 'pos': 1, 'qty': 500, 'ep': 47.13, 'tp': 52.79, 'date': '13-Dec-2024'},
+                {'etf': 'CONSUMBEES', 'pos': 0, 'qty': 700, 'ep': 124.0, 'tp': 127.83, 'date': '20-Dec-2024'},
+                {'etf': 'SILVERBEES', 'pos': 0, 'qty': 1100, 'ep': 86.85, 'tp': 88.49, 'date': '16-Dec-2024'},
+                {'etf': 'GOLDBEES', 'pos': 0, 'qty': 800, 'ep': 66.0, 'tp': 67.5, 'date': '22-Nov-2024'},
+                {'etf': 'FMCGIETF', 'pos': 1, 'qty': 1600, 'ep': 59.73, 'tp': 66.90, 'date': '16-Dec-2024'},
+                {'etf': 'JUNIORBEES', 'pos': 1, 'qty': 50, 'ep': 780.32, 'tp': 873.96, 'date': '16-Dec-2024'},
+                {'etf': 'AUTOIETF', 'pos': 1, 'qty': 2800, 'ep': 24.31, 'tp': 27.23, 'date': '16-Dec-2024'},
+                {'etf': 'PHARMABEES', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'tp': 25.42, 'date': '16-Dec-2024'},
+                {'etf': 'INFRABEES', 'pos': 1, 'qty': 120, 'ep': 880.51, 'tp': 986.17, 'date': '24-Dec-2024'},
+                {'etf': 'HDFCSML250', 'pos': 0, 'qty': 600, 'ep': 178.27, 'tp': 149.26, 'date': '30-Dec-2024'},
+                {'etf': 'NEXT50IETF', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
+                {'etf': 'NIF100BEES', 'pos': 1, 'qty': 400, 'ep': 259.64, 'tp': 290.80, 'date': '30-Dec-2024'},
+                {'etf': 'FINIETF', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'tp': 29.83, 'date': '3-Jan-2025'},
+                {'etf': 'TNIDETF', 'pos': 1, 'qty': 20, 'ep': 101.03, 'tp': 113.15, 'date': '6-Jan-2025'},
+                {'etf': 'MOM30IETF', 'pos': 1, 'qty': 3200, 'ep': 31.34, 'tp': 35.10, 'date': '13-Jan-2025'},
+                {'etf': 'MON100', 'pos': 0, 'qty': 550, 'ep': 192.0, 'tp': 196.81, 'date': '13-Jan-2025'},
+                {'etf': 'HEALTHIETF', 'pos': 0, 'qty': 750, 'ep': 145.05, 'tp': 149.01, 'date': '13-Jan-2025'},
+                {'etf': 'NIFTYBEES', 'pos': 0, 'qty': 400, 'ep': 265.43, 'tp': 256.06, 'date': '24-Dec-2024'},
+                {'etf': 'HDFCPVTBAN', 'pos': 0, 'qty': 4000, 'ep': 25.19, 'tp': 24.36, 'date': '24-Dec-2024'}
+            ]
+            
+            # Store data in admin_trade_signals table
+            admin_user = User.query.filter_by(ucc='admin').first()
+            if not admin_user:
+                admin_user = User(
+                    ucc='admin',
+                    mobile_number='9999999999',
+                    greeting_name='Admin User',
+                    user_id='admin',
+                    is_active=True
+                )
+                db.session.add(admin_user)
+                db.session.commit()
+            
+            for etf_data in csv_etf_data:
+                try:
+                    entry_date = datetime.strptime(etf_data['date'], '%d-%b-%Y')
+                except:
+                    entry_date = datetime.now()
+                
+                signal = AdminTradeSignal(
+                    admin_user_id=admin_user.id,
+                    target_user_id=target_user.id,
+                    symbol=etf_data['etf'],
+                    trading_symbol=f"{etf_data['etf']}-EQ",
+                    signal_type='BUY' if etf_data['pos'] == 1 else 'SELL',
+                    entry_price=etf_data['ep'],
+                    target_price=etf_data['tp'],
+                    quantity=etf_data['qty'],
+                    signal_title=f"ETF Signal - {etf_data['etf']}",
+                    signal_description=f"{'Long' if etf_data['pos'] == 1 else 'Short'} position in {etf_data['etf']}",
+                    priority='MEDIUM',
+                    status='ACTIVE',
+                    created_at=entry_date,
+                    signal_date=entry_date.date(),
+                    exchange='NSE'
+                )
+                db.session.add(signal)
+            
+            db.session.commit()
+            logger.info(f"Created {len(csv_etf_data)} initial ETF signals in admin_trade_signals table")
+        
+        # Fetch all admin trade signals for the target user
+        signals = AdminTradeSignal.query.filter_by(
+            target_user_id=target_user.id,
+            status='ACTIVE'
+        ).order_by(AdminTradeSignal.created_at.desc()).all()
+        
+        if not signals:
+            logger.warning("No admin trade signals found")
+            return jsonify({
+                'success': True,
+                'signals': [],
+                'portfolio': {
+                    'total_positions': 0,
+                    'total_investment': 0,
+                    'current_value': 0,
+                    'total_pnl': 0,
+                    'return_percent': 0,
+                    'active_positions': 0,
+                    'closed_positions': 0
+                },
+                'message': 'No signals found'
+            })</old_str>
 
         # Get comprehensive market data from KotakNeoQuote table with fallback to RealtimeQuote
         latest_quotes = {}
         try:
             from models_etf import KotakNeoQuote
             from sqlalchemy import func
+            from trading_functions import TradingFunctions
             
-            # First try to get comprehensive data from KotakNeoQuote
-            kotak_subquery = db.session.query(
-                KotakNeoQuote.symbol,
-                func.max(KotakNeoQuote.timestamp).label('max_timestamp')
-            ).group_by(KotakNeoQuote.symbol).subquery()
+            # Get unique symbols from signals
+            signal_symbols = list(set([signal.symbol for signal in signals]))
+            
+            # Try to get fresh quotes from Kotak Neo API
+            trading_functions = TradingFunctions()
+            if hasattr(trading_functions, 'get_quotes_for_symbols'):
+                try:
+                    fresh_quotes = trading_functions.get_quotes_for_symbols(signal_symbols)
+                    for symbol, quote_data in fresh_quotes.items():
+                        latest_quotes[symbol] = {
+                            'current_price': float(quote_data.get('ltp', 0)),
+                            'change_percent': float(quote_data.get('percentage_change', 0)),
+                            'open_price': float(quote_data.get('open_price', 0)),
+                            'high_price': float(quote_data.get('high_price', 0)),
+                            'low_price': float(quote_data.get('low_price', 0)),
+                            'volume': quote_data.get('volume', 0),
+                            'bid_price': float(quote_data.get('bid_price', 0)),
+                            'ask_price': float(quote_data.get('ask_price', 0)),
+                            'week_52_high': float(quote_data.get('week_52_high', 0)),
+                            'week_52_low': float(quote_data.get('week_52_low', 0)),
+                            'last_update': datetime.now(),
+                            'data_source': 'KOTAK_NEO_API_LIVE'
+                        }
+                    logger.info(f"✅ Retrieved {len(fresh_quotes)} fresh quotes from Kotak Neo API")
+                except Exception as api_error:
+                    logger.warning(f"⚠️ Could not fetch fresh quotes from API: {api_error}")
+            
+            # Fallback to database quotes if API fails
+            if not latest_quotes:
+                # First try to get comprehensive data from KotakNeoQuote
+                kotak_subquery = db.session.query(
+                    KotakNeoQuote.symbol,
+                    func.max(KotakNeoQuote.timestamp).label('max_timestamp')
+                ).group_by(KotakNeoQuote.symbol).subquery()
 
-            kotak_quotes = db.session.query(KotakNeoQuote).join(
-                kotak_subquery,
-                db.and_(
-                    KotakNeoQuote.symbol == kotak_subquery.c.symbol,
-                    KotakNeoQuote.timestamp == kotak_subquery.c.max_timestamp
-                )
-            ).all()
+                kotak_quotes = db.session.query(KotakNeoQuote).join(
+                    kotak_subquery,
+                    db.and_(
+                        KotakNeoQuote.symbol == kotak_subquery.c.symbol,
+                        KotakNeoQuote.timestamp == kotak_subquery.c.max_timestamp
+                    )
+                ).all()
 
-            for quote in kotak_quotes:
-                latest_quotes[quote.symbol] = {
-                    'current_price': float(quote.ltp),
-                    'change_percent': float(quote.percentage_change) if quote.percentage_change else 0,
-                    'open_price': float(quote.open_price) if quote.open_price else 0,
-                    'high_price': float(quote.high_price) if quote.high_price else 0,
-                    'low_price': float(quote.low_price) if quote.low_price else 0,
-                    'volume': quote.volume or 0,
-                    'bid_price': float(quote.bid_price) if quote.bid_price else 0,
-                    'ask_price': float(quote.ask_price) if quote.ask_price else 0,
-                    'week_52_high': float(quote.week_52_high) if quote.week_52_high else 0,
-                    'week_52_low': float(quote.week_52_low) if quote.week_52_low else 0,
-                    'last_update': quote.timestamp,
-                    'data_source': 'KOTAK_NEO_API'
-                }
-
-            # Fallback to RealtimeQuote for symbols not in KotakNeoQuote
-            realtime_subquery = db.session.query(
-                RealtimeQuote.symbol,
-                func.max(RealtimeQuote.timestamp).label('max_timestamp')
-            ).group_by(RealtimeQuote.symbol).subquery()
-
-            realtime_quotes = db.session.query(RealtimeQuote).join(
-                realtime_subquery,
-                db.and_(
-                    RealtimeQuote.symbol == realtime_subquery.c.symbol,
-                    RealtimeQuote.timestamp == realtime_subquery.c.max_timestamp
-                )
-            ).all()
-
-            for quote in realtime_quotes:
-                if quote.symbol not in latest_quotes:  # Only add if not already from KotakNeoQuote
+                for quote in kotak_quotes:
                     latest_quotes[quote.symbol] = {
-                        'current_price': float(quote.current_price),
-                        'change_percent': float(quote.change_percent) if quote.change_percent else 0,
+                        'current_price': float(quote.ltp),
+                        'change_percent': float(quote.percentage_change) if quote.percentage_change else 0,
                         'open_price': float(quote.open_price) if quote.open_price else 0,
                         'high_price': float(quote.high_price) if quote.high_price else 0,
                         'low_price': float(quote.low_price) if quote.low_price else 0,
                         'volume': quote.volume or 0,
-                        'bid_price': 0,
-                        'ask_price': 0,
-                        'week_52_high': 0,
-                        'week_52_low': 0,
+                        'bid_price': float(quote.bid_price) if quote.bid_price else 0,
+                        'ask_price': float(quote.ask_price) if quote.ask_price else 0,
+                        'week_52_high': float(quote.week_52_high) if quote.week_52_high else 0,
+                        'week_52_low': float(quote.week_52_low) if quote.week_52_low else 0,
                         'last_update': quote.timestamp,
-                        'data_source': 'REALTIME_QUOTES'
+                        'data_source': 'KOTAK_NEO_API'
                     }
 
-            logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
+                # Fallback to RealtimeQuote for symbols not in KotakNeoQuote
+                realtime_subquery = db.session.query(
+                    RealtimeQuote.symbol,
+                    func.max(RealtimeQuote.timestamp).label('max_timestamp')
+                ).group_by(RealtimeQuote.symbol).subquery()
+
+                realtime_quotes = db.session.query(RealtimeQuote).join(
+                    realtime_subquery,
+                    db.and_(
+                        RealtimeQuote.symbol == realtime_subquery.c.symbol,
+                        RealtimeQuote.timestamp == realtime_subquery.c.max_timestamp
+                    )
+                ).all()
+
+                for quote in realtime_quotes:
+                    if quote.symbol not in latest_quotes:  # Only add if not already from KotakNeoQuote
+                        latest_quotes[quote.symbol] = {
+                            'current_price': float(quote.current_price),
+                            'change_percent': float(quote.change_percent) if quote.change_percent else 0,
+                            'open_price': float(quote.open_price) if quote.open_price else 0,
+                            'high_price': float(quote.high_price) if quote.high_price else 0,
+                            'low_price': float(quote.low_price) if quote.low_price else 0,
+                            'volume': quote.volume or 0,
+                            'bid_price': 0,
+                            'ask_price': 0,
+                            'week_52_high': 0,
+                            'week_52_low': 0,
+                            'last_update': quote.timestamp,
+                            'data_source': 'REALTIME_QUOTES'
+                        }
+
+                logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
+
         except Exception as quote_error:
-            logger.warning(f"⚠️ Could not fetch latest quotes from database: {quote_error}")
+            logger.warning(f"⚠️ Could not fetch latest quotes: {quote_error}")
 
         signals_data = []
         total_invested = 0
         total_current_value = 0
         total_pnl = 0
 
-        # Process each CSV ETF entry with real-time calculations
-        for idx, etf in enumerate(csv_etf_data):
-            # Use comprehensive real-time data if available, otherwise use CSV CMP
-            current_price = etf['cmp']
+        # Process each admin trade signal with real-time CMP calculations
+        for idx, signal in enumerate(signals):</old_str>
+            # Get real-time CMP from Kotak Neo quotes or fallback to signal price
+            entry_price = float(signal.entry_price)
+            current_price = float(signal.current_price) if signal.current_price else entry_price
+            quantity = signal.quantity
+            target_price = float(signal.target_price) if signal.target_price else 0
+            
+            # Default values
             change_percent = 0
-            open_price = etf['cmp']
-            high_price = etf['cmp']
-            low_price = etf['cmp']
+            open_price = current_price
+            high_price = current_price
+            low_price = current_price
             volume = 0
             bid_price = ask_price = 0
             week_52_high = week_52_low = 0
-            data_source = 'CSV_DATA'
+            data_source = 'SIGNAL_DATA'
             
-            # Override with comprehensive quote data if available
-            if etf['etf'] in latest_quotes:
-                quote_data = latest_quotes[etf['etf']]
-                current_price = quote_data['current_price']
+            # Override with real-time quote data if available
+            if signal.symbol in latest_quotes:
+                quote_data = latest_quotes[signal.symbol]
+                current_price = quote_data['current_price'] or current_price
                 change_percent = quote_data['change_percent']
                 open_price = quote_data['open_price'] or current_price
                 high_price = quote_data['high_price'] or current_price
@@ -146,46 +268,41 @@ def get_admin_signals():
                 week_52_high = quote_data['week_52_high']
                 week_52_low = quote_data['week_52_low']
                 data_source = quote_data['data_source']
+                
+                # Update signal with latest price
+                signal.current_price = current_price
+                signal.change_percent = change_percent
+                signal.last_update_time = datetime.now()
             else:
-                # Calculate change percent from CSV data
-                change_percent = ((current_price - etf['ep']) / etf['ep']) * 100
+                # Calculate change percent from entry price
+                change_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
 
-            # Calculate all values matching CSV format exactly
-            entry_price = etf['ep']
-            quantity = etf['qty']
-            target_price = etf['tp']
-            
             # Investment calculation
-            invested_amount = entry_price * quantity  # "Inv." column
-            current_value = current_price * quantity  # Current market value
-            target_value_amount = target_price * quantity  # "TVA" column
+            invested_amount = entry_price * quantity
+            current_value = current_price * quantity
+            target_value_amount = target_price * quantity if target_price > 0 else 0
             
-            # P&L calculations based on position type
-            if etf['pos'] == 1:  # Long position
+            # P&L calculations based on signal type
+            if signal.signal_type == 'BUY':  # Long position
                 pnl_amount = (current_price - entry_price) * quantity
-            else:  # Short position (pos == 0)
+            else:  # Short position
                 pnl_amount = (entry_price - current_price) * quantity
             
             # Target profit return calculation
-            target_profit_return = ((target_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+            target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0
             
-            # Calculate days held (simulate from date)
-            try:
-                from datetime import datetime
-                entry_date = datetime.strptime(etf['date'], '%d-%b-%Y')
-                days_held = (datetime.now() - entry_date).days
-            except:
-                days_held = 30  # Default
+            # Calculate days held
+            days_held = (datetime.now() - signal.created_at).days if signal.created_at else 0
             
             # Format signal data with comprehensive market data
             signal_data = {
-                'id': idx + 1,
-                'etf': etf['etf'],  # ETF column
-                'symbol': etf['etf'],
+                'id': signal.id,
+                'etf': signal.symbol,  # ETF column
+                'symbol': signal.symbol,
                 'thirty': f"{change_percent * 1.2:.1f}%",  # 30-day performance (simulated)
-                'dh': days_held if days_held != '#N/A' else '#N/A',  # DH (Days Held)
-                'date': etf['date'],  # Date
-                'pos': etf['pos'],  # Pos (Position: 1=Long, 0=Short)
+                'dh': days_held,  # DH (Days Held)
+                'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',  # Date
+                'pos': 1 if signal.signal_type == 'BUY' else 0,  # Pos (Position: 1=Long, 0=Short)
                 'qty': quantity,  # Qty
                 'ep': entry_price,  # EP (Entry Price)
                 'cmp': current_price,  # CMP (Current Market Price) - REAL-TIME
@@ -195,14 +312,14 @@ def get_admin_signals():
                 'tva': target_value_amount,  # TVA (Target Value Amount)
                 'tpr': f"₹{target_profit_return:.0f}",  # TPR (Target Profit Return)
                 'pl': pnl_amount,  # PL (Profit/Loss)
-                'ed': '',  # ED (Expiry Date)
-                'exp': '',  # EXP (Expiry field)
+                'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # ED (Expiry Date)
+                'exp': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # EXP (Expiry field)
                 'pr': f"{change_percent:.1f}%",  # PR (Profit Return %)
                 'pp': '★★★' if change_percent > 5 else '★★' if change_percent > 2 else '★' if change_percent > 0 else '☆',  # PP (Performance Points)
                 'iv': invested_amount,  # IV (Investment Value)
                 'ip': f"{change_percent:.2f}%",  # IP (Investment Performance %)
-                'nt': f"CSV ETF data for {etf['etf']} - Real-time CMP: ₹{current_price:.2f}",  # NT (Notes)
-                'qt': datetime.utcnow().strftime('%H:%M'),  # Qt (Quote time) - REAL-TIME
+                'nt': signal.signal_description or f"Admin signal for {signal.symbol} - Real-time CMP: ₹{current_price:.2f}",  # NT (Notes)
+                'qt': datetime.now().strftime('%H:%M'),  # Qt (Quote time) - REAL-TIME
                 'seven': f"{change_percent * 0.8:.1f}%",  # 7-day performance (simulated)
                 'change2': change_percent,  # Alternative change field
                 
@@ -218,12 +335,12 @@ def get_admin_signals():
                 'data_source': data_source,
                 
                 # Additional fields for compatibility
-                'signal_type': 'BUY' if etf['pos'] == 1 else 'SELL',
-                'status': 'ACTIVE',
-                'trading_symbol': f"{etf['etf']}-EQ",
-                'priority': 'MEDIUM',
-                'created_at': datetime.utcnow().isoformat(),
-                'last_updated': datetime.utcnow().strftime('%H:%M:%S'),
+                'signal_type': signal.signal_type,
+                'status': signal.status,
+                'trading_symbol': signal.trading_symbol or f"{signal.symbol}-EQ",
+                'priority': signal.priority,
+                'created_at': signal.created_at.isoformat() if signal.created_at else None,
+                'last_updated': datetime.now().strftime('%H:%M:%S'),
                 
                 # DataTable display fields
                 'display_price': f"₹{current_price:.2f}",
@@ -237,11 +354,19 @@ def get_admin_signals():
             # Update totals for portfolio summary
             total_invested += invested_amount
             total_current_value += current_value
-            total_pnl += pnl_amount
+            total_pnl += pnl_amount</old_str>
 
-        logger.info(f"✅ Processed {len(signals_data)} CSV ETF signals with real-time CMP calculations")
+        logger.info(f"✅ Processed {len(signals_data)} admin trade signals with real-time CMP from Kotak Neo")
 
-        # Also fetch admin trade signals from database
+        # Commit any price updates to database
+        try:
+            db.session.commit()
+            logger.info("✅ Updated signal prices in database")
+        except Exception as commit_error:
+            logger.warning(f"⚠️ Could not commit price updates: {commit_error}")
+            db.session.rollback()
+
+        # Calculate portfolio summary from processed signals</old_str>
         try:
             admin_signals = db.session.query(AdminTradeSignal).filter_by(
                 assigned_to_ucc='zhz3j'  # Demo user

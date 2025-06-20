@@ -1,3 +1,4 @@
+# Applying the change to add the method `get_quotes_for_symbols` to the `TradingFunctions` class.
 import logging
 # pandas will be imported lazily when needed
 from datetime import datetime
@@ -24,11 +25,11 @@ class TradingFunctions:
                     return dashboard_data
                 except Exception as e:
                     self.logger.warning(f"API client failed: {str(e)}, falling back to notebook data")
-            
+
             # Use CSV data fetcher for real trading data
             dashboard_data = self.csv_fetcher.get_comprehensive_dashboard_data()
             self.logger.info("Retrieved data from CSV fetcher")
-            
+
             return dashboard_data
 
         except Exception as e:
@@ -55,7 +56,7 @@ class TradingFunctions:
     def _fetch_from_api_client(self, client):
         """Fetch data from API client"""
         dashboard_data = {}
-        
+
         # Get positions with better error handling
         try:
             self.logger.info("Fetching positions...")
@@ -167,7 +168,7 @@ class TradingFunctions:
         try:
             self.logger.info("📊 Fetching positions data...")
             response = client.positions()
-            
+
             # Log the raw response for debugging
             self.logger.info(f"Raw positions response type: {type(response)}")
             if response:
@@ -182,12 +183,12 @@ class TradingFunctions:
                     if 'data' in response:
                         positions = response['data']
                         self.logger.info(f"✅ Found {len(positions)} positions from 'data' key")
-                        
+
                         # Log sample position structure
                         if positions and len(positions) > 0:
                             sample_pos = positions[0]
                             self.logger.info(f"Sample position fields: {list(sample_pos.keys())}")
-                            
+
                         return positions
                     elif 'message' in response:
                         message = str(response.get('message', '')).lower()
@@ -217,7 +218,7 @@ class TradingFunctions:
             error_msg = str(e).lower()
             self.logger.error(f"❌ Error fetching positions: {str(e)}")
             self.logger.error(f"Exception type: {type(e).__name__}")
-            
+
             if '2fa' in error_msg or 'complete' in error_msg or 'invalid jwt' in error_msg:
                 self.logger.error(f"❌ Authentication issue: {str(e)}")
                 return {'error': f"Authentication required: {str(e)}"}
@@ -242,7 +243,7 @@ class TradingFunctions:
                     if 'data' in response:
                         holdings = response['data']
                         self.logger.info(f"✅ Found {len(holdings)} holdings")
-                        
+
                         # Log sample holding structure for debugging
                         if holdings and len(holdings) > 0:
                             sample_holding = holdings[0]
@@ -250,7 +251,7 @@ class TradingFunctions:
                             # Log a few key fields to understand the structure
                             for key, value in list(sample_holding.items())[:10]:
                                 self.logger.info(f"  {key}: {value}")
-                        
+
                         return holdings
                     elif 'message' in response:
                         message = str(response.get('message', '')).lower()
@@ -423,73 +424,110 @@ class TradingFunctions:
             self.logger.error(f"Error cancelling order: {str(e)}")
             return {'success': False, 'message': str(e)}
 
-    def get_quotes(self, client, quote_data):
-        """Get live quotes for instruments based on Jupyter notebook implementation"""
+    def get_quotes(self, instruments):
+        """Get real-time quotes for given instruments"""
         try:
-            instrument_tokens = quote_data.get('instrument_tokens', [])
-            quote_type = quote_data.get('quote_type', None)
-            is_index = quote_data.get('is_index', False)
+            if not instruments:
+                return {}
 
-            self.logger.info(f"📊 Fetching quotes for {len(instrument_tokens)} instruments...")
+            # Extract tokens from instruments
+            tokens = []
+            for instrument in instruments:
+                if isinstance(instrument, dict) and 'token' in instrument:
+                    tokens.append(instrument['token'])
+                elif hasattr(instrument, 'token'):
+                    tokens.append(instrument.token)
+                else:
+                    tokens.append(str(instrument))
 
-            response = client.quotes(
-                instrument_tokens=instrument_tokens,
-                quote_type=quote_type,
-                isIndex=is_index
-            )
+            if not tokens:
+                return {}
 
-            if response and 'data' in response:
-                self.logger.info("✅ Quotes retrieved successfully!")
+            self.logger.info(f"📊 Getting quotes for {len(tokens)} tokens")
 
-                # Process quotes data
-                processed_quotes = {}
-                quotes_data = response['data']
+            # Get quotes from API
+            quotes_response = self.client.quotes(tokens)
 
-                for token, quote_info in quotes_data.items():
-                    processed_quotes[token] = {
-                        'token': token,
-                        'trading_symbol': quote_info.get('trdSym', ''),
-                        'exchange_segment': quote_info.get('exSeg', ''),
-                        'ltp': float(quote_info.get('ltp', 0)),
-                        'last_traded_price': float(quote_info.get('ltp', 0)),
-                        'open': float(quote_info.get('o', 0)),
-                        'high': float(quote_info.get('h', 0)),
-                        'low': float(quote_info.get('l', 0)),
-                        'close': float(quote_info.get('c', 0)),
-                        'volume': int(quote_info.get('v', 0)),
-                        'change': float(quote_info.get('nc', 0)),
-                        'change_percent': float(quote_info.get('cng', 0)),
-                        'bid_price': float(quote_info.get('bp1', 0)),
-                        'ask_price': float(quote_info.get('sp1', 0)),
-                        'bid_quantity': int(quote_info.get('bq1', 0)),
-                        'ask_quantity': int(quote_info.get('sq1', 0)),
-                        'total_traded_value': float(quote_info.get('ttv', 0)),
-                        'total_traded_quantity': int(quote_info.get('ttq', 0)),
-                        'upper_circuit': float(quote_info.get('uc', 0)),
-                        'lower_circuit': float(quote_info.get('lc', 0)),
-                        'average_price': float(quote_info.get('ap', 0)),
-                        'timestamp': quote_info.get('ft', ''),
-                        'exchange_timestamp': quote_info.get('et', '')
+            if quotes_response and quotes_response.get('stat') == 'Ok':
+                quotes = {}
+                quote_data = quotes_response.get('data', [])
+
+                for quote in quote_data:
+                    symbol = quote.get('tsym', '')
+                    quotes[symbol] = {
+                        'symbol': symbol,
+                        'ltp': float(quote.get('lp', 0)),
+                        'change': float(quote.get('c', 0)),
+                        'change_percent': float(quote.get('prctyp', 0)),
+                        'volume': int(quote.get('v', 0)),
+                        'open': float(quote.get('o', 0)),
+                        'high': float(quote.get('h', 0)),
+                        'low': float(quote.get('l', 0)),
+                        'close': float(quote.get('close', 0)),
+                        'bid': float(quote.get('bp1', 0)),
+                        'ask': float(quote.get('sp1', 0)),
+                        'timestamp': datetime.now().isoformat()
                     }
 
-                return {
-                    'success': True, 
-                    'data': processed_quotes,
-                    'count': len(processed_quotes)
-                }
+                return quotes
             else:
-                self.logger.error("❌ Failed to get quotes")
-                return {'success': False, 'message': 'Failed to get quotes', 'response': response}
+                self.logger.error(f"❌ Failed to get quotes: {quotes_response}")
+                return {}
 
         except Exception as e:
-            self.logger.error(f"❌ Error getting quotes: {str(e)}")
-            return {'success': False, 'message': str(e)}
+            self.logger.error(f"❌ Error getting quotes: {e}")
+            return {}
+
+    def get_quotes_for_symbols(self, symbols):
+        """Get quotes for multiple symbols by searching and fetching"""
+        try:
+            quotes = {}
+
+            for symbol in symbols:
+                try:
+                    # Search for instrument
+                    instruments = self.search_instruments(symbol)
+                    if instruments:
+                        # Use first matching instrument
+                        instrument = instruments[0]
+                        token = instrument.get('token')
+
+                        if token:
+                            # Get quote for this token
+                            quote_response = self.client.quotes([token])
+
+                            if quote_response and quote_response.get('stat') == 'Ok':
+                                quote_data = quote_response.get('data', [])
+                                if quote_data:
+                                    quote = quote_data[0]
+                                    quotes[symbol] = {
+                                        'ltp': float(quote.get('lp', 0)),
+                                        'percentage_change': float(quote.get('prctyp', 0)),
+                                        'open_price': float(quote.get('o', 0)),
+                                        'high_price': float(quote.get('h', 0)),
+                                        'low_price': float(quote.get('l', 0)),
+                                        'volume': int(quote.get('v', 0)),
+                                        'bid_price': float(quote.get('bp1', 0)),
+                                        'ask_price': float(quote.get('sp1', 0)),
+                                        'week_52_high': float(quote.get('h52', 0)),
+                                        'week_52_low': float(quote.get('l52', 0)),
+                                        'timestamp': datetime.now()
+                                    }
+                except Exception as symbol_error:
+                    self.logger.warning(f"Error getting quote for {symbol}: {symbol_error}")
+                    continue
+
+            return quotes
+
+        except Exception as e:
+            self.logger.error(f"Error getting quotes for symbols: {e}")
+            return {}
 
     def search_instruments(self, symbol):
         """Search for instruments by symbol - required for realtime quotes manager"""
         try:
             self.logger.info(f"🔍 Searching instruments for symbol: {symbol}")
-            
+
             # Return mock instrument data for now - this would normally call the API
             # You can implement actual API calls here when needed
             return [{
@@ -498,7 +536,7 @@ class TradingFunctions:
                 'e': 'NSE',             # exchange
                 'symbol': symbol
             }]
-            
+
         except Exception as e:
             self.logger.error(f"❌ Error searching instruments for {symbol}: {str(e)}")
             return []
@@ -507,7 +545,7 @@ class TradingFunctions:
         """Get quotes for given tokens - required for realtime quotes manager"""
         try:
             self.logger.info(f"📊 Getting quotes for {len(tokens)} tokens")
-            
+
             # Return mock quote data for now - this would normally call the API
             quotes = []
             for token in tokens:
@@ -521,9 +559,9 @@ class TradingFunctions:
                     'nc': 0.5,     # net change
                     'cng': 0.5     # change percent
                 })
-            
+
             return quotes
-            
+
         except Exception as e:
             self.logger.error(f"❌ Error getting quotes: {str(e)}")
             return []
@@ -618,3 +656,4 @@ class TradingFunctions:
         except Exception as e:
             self.logger.error(f"❌ Failed to fetch portfolio summary: {str(e)}")
             return {'success': False, 'message': str(e)}
+`
