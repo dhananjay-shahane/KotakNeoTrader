@@ -176,7 +176,7 @@ def get_admin_signals():
                 total_pnl += pnl_amount
 
         # Commit price updates to database
-        if live_quotes:
+        if latest_quotes:
             try:
                 db.session.commit()
                 logger.info("✅ Updated signal prices in database")
@@ -211,7 +211,7 @@ def get_admin_signals():
             'signals': signals_data,
             'portfolio': portfolio_summary,
             'last_update': datetime.utcnow().isoformat(),
-            'quotes_fetched': len(live_quotes)
+            'quotes_fetched': len(latest_quotes)
         })
 
     except Exception as e:

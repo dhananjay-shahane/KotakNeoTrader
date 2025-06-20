@@ -1,11 +1,9 @@
-"""
-Script to populate ETF quotes from Kotak Neo API and store in database
-"""
+"""This script populates ETF quotes and signals based on CSV data."""
 from app import app, db
 from models_etf import AdminTradeSignal
 from trading_functions import TradingFunctions
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import random
 
@@ -57,7 +55,7 @@ def generate_realistic_price(symbol):
         'TCS': (4100, 4200),
         'INFY': (1800, 1900),
     }
-    
+
     price_range = price_ranges.get(symbol, (50, 100))
     return round(random.uniform(price_range[0], price_range[1]), 2)
 
@@ -65,167 +63,121 @@ def generate_realistic_change():
     """Generate realistic percentage change (-5% to +5%)"""
     return round(random.uniform(-5.0, 5.0), 2)
 
-def populate_etf_signals_with_realistic_data():
-    """Populate database with realistic ETF signals matching CSV format"""
+def populate_etf_signals_with_csv_data():
+    """Create ETF trading signals based on CSV data format"""
     with app.app_context():
         try:
             from models import User
             from models_etf import AdminTradeSignal
-            
-            # Get or create admin user
-            admin_user = User.query.first()
-            if not admin_user:
-                admin_user = User(ucc='ADMIN', greeting_name='Admin User', is_active=True)
-                db.session.add(admin_user)
-                db.session.commit()
-            
-            # Clear existing signals
-            AdminTradeSignal.query.delete()
-            db.session.commit()
-            
-            # ETF data based on your CSV
+
+            # ETF data matching your CSV format - focus on CMP calculation
             etf_data = [
                 {'symbol': 'MID150BEES', 'entry_price': 227.02, 'current_price': 222.19, 'quantity': 200},
                 {'symbol': 'ITETF', 'entry_price': 47.13, 'current_price': 40.74, 'quantity': 500},
                 {'symbol': 'CONSUMBEES', 'entry_price': 124.0, 'current_price': 126.92, 'quantity': 700},
-                {'symbol': 'SILVERBEES', 'entry_price': 86.85, 'current_price': 103.65, 'quantity': 1100},
-                {'symbol': 'GOLDBEES', 'entry_price': 66.0, 'current_price': 82.61, 'quantity': 800},
-                {'symbol': 'FMCGIETF', 'entry_price': 59.73, 'current_price': 58.3, 'quantity': 1600},
-                {'symbol': 'JUNIORBEES', 'entry_price': 780.32, 'current_price': 722.72, 'quantity': 50},
-                {'symbol': 'AUTOIETF', 'entry_price': 24.31, 'current_price': 23.83, 'quantity': 2800},
-                {'symbol': 'PHARMABEES', 'entry_price': 22.7, 'current_price': 22.28, 'quantity': 4500},
-                {'symbol': 'NIFTYBEES', 'entry_price': 265.43, 'current_price': 278.9, 'quantity': 400},
-                {'symbol': 'HDFCPVTBAN', 'entry_price': 25.19, 'current_price': 28.09, 'quantity': 4000},
-                {'symbol': 'INFRABEES', 'entry_price': 880.51, 'current_price': 933.97, 'quantity': 120},
-                {'symbol': 'HDFCSML250', 'entry_price': 178.27, 'current_price': 174.2, 'quantity': 600},
-                {'symbol': 'NEXT50IETF', 'entry_price': 70.9, 'current_price': 70.55, 'quantity': 1400},
-                {'symbol': 'NIF100BEES', 'entry_price': 259.64, 'current_price': 268.09, 'quantity': 400},
-                {'symbol': 'TNIDETF', 'entry_price': 101.03, 'current_price': 93.75, 'quantity': 20},
-                {'symbol': 'FINIETF', 'entry_price': 26.63, 'current_price': 30.47, 'quantity': 4000},
-                {'symbol': 'MOM30IETF', 'entry_price': 31.34, 'current_price': 31.97, 'quantity': 3200},
-                {'symbol': 'MON100', 'entry_price': 192.0, 'current_price': 181.99, 'quantity': 550},
-                {'symbol': 'MAFANG', 'entry_price': 136.0, 'current_price': 136.0, 'quantity': 800},
-                {'symbol': 'HEALTHIETF', 'entry_price': 145.05, 'current_price': 145.46, 'quantity': 750},
-                {'symbol': 'ITBEES', 'entry_price': 45.28, 'current_price': 42.85, 'quantity': 2300},
-                {'symbol': 'MONQ50', 'entry_price': 90.24, 'current_price': 74.33, 'quantity': 1200},
-                {'symbol': 'LIQUIDBEES', 'entry_price': 999.0, 'current_price': 999.69, 'quantity': 341}
+                {'symbol': 'NIFTYBEES', 'entry_price': 247.55, 'current_price': 251.20, 'quantity': 1000},
+                {'symbol': 'BANKBEES', 'entry_price': 425.30, 'current_price': 432.80, 'quantity': 500},
+                {'symbol': 'LIQUIDBEES', 'entry_price': 999.0, 'current_price': 999.69, 'quantity': 341},
+                {'symbol': 'GOLDSHARE', 'entry_price': 45.85, 'current_price': 47.12, 'quantity': 2000},
+                {'symbol': 'ITBEES', 'entry_price': 45.28, 'current_price': 42.85, 'quantity': 2300}
             ]
-            
+
+            # Find target user (preferably zhz3j)
+            target_user = User.query.filter(
+                (User.ucc.ilike('%zhz3j%')) | 
+                (User.greeting_name.ilike('%zhz3j%')) | 
+                (User.user_id.ilike('%zhz3j%'))
+            ).first()
+
+            if not target_user:
+                target_user = User.query.first()
+
+            if not target_user:
+                logging.error("No users found in database")
+                return 0
+
+            admin_user = target_user  # Use same user as admin for demo
+
+            # Clear existing signals for clean data
+            AdminTradeSignal.query.filter_by(target_user_id=target_user.id).delete()
+            db.session.commit()
+
             signals_created = 0
-            
-            for i, etf in enumerate(etf_data):
+
+            for etf in etf_data:
                 try:
-                    # Calculate change percentage
-                    change_percent = ((etf['current_price'] - etf['entry_price']) / etf['entry_price']) * 100
-                    
-                    # Determine signal type based on performance
+                    # Calculate change percentage - this is the key CMP calculation
+                    entry_price = float(etf['entry_price'])
+                    current_price = float(etf['current_price'])
+                    quantity = int(etf['quantity'])
+
+                    change_percent = ((current_price - entry_price) / entry_price) * 100
+
+                    # Calculate investment and current values
+                    invested_amount = entry_price * quantity
+                    current_value = current_price * quantity
+                    pnl = current_value - invested_amount
+
+                    # Determine signal type
                     signal_type = 'BUY' if change_percent >= 0 else 'SELL'
-                    
-                    # Calculate target price (10-15% above entry for BUY, 10% below for SELL)
+
+                    # Set targets based on signal type
                     if signal_type == 'BUY':
-                        target_price = etf['entry_price'] * 1.15
+                        target_price = entry_price * 1.10  # 10% target
+                        stop_loss = entry_price * 0.95     # 5% stop loss
                     else:
-                        target_price = etf['entry_price'] * 0.9
-                    
-                    # Calculate stop loss (5-8% below entry for BUY, 5% above for SELL)
-                    if signal_type == 'BUY':
-                        stop_loss = etf['entry_price'] * 0.92
-                    else:
-                        stop_loss = etf['entry_price'] * 1.05
-                    
-                    # Create admin trade signal
+                        target_price = entry_price * 0.90  # 10% target (down)
+                        stop_loss = entry_price * 1.05     # 5% stop loss (up)
+
+                    # Create signal with CMP data
                     signal = AdminTradeSignal(
                         admin_user_id=admin_user.id,
-                        target_user_id=admin_user.id,  # Self-target for now
+                        target_user_id=target_user.id,
                         symbol=etf['symbol'],
                         trading_symbol=f"{etf['symbol']}-EQ",
-                        token=str(1000 + i),  # Sequential tokens
+                        token=f"NSE_{etf['symbol']}",
                         exchange='NSE',
                         signal_type=signal_type,
-                        entry_price=etf['entry_price'],
-                        current_price=etf['current_price'],
+                        entry_price=entry_price,
+                        current_price=current_price,  # This is the CMP
                         target_price=target_price,
                         stop_loss=stop_loss,
-                        quantity=etf['quantity'],
-                        signal_title=f"{signal_type} Signal for {etf['symbol']}",
-                        signal_description=f"ETF trading signal based on market analysis. Entry: ₹{etf['entry_price']}, Current: ₹{etf['current_price']}",
-                        priority=['HIGH', 'MEDIUM', 'LOW'][i % 3],
+                        quantity=quantity,
+                        signal_title=f"{signal_type} - {etf['symbol']}",
+                        signal_description=f"ETF position: {etf['symbol']} | Entry: ₹{entry_price} | CMP: ₹{current_price} | P&L: {change_percent:.2f}%",
+                        priority=['LOW', 'MEDIUM', 'HIGH'][signals_created % 3],
                         change_percent=change_percent,
-                        last_update_time=datetime.utcnow(),
+                        investment_amount=invested_amount,
+                        current_value=current_value,
+                        pnl=pnl,
+                        pnl_percentage=change_percent,
                         status='ACTIVE',
-                        created_at=datetime.utcnow() - timedelta(days=random.randint(1, 30)),
-                        expires_at=datetime.utcnow() + timedelta(days=random.randint(30, 90))
+                        created_at=datetime.utcnow() - timedelta(days=(signals_created % 30) + 1),
+                        expires_at=datetime.utcnow() + timedelta(days=60),
+                        last_update_time=datetime.utcnow()
                     )
-                    
+
                     db.session.add(signal)
                     signals_created += 1
-                    
-                    logging.info(f"Created signal {signals_created}: {etf['symbol']} - {signal_type} at ₹{etf['entry_price']}")
-                        
+
+                    logging.info(f"✅ Created signal {signals_created}: {etf['symbol']} | Entry: ₹{entry_price} | CMP: ₹{current_price} | Change: {change_percent:.2f}%")
+
                 except Exception as e:
-                    logging.error(f"Error processing {etf['symbol']}: {str(e)}")
+                    logging.error(f"❌ Error processing {etf['symbol']}: {str(e)}")
                     continue
-            
+
             # Commit all signals
             db.session.commit()
-            logging.info(f"Successfully created {signals_created} ETF signals with realistic data")
-            
+            logging.info(f"🎯 Successfully created {signals_created} ETF signals with CMP calculations")
+
             return signals_created
-                    signal_type = 'BUY' if i % 2 == 0 else 'SELL'
-                    if signal_type == 'BUY':
-                        entry_price = current_price * 0.995  # 0.5% below current
-                        target_price = current_price * 1.05   # 5% above current
-                        stop_loss = current_price * 0.98      # 2% below current
-                    else:
-                        entry_price = current_price * 1.005  # 0.5% above current
-                        target_price = current_price * 0.95   # 5% below current
-                        stop_loss = current_price * 1.02      # 2% above current
-                    
-                    # Select target user (rotate through users)
-                    target_user = target_users[i % len(target_users)]
-                    
-                    # Create signal
-                    signal = AdminTradeSignal()
-                    signal.admin_user_id = admin_user.id
-                    signal.target_user_id = target_user.id
-                    signal.symbol = instrument['symbol']
-                    signal.trading_symbol = instrument['trading_symbol']
-                    signal.token = instrument['token']
-                    signal.exchange = instrument['exchange']
-                    signal.signal_type = signal_type
-                    signal.entry_price = round(entry_price, 2)
-                    signal.target_price = round(target_price, 2)
-                    signal.stop_loss = round(stop_loss, 2)
-                    signal.quantity = 100 + (i * 50)  # Varying quantities
-                    signal.signal_title = f"{signal_type} Signal for {instrument['symbol']}"
-                    signal.signal_description = f"Market signal based on current price ₹{current_price}. Change: {change_percent}%"
-                    signal.priority = ['HIGH', 'MEDIUM', 'LOW'][i % 3]
-                    signal.current_price = current_price
-                    signal.change_percent = change_percent
-                    signal.last_update_time = datetime.utcnow()
-                    signal.status = 'ACTIVE'
-                    
-                    db.session.add(signal)
-                    signals_created += 1
-                    
-                    logging.info(f"Created signal {signals_created}: {instrument['symbol']} - {signal_type} at ₹{entry_price}")
-                        
-                except Exception as e:
-                    logging.error(f"Error processing {instrument['symbol']}: {str(e)}")
-                    continue
-            
-            # Commit all signals
-            db.session.commit()
-            logging.info(f"Successfully created {signals_created} ETF signals with live data")
-            
-            return signals_created
-            
+
         except Exception as e:
-            logging.error(f"Error populating ETF signals: {str(e)}")
+            logging.error(f"❌ Error in populate_etf_signals_with_csv_data: {str(e)}")
             db.session.rollback()
             return 0
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    count = populate_etf_signals_with_live_data()
+    count = populate_etf_signals_with_csv_data()
     print(f"Created {count} ETF signals with live Kotak Neo API data")
