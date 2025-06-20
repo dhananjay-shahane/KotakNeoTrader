@@ -104,6 +104,18 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 20, 2025** - Built comprehensive trading signal management system
+  - Implemented real-time CMP integration with Kotak Neo API (5-minute updates)
+  - Created RealtimeQuote model for storing market data with timestamps
+  - Built advanced DataTables with pagination, search, filtering, and sorting
+  - Added admin panel for creating and managing ETF trading signals
+  - Implemented user dashboard with real-time portfolio tracking
+  - Created P&L calculations with percentage returns and current values
+  - Added column visibility controls and responsive design
+  - Integrated real-time price updates for all trading signals
+  - Built comprehensive API endpoints for quotes and signal management
+  - Populated demo data with 5 users, 50 market quotes, and 40 trading signals
+
 - **June 19, 2025** - Successfully completed migration from Replit Agent to standard Replit environment
   - Resolved pandas/libstdc++.so.6 dependency issues by setting proper LD_LIBRARY_PATH
   - Fixed NeoAPI import issues with direct library path configuration  
@@ -112,9 +124,6 @@ The application follows a modern Flask architecture with clear separation of con
   - Login functionality now working with proper library dependencies
   - Database properly connected with PostgreSQL environment variables
   - All core dependencies installed and configured correctly
-  - Enhanced ETF signals page with clean, focused interface
-  - Removed bulky admin panels and notification sections per user preference
-  - Maintained core ETF position tracking and portfolio summary functionality
 
 ## Changelog
 
