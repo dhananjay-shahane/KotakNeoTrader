@@ -942,6 +942,7 @@
 
         // Theme Toggle Functionality
         function initializeTheme() {
+```text
             //            // Get saved theme from localStorage or default to 'dark'
             const savedTheme = localStorage.getItem('theme') || 'dark';
 
@@ -1093,13 +1094,22 @@
         // Toggle sidebar function
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('.main-content');
             const overlay = document.querySelector('.sidebar-overlay');
 
-            if (sidebar) {
-                sidebar.classList.toggle('active');
-                if (mainContent) mainContent.classList.toggle('sidebar-active');
-                if (overlay) overlay.classList.toggle('active');
+            if (!sidebar) {
+                return; // Sidebar element doesn't exist, skip
+            }
+
+            const isOpen = sidebar.classList.contains('active');
+
+            if (isOpen) {
+                sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('active');
+                if (overlay) overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
         }
 
@@ -1113,10 +1123,12 @@
         // Debug function to check theme toggle
         function debugThemeToggle() {
             const toggle = document.getElementById('themeToggle');
-            const saved = localStorage.getItem('neo-trading-theme');
-            console.log('Theme toggle element:', toggle);
-            console.log('Saved theme:', saved);
-            console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
+            const saved = localStorage.getItem('theme');
+            if (toggle) {
+                console.log('Theme toggle element:', toggle);
+                console.log('Saved theme:', saved);
+                console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
+            }
         }
 
         // Initialize theme immediately (before DOM loads)

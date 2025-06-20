@@ -35,9 +35,11 @@
     .neutral { color: var(--warning-color); }
     .table-container {
         height: 70vh;
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: auto;
         border: 1px solid var(--border-color);
         border-radius: 8px;
+        position: relative;
     }
     .portfolio-summary {
         background: var(--card-bg);
@@ -155,8 +157,8 @@
         </div>
     </div>
 
-    <div class="card-body p-0">
-        <div class="table-responsive">
+    <div class="card-body p-0" style="overflow: visible;">
+        <div class="table-responsive" style="overflow-x: auto; overflow-y: visible;">
             <table class="table table-dark table-hover mb-0 signals-table" id="dealsTable">
                 <thead>
                     <tr id="tableHeaders">
@@ -1032,6 +1034,33 @@ document.addEventListener('DOMContentLoaded', function() {
         window.defaultDealsManager.refreshIntervalTime = parseInt(savedInterval);
         document.getElementById('currentInterval').textContent = savedDisplay;
     }
+    
+    // Fix dropdown positioning
+    document.addEventListener('shown.bs.dropdown', function(e) {
+        const dropdown = e.target.closest('.dropdown');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        
+        if (menu) {
+            const rect = dropdown.getBoundingClientRect();
+            const tableContainer = dropdown.closest('.table-responsive');
+            
+            if (tableContainer) {
+                const containerRect = tableContainer.getBoundingClientRect();
+                
+                // Check if dropdown would overflow bottom
+                if (rect.bottom + menu.offsetHeight > containerRect.bottom) {
+                    menu.style.top = 'auto';
+                    menu.style.bottom = '100%';
+                }
+                
+                // Check if dropdown would overflow right
+                if (rect.right + menu.offsetWidth > containerRect.right) {
+                    menu.style.left = 'auto';
+                    menu.style.right = '0';
+                }
+            }
+        }
+    });
 });
 </script>
 {% endblock %}
