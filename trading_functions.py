@@ -656,4 +656,3 @@ class TradingFunctions:
         except Exception as e:
             self.logger.error(f"❌ Failed to fetch portfolio summary: {str(e)}")
             return {'success': False, 'message': str(e)}
-`
