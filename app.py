@@ -42,8 +42,8 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 # create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET") or "877ec8603e82bb360d188674c9909e08e69fba8333bce85cdec7d2298c34f02d"
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # needed for url_for to generate with https
+app.secret_key = os.environ.get("SESSION_SECRET")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
