@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}ETF Signals - Real-time Kotak Neo CMP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .portfolio-metric {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .signals-table {
+        font-size: 0.85rem;
+        background: var(--card-bg);
+    }
+    
+    .signals-table th {
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-align: center;
+        padding: 8px 6px;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    
+    .signals-table td {
+        padding: 6px 4px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+        white-space: nowrap;
+        font-size: 0.8rem;
+    }
+    
+    .profit { color: var(--success-color); font-weight: 600; }
+    .loss { color: var(--danger-color); font-weight: 600; }
+    .neutral { color: var(--warning-color); }
+    
+    .table-container {
+        height: 75vh;
+        overflow: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .portfolio-summary {
+        background: var(--card-bg);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .summary-card {
+        background: var(--dark-bg);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .auto-refresh-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #28a745;
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .kotak-cmp {
+        color: #007bff;
+        font-weight: 600;
+    }
+    
+    .csv-cmp {
+        color: #6c757d;
+    }
+    
+    .data-source-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        border-radius: 8px;
+        background: rgba(108, 117, 125, 0.2);
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">ETF Signals</h1>
+        <p class="text-muted mb-0">
+            <span class="auto-refresh-indicator"></span>
+            Real-time Kotak Neo CMP integration
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <span class="badge bg-success me-2" id="liveIndicator">
+            <span class="auto-refresh-indicator"></span>Live CMP
+        </span>
+    </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="portfolio-summary">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>Portfolio Summary
+            </h5>
+            <div class="row" id="portfolioSummary">
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Total Positions</div>
+                        <div class="h5 mb-0" id="totalPositions">0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Investment</div>
+                        <div class="h5 mb-0" id="totalInvestment">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Current Value</div>
+                        <div class="h5 mb-0" id="currentValue">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">P&L</div>
+                        <div class="h5 mb-0" id="totalPnL">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Kotak CMP</div>
+                        <div class="h5 mb-0 text-primary" id="kotakCMPCount">0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">CSV Data</div>
+                        <div class="h5 mb-0 text-secondary" id="csvDataCount">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ETF Signals Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i>ETF Signals with Real-time CMP
+            <span class="badge bg-info ms-2" id="signalsCount">Loading...</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-container">
+            <table class="table table-hover signals-table mb-0" id="etfSignalsTable">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Entry Price</th>
+                        <th>CMP</th>
+                        <th>Change %</th>
+                        <th>Quantity</th>
+                        <th>Investment</th>
+                        <th>Current Value</th>
+                        <th>P&L</th>
+                        <th>Volume</th>
+                        <th>Bid/Ask</th>
+                        <th>High/Low</th>
+                        <th>Data Source</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody id="signalsTableBody">
+                    <tr>
+                        <td colspan="13" class="text-center py-4">
+                            <div class="spinner-border text-primary me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Loading ETF signals with real-time CMP...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Data Sources Info -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Real-time Data Sources</h6>
+                <div class="row" id="dataSourcesInfo">
+                    <div class="col-md-6">
+                        <span class="data-source-badge" style="background: rgba(0, 123, 255, 0.2); color: #007bff;">KOTAK_NEO_API</span>
+                        <span class="ms-2" id="kotakNeoSourceCount">0 signals</span>
+                        <small class="text-muted d-block">Live market data from Kotak Neo</small>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="data-source-badge">CSV_DATA</span>
+                        <span class="ms-2" id="csvSourceCount">0 signals</span>
+                        <small class="text-muted d-block">Static data from CSV files</small>
+                    </div>
+                </div>
+                <small class="text-muted">Last updated: <span id="lastUpdateTime">-</span></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let refreshInterval;
+let isRefreshing = false;
+
+// Auto-refresh every 30 seconds
+const AUTO_REFRESH_INTERVAL = 30000;
+
+async function refreshSignals() {
+    if (isRefreshing) return;
+    
+    isRefreshing = true;
+    const refreshBtn = document.getElementById('refreshBtn');
+    const originalHtml = refreshBtn.innerHTML;
+    
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
+    refreshBtn.disabled = true;
+    
+    try {
+        // Fetch both ETF signals and admin trade signals for real-time CMP
+        const [etfResponse, adminResponse] = await Promise.all([
+            fetch('/api/etf-signals'),
+            fetch('/api/admin-trade-signals')
+        ]);
+        
+        const etfData = await etfResponse.json();
+        const adminData = adminResponse.ok ? await adminResponse.json() : { success: false };
+        
+        if (etfData.success) {
+            let positions = etfData.signals || [];
+            
+            // Enhance with real-time Kotak Neo CMP
+            if (adminData.success && adminData.data) {
+                positions = enhanceWithKotakNeoCMP(positions, adminData.data);
+                updateDataSources(adminData.data_sources);
+            }
+            
+            updateSignalsTable(positions);
+            updatePortfolioSummary(positions);
+            document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString();
+            document.getElementById('signalsCount').textContent = `${positions.length} Active`;
+            
+            // Update live indicator
+            const liveIndicator = document.getElementById('liveIndicator');
+            liveIndicator.className = 'badge bg-success me-2';
+            liveIndicator.innerHTML = '<span class="auto-refresh-indicator"></span>Live CMP';
+            
+            console.log(`✅ Updated ${positions.length} ETF signals with real-time CMP`);
+        } else {
+            console.error('Error fetching ETF signals:', etfData.error);
+            showError('Failed to fetch ETF signals');
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        showError('Network error while fetching signals');
+        
+        // Update live indicator to show disconnected state
+        const liveIndicator = document.getElementById('liveIndicator');
+        liveIndicator.className = 'badge bg-danger me-2';
+        liveIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Connection Error';
+    } finally {
+        isRefreshing = false;
+        refreshBtn.innerHTML = originalHtml;
+        refreshBtn.disabled = false;
+    }
+}
+
+function enhanceWithKotakNeoCMP(etfSignals, adminSignals) {
+    // Create lookup map of Kotak Neo quotes by symbol
+    const kotakQuotes = {};
+    let kotakDataCount = 0;
+    
+    adminSignals.forEach(signal => {
+        if (signal.data_source === 'KOTAK_NEO_API') {
+            kotakQuotes[signal.symbol] = {
+                current_price: parseFloat(signal.current_price),
+                day_change_percent: parseFloat(signal.day_change_percent) || 0,
+                volume: signal.volume || 0,
+                bid_price: parseFloat(signal.bid_price) || 0,
+                ask_price: parseFloat(signal.ask_price) || 0,
+                high_price: parseFloat(signal.high_price) || 0,
+                low_price: parseFloat(signal.low_price) || 0,
+                last_update: signal.last_update
+            };
+            kotakDataCount++;
+        }
+    });
+
+    console.log(`📊 Found ${kotakDataCount} Kotak Neo quotes for CMP enhancement`);
+
+    // Enhance ETF signals with real-time Kotak Neo CMP
+    let enhancedCount = 0;
+    const enhancedSignals = etfSignals.map(signal => {
+        const kotakQuote = kotakQuotes[signal.symbol];
+        
+        if (kotakQuote) {
+            // Update with real-time Kotak Neo data
+            const enhancedSignal = { ...signal };
+            enhancedSignal.current_price = kotakQuote.current_price;
+            enhancedSignal.change_percent = kotakQuote.day_change_percent;
+            enhancedSignal.kotak_volume = kotakQuote.volume;
+            enhancedSignal.kotak_bid = kotakQuote.bid_price;
+            enhancedSignal.kotak_ask = kotakQuote.ask_price;
+            enhancedSignal.kotak_high = kotakQuote.high_price;
+            enhancedSignal.kotak_low = kotakQuote.low_price;
+            enhancedSignal.kotak_last_update = kotakQuote.last_update;
+            enhancedSignal.cmp_source = 'KOTAK_NEO_API';
+            
+            // Recalculate dependent values with real-time CMP
+            const entryPrice = parseFloat(signal.entry_price) || 0;
+            const quantity = parseInt(signal.quantity) || 0;
+            const investment = entryPrice * quantity;
+            const currentValue = enhancedSignal.current_price * quantity;
+            
+            enhancedSignal.investment = investment;
+            enhancedSignal.current_value = currentValue;
+            enhancedSignal.profit_loss = currentValue - investment;
+            
+            enhancedCount++;
+            console.log(`✅ Enhanced ${signal.symbol}: CMP with Kotak Neo data`);
+            
+            return enhancedSignal;
+        } else {
+            return { ...signal, cmp_source: 'CSV_DATA' };
+        }
+    });
+    
+    console.log(`📈 Enhanced ${enhancedCount}/${etfSignals.length} signals with real-time Kotak Neo CMP`);
+    return enhancedSignals;
+}
+
+function updateSignalsTable(signals) {
+    const tbody = document.getElementById('signalsTableBody');
+    
+    if (!signals || signals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4">No ETF signals found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = signals.map(signal => {
+        const entryPrice = parseFloat(signal.entry_price) || 0;
+        const currentPrice = parseFloat(signal.current_price) || entryPrice;
+        const changePercent = parseFloat(signal.change_percent) || 0;
+        const quantity = parseInt(signal.quantity) || 0;
+        const investment = entryPrice * quantity;
+        const currentValue = currentPrice * quantity;
+        const pnl = currentValue - investment;
+        
+        const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+        const changeClass = changePercent > 0 ? 'profit' : changePercent < 0 ? 'loss' : 'neutral';
+        const cmpClass = signal.cmp_source === 'KOTAK_NEO_API' ? 'kotak-cmp' : 'csv-cmp';
+        
+        const volume = signal.kotak_volume ? signal.kotak_volume.toLocaleString() : 'N/A';
+        const bidAsk = signal.kotak_bid && signal.kotak_ask ? 
+            `₹${signal.kotak_bid}/₹${signal.kotak_ask}` : 'N/A';
+        const highLow = signal.kotak_high && signal.kotak_low ? 
+            `₹${signal.kotak_high}/₹${signal.kotak_low}` : 'N/A';
+        const lastUpdate = signal.kotak_last_update ? 
+            new Date(signal.kotak_last_update).toLocaleString() : 
+            new Date(signal.updated_at || signal.created_at).toLocaleString();
+        
+        return `
+            <tr>
+                <td><strong>${signal.symbol}</strong></td>
+                <td>₹${entryPrice.toFixed(2)}</td>
+                <td class="${cmpClass}">₹${currentPrice.toFixed(2)}</td>
+                <td class="${changeClass}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+                <td>${quantity}</td>
+                <td>₹${investment.toLocaleString()}</td>
+                <td>₹${currentValue.toLocaleString()}</td>
+                <td class="${pnlClass}">₹${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</td>
+                <td>${volume}</td>
+                <td>${bidAsk}</td>
+                <td>${highLow}</td>
+                <td><span class="data-source-badge">${signal.cmp_source}</span></td>
+                <td>${lastUpdate}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePortfolioSummary(signals) {
+    if (!signals || signals.length === 0) return;
+    
+    let totalInvestment = 0;
+    let totalCurrentValue = 0;
+    let kotakCMPCount = 0;
+    let csvDataCount = 0;
+    
+    signals.forEach(signal => {
+        const entryPrice = parseFloat(signal.entry_price) || 0;
+        const currentPrice = parseFloat(signal.current_price) || entryPrice;
+        const quantity = parseInt(signal.quantity) || 0;
+        
+        totalInvestment += entryPrice * quantity;
+        totalCurrentValue += currentPrice * quantity;
+        
+        if (signal.cmp_source === 'KOTAK_NEO_API') {
+            kotakCMPCount++;
+        } else {
+            csvDataCount++;
+        }
+    });
+    
+    const totalPnL = totalCurrentValue - totalInvestment;
+    
+    document.getElementById('totalPositions').textContent = signals.length;
+    document.getElementById('totalInvestment').textContent = `₹${totalInvestment.toLocaleString()}`;
+    document.getElementById('currentValue').textContent = `₹${totalCurrentValue.toLocaleString()}`;
+    
+    const pnlElement = document.getElementById('totalPnL');
+    pnlElement.textContent = `₹${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}`;
+    pnlElement.className = `h5 mb-0 ${totalPnL > 0 ? 'text-success' : totalPnL < 0 ? 'text-danger' : 'text-warning'}`;
+    
+    document.getElementById('kotakCMPCount').textContent = kotakCMPCount;
+    document.getElementById('csvDataCount').textContent = csvDataCount;
+}
+
+function updateDataSources(sources) {
+    if (!sources) return;
+    
+    document.getElementById('kotakNeoSourceCount').textContent = `${sources.kotak_neo_quotes || 0} signals`;
+    document.getElementById('csvSourceCount').textContent = `${sources.signal_data || 0} signals`;
+}
+
+function showError(message) {
+    console.error(message);
+    // Could be enhanced with toast notifications
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial load
+    refreshSignals();
+    
+    // Set up auto-refresh
+    refreshInterval = setInterval(refreshSignals, AUTO_REFRESH_INTERVAL);
+    
+    console.log('ETF Signals page with Kotak Neo CMP integration initialized');
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %}
