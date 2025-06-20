@@ -1805,4 +1805,32 @@ function saveDeal() {
         setInterval(loadSignals, 60000);
     });
 </script>
+<script>
+// Theme management
+        function initializeTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+
+            // Only proceed if theme toggle exists
+            if (!themeToggle) {
+                return;
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+
+                // Update icon if it exists
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            });
+        }
+</script>
 {% endblock %}

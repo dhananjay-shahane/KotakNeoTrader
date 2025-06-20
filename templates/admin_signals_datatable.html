@@ -362,12 +362,12 @@ $(document).ready(function() {
     setupAutoRefresh();
     setupColumnToggles();
     loadUsers();
-    
+
     // Refresh button click
     $('#refreshData').click(function() {
         refreshData();
     });
-    
+
     // Create signal form submission
     $('#createSignalForm').submit(function(e) {
         e.preventDefault();
@@ -481,20 +481,20 @@ function setupColumnToggles() {
         { idx: 13, name: 'Expires' },
         { idx: 14, name: 'Last Update' }
     ];
-    
+
     const togglesContainer = $('#columnToggles');
-    
+
     columns.forEach(col => {
         const btn = $(`<button class="btn btn-sm btn-outline-secondary" data-column="${col.idx}">
             ${col.name}
         </button>`);
-        
+
         btn.click(function() {
             const column = adminSignalsTable.column(col.idx);
             column.visible(!column.visible());
             $(this).toggleClass('btn-outline-secondary btn-secondary');
         });
-        
+
         togglesContainer.append(btn);
     });
 }
@@ -510,7 +510,7 @@ function refreshData() {
     if (adminSignalsTable) {
         adminSignalsTable.ajax.reload(null, false);
     }
-    
+
     // Force quote update
     fetch('/api/quotes/force-update', {
         method: 'POST',
@@ -528,7 +528,7 @@ function updateStatistics() {
     let activeSignals = 0;
     let uniqueUsers = new Set();
     let uniqueSymbols = new Set();
-    
+
     data.each(function(row) {
         if (row.status === 'ACTIVE') {
             activeSignals++;
@@ -536,7 +536,7 @@ function updateStatistics() {
         uniqueUsers.add(row.target_user_ucc);
         uniqueSymbols.add(row.symbol);
     });
-    
+
     $('#totalSignals').text(totalSignals);
     $('#activeSignals').text(activeSignals);
     $('#totalUsers').text(uniqueUsers.size);
@@ -554,7 +554,7 @@ function loadUsers() {
             if (data.success) {
                 const userSelect = $('select[name="target_user_id"]');
                 userSelect.empty().append('<option value="">Select User</option>');
-                
+
                 data.users.forEach(user => {
                     userSelect.append(`<option value="${user.id}">${user.greeting_name} (${user.ucc})</option>`);
                 });
@@ -568,11 +568,11 @@ function loadUsers() {
 function createSignal() {
     const formData = new FormData($('#createSignalForm')[0]);
     const signalData = {};
-    
+
     for (let [key, value] of formData.entries()) {
         signalData[key] = value;
     }
-    
+
     fetch('/api/admin/create-signal', {
         method: 'POST',
         headers: {
@@ -615,7 +615,7 @@ function viewSignalDetails(signalId) {
 
 function displaySignalDetails(signal) {
     const modalBody = $('#signalDetailsBody');
-    
+
     const html = `
         <div class="row">
             <div class="col-md-6">
@@ -645,10 +645,10 @@ function displaySignalDetails(signal) {
             <div class="col-12">
                 <h6>Description</h6>
                 <p>${signal.signal_description || 'No description provided'}</p>
-                
+
                 <h6>Target User</h6>
                 <p><strong>${signal.target_user_name}</strong> (${signal.target_user_ucc})</p>
-                
+
                 <h6>Timing</h6>
                 <table class="table table-sm">
                     <tr><td><strong>Created:</strong></td><td>${new Date(signal.created_at).toLocaleString()}</td></tr>
@@ -658,7 +658,7 @@ function displaySignalDetails(signal) {
             </div>
         </div>
     `;
-    
+
     modalBody.html(html);
     $('#signalDetailsModal').modal('show');
 }
@@ -699,10 +699,10 @@ function showAlert(message, type = 'info') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     $('.alert').remove();
     $('.container-fluid').prepend(alertHtml);
-    
+
     setTimeout(() => {
         $('.alert').fadeOut();
     }, 5000);
@@ -714,5 +714,32 @@ $(window).on('beforeunload', function() {
         clearInterval(autoRefreshInterval);
     }
 });
+
+// Theme management
+        function initializeTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+
+            // Only proceed if theme toggle exists
+            if (!themeToggle) {
+                return;
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+
+                // Update icon if it exists
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            });
+        }
 </script>
 {% endblock %}
