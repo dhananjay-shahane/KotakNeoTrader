@@ -80,8 +80,108 @@ class AdminTradeSignal(db.Model):
             'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
         }
 
+class KotakNeoQuote(db.Model):
+    """Enhanced Kotak Neo quotes data table with comprehensive market data"""
+    __tablename__ = 'kotak_neo_quotes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Instrument Identification
+    symbol = db.Column(db.String(50), nullable=False, index=True)
+    trading_symbol = db.Column(db.String(100), nullable=True)
+    token = db.Column(db.String(50), nullable=True, index=True)
+    exchange = db.Column(db.String(20), default='NSE')
+    segment = db.Column(db.String(20), nullable=True)  # EQ, FO, CD, etc.
+    instrument_type = db.Column(db.String(20), nullable=True)  # EQ, FUT, OPT, etc.
+    
+    # Price Data (from Kotak Neo Quotes API)
+    ltp = db.Column(db.Numeric(12, 4), nullable=False)  # Last Traded Price
+    open_price = db.Column(db.Numeric(12, 4), nullable=True)
+    high_price = db.Column(db.Numeric(12, 4), nullable=True)
+    low_price = db.Column(db.Numeric(12, 4), nullable=True)
+    close_price = db.Column(db.Numeric(12, 4), nullable=True)  # Previous close
+    
+    # Change Calculations
+    net_change = db.Column(db.Numeric(12, 4), nullable=True)  # Price change
+    percentage_change = db.Column(db.Numeric(8, 4), nullable=True)  # % change
+    
+    # Volume Data
+    volume = db.Column(db.BigInteger, nullable=True)  # Today's volume
+    value = db.Column(db.Numeric(15, 2), nullable=True)  # Turnover value
+    
+    # Bid/Ask Data
+    bid_price = db.Column(db.Numeric(12, 4), nullable=True)
+    ask_price = db.Column(db.Numeric(12, 4), nullable=True)
+    bid_size = db.Column(db.Integer, nullable=True)
+    ask_size = db.Column(db.Integer, nullable=True)
+    
+    # Circuit Limits
+    upper_circuit = db.Column(db.Numeric(12, 4), nullable=True)
+    lower_circuit = db.Column(db.Numeric(12, 4), nullable=True)
+    
+    # 52-week Data
+    week_52_high = db.Column(db.Numeric(12, 4), nullable=True)
+    week_52_low = db.Column(db.Numeric(12, 4), nullable=True)
+    
+    # Average Prices
+    avg_price = db.Column(db.Numeric(12, 4), nullable=True)  # VWAP
+    
+    # Timestamps
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    last_trade_time = db.Column(db.DateTime, nullable=True)
+    
+    # Market Status
+    market_status = db.Column(db.String(20), default='OPEN')  # OPEN, CLOSED, PRE_OPEN
+    
+    # Data Quality
+    data_source = db.Column(db.String(50), default='KOTAK_NEO_API')
+    fetch_status = db.Column(db.String(20), default='SUCCESS')  # SUCCESS, ERROR, STALE
+    
+    # Additional Meta Data
+    lot_size = db.Column(db.Integer, nullable=True)
+    tick_size = db.Column(db.Numeric(8, 4), nullable=True)
+    
+    def __repr__(self):
+        return f'<KotakNeoQuote {self.symbol} @ ₹{self.ltp}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'symbol': self.symbol,
+            'trading_symbol': self.trading_symbol,
+            'token': self.token,
+            'exchange': self.exchange,
+            'segment': self.segment,
+            'instrument_type': self.instrument_type,
+            'ltp': float(self.ltp) if self.ltp else None,
+            'open_price': float(self.open_price) if self.open_price else None,
+            'high_price': float(self.high_price) if self.high_price else None,
+            'low_price': float(self.low_price) if self.low_price else None,
+            'close_price': float(self.close_price) if self.close_price else None,
+            'net_change': float(self.net_change) if self.net_change else None,
+            'percentage_change': float(self.percentage_change) if self.percentage_change else None,
+            'volume': self.volume,
+            'value': float(self.value) if self.value else None,
+            'bid_price': float(self.bid_price) if self.bid_price else None,
+            'ask_price': float(self.ask_price) if self.ask_price else None,
+            'bid_size': self.bid_size,
+            'ask_size': self.ask_size,
+            'upper_circuit': float(self.upper_circuit) if self.upper_circuit else None,
+            'lower_circuit': float(self.lower_circuit) if self.lower_circuit else None,
+            'week_52_high': float(self.week_52_high) if self.week_52_high else None,
+            'week_52_low': float(self.week_52_low) if self.week_52_low else None,
+            'avg_price': float(self.avg_price) if self.avg_price else None,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'last_trade_time': self.last_trade_time.isoformat() if self.last_trade_time else None,
+            'market_status': self.market_status,
+            'data_source': self.data_source,
+            'fetch_status': self.fetch_status,
+            'lot_size': self.lot_size,
+            'tick_size': float(self.tick_size) if self.tick_size else None
+        }
+
 class RealtimeQuote(db.Model):
-    """Real-time market quotes table for CMP storage"""
+    """Legacy real-time quotes table for backward compatibility"""
     __tablename__ = 'realtime_quotes'
 
     id = db.Column(db.Integer, primary_key=True)

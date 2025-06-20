@@ -43,29 +43,72 @@ def get_admin_signals():
             {'etf': 'HDFCPVTBAN', 'pos': 0, 'qty': 4000, 'ep': 25.19, 'cmp': 28.09, 'tp': 24.36, 'date': '24-Dec-2024'}
         ]
 
-        # Get latest quotes from realtime_quotes table for price updates
+        # Get comprehensive market data from KotakNeoQuote table with fallback to RealtimeQuote
         latest_quotes = {}
         try:
+            from models_etf import KotakNeoQuote
             from sqlalchemy import func
-            subquery = db.session.query(
+            
+            # First try to get comprehensive data from KotakNeoQuote
+            kotak_subquery = db.session.query(
+                KotakNeoQuote.symbol,
+                func.max(KotakNeoQuote.timestamp).label('max_timestamp')
+            ).group_by(KotakNeoQuote.symbol).subquery()
+
+            kotak_quotes = db.session.query(KotakNeoQuote).join(
+                kotak_subquery,
+                db.and_(
+                    KotakNeoQuote.symbol == kotak_subquery.c.symbol,
+                    KotakNeoQuote.timestamp == kotak_subquery.c.max_timestamp
+                )
+            ).all()
+
+            for quote in kotak_quotes:
+                latest_quotes[quote.symbol] = {
+                    'current_price': float(quote.ltp),
+                    'change_percent': float(quote.percentage_change) if quote.percentage_change else 0,
+                    'open_price': float(quote.open_price) if quote.open_price else 0,
+                    'high_price': float(quote.high_price) if quote.high_price else 0,
+                    'low_price': float(quote.low_price) if quote.low_price else 0,
+                    'volume': quote.volume or 0,
+                    'bid_price': float(quote.bid_price) if quote.bid_price else 0,
+                    'ask_price': float(quote.ask_price) if quote.ask_price else 0,
+                    'week_52_high': float(quote.week_52_high) if quote.week_52_high else 0,
+                    'week_52_low': float(quote.week_52_low) if quote.week_52_low else 0,
+                    'last_update': quote.timestamp,
+                    'data_source': 'KOTAK_NEO_API'
+                }
+
+            # Fallback to RealtimeQuote for symbols not in KotakNeoQuote
+            realtime_subquery = db.session.query(
                 RealtimeQuote.symbol,
                 func.max(RealtimeQuote.timestamp).label('max_timestamp')
             ).group_by(RealtimeQuote.symbol).subquery()
 
-            quotes_query = db.session.query(RealtimeQuote).join(
-                subquery,
+            realtime_quotes = db.session.query(RealtimeQuote).join(
+                realtime_subquery,
                 db.and_(
-                    RealtimeQuote.symbol == subquery.c.symbol,
-                    RealtimeQuote.timestamp == subquery.c.max_timestamp
+                    RealtimeQuote.symbol == realtime_subquery.c.symbol,
+                    RealtimeQuote.timestamp == realtime_subquery.c.max_timestamp
                 )
             ).all()
 
-            for quote in quotes_query:
-                latest_quotes[quote.symbol] = {
-                    'current_price': float(quote.current_price),
-                    'change_percent': float(quote.change_percent),
-                    'last_update': quote.timestamp
-                }
+            for quote in realtime_quotes:
+                if quote.symbol not in latest_quotes:  # Only add if not already from KotakNeoQuote
+                    latest_quotes[quote.symbol] = {
+                        'current_price': float(quote.current_price),
+                        'change_percent': float(quote.change_percent) if quote.change_percent else 0,
+                        'open_price': float(quote.open_price) if quote.open_price else 0,
+                        'high_price': float(quote.high_price) if quote.high_price else 0,
+                        'low_price': float(quote.low_price) if quote.low_price else 0,
+                        'volume': quote.volume or 0,
+                        'bid_price': 0,
+                        'ask_price': 0,
+                        'week_52_high': 0,
+                        'week_52_low': 0,
+                        'last_update': quote.timestamp,
+                        'data_source': 'REALTIME_QUOTES'
+                    }
 
             logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
         except Exception as quote_error:
@@ -78,14 +121,31 @@ def get_admin_signals():
 
         # Process each CSV ETF entry with real-time calculations
         for idx, etf in enumerate(csv_etf_data):
-            # Use real-time price if available, otherwise use CSV CMP
+            # Use comprehensive real-time data if available, otherwise use CSV CMP
             current_price = etf['cmp']
             change_percent = 0
+            open_price = etf['cmp']
+            high_price = etf['cmp']
+            low_price = etf['cmp']
+            volume = 0
+            bid_price = ask_price = 0
+            week_52_high = week_52_low = 0
+            data_source = 'CSV_DATA'
             
-            # Override with latest quote if available
+            # Override with comprehensive quote data if available
             if etf['etf'] in latest_quotes:
-                current_price = latest_quotes[etf['etf']]['current_price']
-                change_percent = latest_quotes[etf['etf']]['change_percent']
+                quote_data = latest_quotes[etf['etf']]
+                current_price = quote_data['current_price']
+                change_percent = quote_data['change_percent']
+                open_price = quote_data['open_price'] or current_price
+                high_price = quote_data['high_price'] or current_price
+                low_price = quote_data['low_price'] or current_price
+                volume = quote_data['volume']
+                bid_price = quote_data['bid_price']
+                ask_price = quote_data['ask_price']
+                week_52_high = quote_data['week_52_high']
+                week_52_low = quote_data['week_52_low']
+                data_source = quote_data['data_source']
             else:
                 # Calculate change percent from CSV data
                 change_percent = ((current_price - etf['ep']) / etf['ep']) * 100
@@ -117,10 +177,11 @@ def get_admin_signals():
             except:
                 days_held = 30  # Default
             
-            # Format signal data exactly matching CSV structure
+            # Format signal data with comprehensive market data
             signal_data = {
                 'id': idx + 1,
                 'etf': etf['etf'],  # ETF column
+                'symbol': etf['etf'],
                 'thirty': f"{change_percent * 1.2:.1f}%",  # 30-day performance (simulated)
                 'dh': days_held if days_held != '#N/A' else '#N/A',  # DH (Days Held)
                 'date': etf['date'],  # Date
@@ -145,14 +206,30 @@ def get_admin_signals():
                 'seven': f"{change_percent * 0.8:.1f}%",  # 7-day performance (simulated)
                 'change2': change_percent,  # Alternative change field
                 
+                # Comprehensive market data from Kotak Neo API
+                'open_price': round(open_price, 2),
+                'high_price': round(high_price, 2),
+                'low_price': round(low_price, 2),
+                'volume': volume,
+                'bid_price': round(bid_price, 2),
+                'ask_price': round(ask_price, 2),
+                'week_52_high': round(week_52_high, 2),
+                'week_52_low': round(week_52_low, 2),
+                'data_source': data_source,
+                
                 # Additional fields for compatibility
                 'signal_type': 'BUY' if etf['pos'] == 1 else 'SELL',
                 'status': 'ACTIVE',
-                'symbol': etf['etf'],
                 'trading_symbol': f"{etf['etf']}-EQ",
                 'priority': 'MEDIUM',
                 'created_at': datetime.utcnow().isoformat(),
-                'last_updated': datetime.utcnow().strftime('%H:%M:%S')
+                'last_updated': datetime.utcnow().strftime('%H:%M:%S'),
+                
+                # DataTable display fields
+                'display_price': f"₹{current_price:.2f}",
+                'display_change': f"{change_percent:+.2f}%",
+                'display_pnl': f"₹{pnl_amount:+,.2f}",
+                'display_volume': f"{volume:,}" if volume > 0 else "N/A"
             }
             
             signals_data.append(signal_data)

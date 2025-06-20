@@ -752,12 +752,14 @@ try:
     from api.notifications import notifications_bp
     from api.realtime_quotes import quotes_bp
     from api.signals_datatable import datatable_bp
+    from api.enhanced_etf_signals import enhanced_etf_bp
 
     app.register_blueprint(etf_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(quotes_bp)
     app.register_blueprint(datatable_bp)
+    app.register_blueprint(enhanced_etf_bp)
     print("✓ Additional blueprints registered successfully")
     
     # Initialize realtime quotes scheduler
