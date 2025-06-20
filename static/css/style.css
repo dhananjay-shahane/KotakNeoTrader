@@ -196,11 +196,11 @@ body {
         min-width: 140px;
         font-size: 0.8rem;
     }
-    
+
     .dropdown-menu .dropdown-item {
         padding: 0.4rem 0.8rem;
     }
-    
+
     .btn-xs.dropdown-toggle {
         padding: 0.2rem 0.4rem;
         font-size: 0.7rem;
@@ -938,26 +938,26 @@ input[name="totp"], input[name="mpin"] {
     .mobile-toggle {
         display: block;
     }
-    
+
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 999;
     }
-    
+
     .sidebar.active {
         transform: translateX(0);
     }
-    
+
     .main-content {
         margin-left: 0;
         transition: margin-left 0.3s ease;
     }
-    
+
     .main-content.sidebar-active {
         margin-left: 0;
     }
-    
+
     .header-brand span {
         display: none;
     }
@@ -967,11 +967,11 @@ input[name="totp"], input[name="mpin"] {
     .main-header {
         padding: 0.5rem 1rem;
     }
-    
+
     .header-brand {
         font-size: 1.2rem;
     }
-    
+
     .notification-btn,
     .user-profile {
         padding: 0.5rem;
@@ -1099,4 +1099,68 @@ footer {
 
 .border-left-info {
     border-left: 4px solid var(--info-color) !important;
+}
+
+/* Table styling improvements */
+.table-responsive {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    overflow-y: visible;
+    position: relative;
+}
+
+.signals-table {
+    margin-bottom: 0;
+}
+
+.signals-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--secondary-color) !important;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.signals-table td, .signals-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Dropdown menu positioning fixes */
+.dropdown {
+    position: static;
+}
+
+.dropdown-menu {
+    position: fixed !important;
+    z-index: 10000 !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+
+/* Ensure dropdowns appear outside table container */
+.card-body {
+    overflow: visible !important;
+}
+
+.table-container {
+    overflow-x: auto;
+    overflow-y: visible;
+    position: relative;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .signals-table {
+        font-size: 0.7rem;
+    }
+
+    .signals-table th, .signals-table td {
+        padding: 4px 2px;
+    }
+
+    .dropdown-menu {
+        min-width: 140px;
+    }
 }
