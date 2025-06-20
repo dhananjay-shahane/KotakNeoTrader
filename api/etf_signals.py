@@ -1,4 +1,3 @@
-
 """ETF Trading Signals API endpoints"""
 from flask import request, jsonify, session, Blueprint
 from app import db
@@ -15,15 +14,19 @@ logger = logging.getLogger(__name__)
 def get_admin_signals():
     """Get real admin trade signals with live CMP values from Kotak Neo"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
+        # Get current user - try db_user_id first, fallback to user_id
         from models import User
         from models_etf import AdminTradeSignal
         from neo_client import NeoClient
         from session_manager import SessionManager
-        
-        current_user = User.query.get(session['user_id'])
+
+        user_id = session.get('db_user_id') or session.get('user_id')
+        current_user = User.query.get(user_id)
+
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
@@ -31,7 +34,7 @@ def get_admin_signals():
         admin_signals = AdminTradeSignal.query.filter_by(
             status='ACTIVE'
         ).order_by(AdminTradeSignal.created_at.desc()).all()
-        
+
         logger.info(f"Found {len(admin_signals)} admin trade signals for user {current_user.ucc}")
 
         if not admin_signals:
@@ -64,7 +67,7 @@ def get_admin_signals():
         session_manager = SessionManager()
         stored_session = session_manager.load_session(current_user.ucc)
         neo_client = None
-        
+
         if stored_session and stored_session.get('access_token'):
             neo_client_instance = NeoClient()
             neo_client = neo_client_instance.initialize_client_with_tokens(
@@ -80,7 +83,7 @@ def get_admin_signals():
 
         # Collect unique symbols for batch quote fetching
         unique_symbols = list(set([signal.symbol for signal in admin_signals if signal.symbol]))
-        
+
         # Prepare instruments for quotes
         instruments_for_quotes = []
         for symbol in unique_symbols:
@@ -111,27 +114,27 @@ def get_admin_signals():
             # Get current price from live quotes or use entry price as fallback
             current_price = float(signal.current_price) if signal.current_price else float(signal.entry_price)
             change_percent = float(signal.change_percent) if signal.change_percent else 0
-            
+
             if signal.symbol in live_quotes:
                 current_price = live_quotes[signal.symbol]['current_price']
                 change_percent = live_quotes[signal.symbol]['change_percent']
-                
+
                 # Update signal with latest price in database
                 signal.current_price = current_price
                 signal.change_percent = change_percent
                 signal.last_update_time = datetime.utcnow()
-            
+
             # Calculate P&L
             invested_amount = float(signal.entry_price) * signal.quantity
             current_value = current_price * signal.quantity
-            
+
             if signal.signal_type.upper() == 'BUY':
                 pnl_amount = (current_price - float(signal.entry_price)) * signal.quantity
             else:  # SELL
                 pnl_amount = (float(signal.entry_price) - current_price) * signal.quantity
-            
+
             pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
-            
+
             # Create signal data for frontend
             signal_data = {
                 'id': signal.id,
@@ -159,9 +162,9 @@ def get_admin_signals():
                 'admin_user_id': signal.admin_user_id,
                 'target_user_id': signal.target_user_id
             }
-            
+
             signals_data.append(signal_data)
-            
+
             # Update totals
             total_invested += invested_amount
             total_current_value += current_value
@@ -180,7 +183,7 @@ def get_admin_signals():
         active_signals = len([s for s in signals_data if s.get('status') == 'ACTIVE'])
         profit_signals = len([s for s in signals_data if s.get('profit_loss', 0) > 0])
         loss_signals = len([s for s in signals_data if s.get('profit_loss', 0) < 0])
-        
+
         portfolio_summary = {
             'total_trades': len(signals_data),
             'active_trades': active_signals,
@@ -214,20 +217,23 @@ def get_admin_signals():
 def send_admin_signal():
     """Admin endpoint to send trading signals to specific users"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
-        # Get current user and verify admin privileges
+        # Get current user - try db_user_id first, fallback to user_id
         from models import User
         from models_etf import AdminTradeSignal
-        
-        current_user = User.query.get(session['user_id'])
+
+        user_id = session.get('db_user_id') or session.get('user_id')
+        current_user = User.query.get(user_id)
+
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
         # For now, allow any authenticated user to send signals (you can add admin check later)
         data = request.get_json()
-        
+
         # Validate required fields
         required_fields = ['target_user_ids', 'symbol', 'trading_symbol', 'signal_type', 'entry_price', 'quantity', 'signal_title']
         for field in required_fields:
@@ -240,7 +246,7 @@ def send_admin_signal():
             target_user_ids = [target_user_ids]
 
         signals_created = []
-        
+
         for target_user_id in target_user_ids:
             # Verify target user exists
             target_user = User.query.get(target_user_id)
@@ -265,7 +271,7 @@ def send_admin_signal():
                 priority=data.get('priority', 'MEDIUM'),
                 expires_at=data.get('expires_at')
             )
-            
+
             db.session.add(signal)
             signals_created.append({
                 'target_user_id': target_user_id,
@@ -275,7 +281,7 @@ def send_admin_signal():
 
         # Commit to database
         db.session.commit()
-        
+
         # Update signal IDs
         for i, signal_info in enumerate(signals_created):
             signal_info['signal_id'] = signals_created[i]['signal_id']
@@ -296,11 +302,11 @@ def get_target_users():
     """Get list of users to send signals to"""
     try:
         # Check authentication using the same method as other endpoints
-        if not session.get('authenticated') and 'user_id' not in session:
+        if not session.get('authenticated') and ('db_user_id' not in session and 'user_id' not in session):
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
         from models import User
-        
+
         # Get all active users
         users = User.query.filter(User.is_active == True).all()
 
@@ -314,7 +320,7 @@ def get_target_users():
             })
 
         logging.info(f"Found {len(users_data)} active users for admin panel")
-        
+
         return jsonify({
             'success': True,
             'users': users_data
@@ -328,13 +334,17 @@ def get_target_users():
 def get_user_deals():
     """Get deals created by current user"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
+        # Get current user - try db_user_id first, fallback to user_id
         from models import User
         from models_etf import UserDeal
 
-        current_user = User.query.get(session['user_id'])
+        user_id = session.get('db_user_id') or session.get('user_id')
+        current_user = User.query.get(user_id)
+
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
@@ -375,13 +385,17 @@ def get_user_deals():
 def create_deal():
     """Create a new deal from signal or manually"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
+        # Get current user - try db_user_id first, fallback to user_id
         from models import User
         from models_etf import UserDeal, ETFSignalTrade
 
-        current_user = User.query.get(session['user_id'])
+        user_id = session.get('db_user_id') or session.get('user_id')
+        current_user = User.query.get(user_id)
+
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
@@ -436,14 +450,15 @@ def create_deal():
 def add_etf_position():
     """Add new ETF position"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         etf_manager = ETFTradingSignals()
 
         # Validate required fields
@@ -470,7 +485,8 @@ def add_etf_position():
 def update_etf_position():
     """Update existing ETF position"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
         data = request.get_json()
@@ -481,7 +497,7 @@ def update_etf_position():
         if not position_id:
             return jsonify({'error': 'Position ID required'}), 400
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         etf_manager = ETFTradingSignals()
 
         position = etf_manager.update_etf_position(position_id, user_id, data)
@@ -502,14 +518,15 @@ def update_etf_position():
 def delete_etf_position():
     """Delete ETF position"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
         position_id = request.args.get('id') or request.json.get('id') if request.json else None
         if not position_id:
             return jsonify({'error': 'Position ID required'}), 400
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         etf_manager = ETFTradingSignals()
 
         success = etf_manager.delete_etf_position(position_id, user_id)
@@ -581,10 +598,11 @@ def get_etf_quotes():
 def get_portfolio_summary():
     """Get portfolio summary metrics"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         etf_manager = ETFTradingSignals()
         summary = etf_manager.calculate_portfolio_summary(user_id)
 
@@ -601,7 +619,8 @@ def get_portfolio_summary():
 def bulk_update_positions():
     """Bulk update multiple ETF positions"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
         data = request.get_json()
@@ -612,7 +631,7 @@ def bulk_update_positions():
         if not isinstance(positions, list):
             return jsonify({'error': 'Positions must be a list'}), 400
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         etf_manager = ETFTradingSignals()
 
         updated_positions = []
@@ -646,10 +665,11 @@ def bulk_update_positions():
 def get_user_etf_signal_trades():
     """Get ETF signal trades for current user"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         trades = ETFSignalTrade.query.filter_by(user_id=user_id).order_by(ETFSignalTrade.created_at.desc()).all()
 
         return jsonify({
@@ -666,7 +686,8 @@ def get_user_etf_signal_trades():
 def update_etf_signal_trade():
     """Update ETF signal trade status"""
     try:
-        if 'user_id' not in session:
+        # Check authentication - use db_user_id which is set during login
+        if 'db_user_id' not in session and 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
 
         data = request.get_json()
@@ -675,7 +696,7 @@ def update_etf_signal_trade():
         if not trade_id:
             return jsonify({'error': 'Trade ID required'}), 400
 
-        user_id = session['user_id']
+        user_id = session.get('db_user_id') or session.get('user_id')
         trade = ETFSignalTrade.query.filter_by(id=trade_id, user_id=user_id).first()
 
         if not trade:
