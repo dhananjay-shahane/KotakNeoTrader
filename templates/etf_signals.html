@@ -1,50 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Trading Signals - Kotak Neo Trading{% endblock %}
+{% block title %}Admin Trading Signals - Kotak Neo Trading{% endblock %}
 
 {% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
 <style>
     .portfolio-metric {
         text-align: center;
         padding: 1rem;
     }
 
-
-
-    .signals-table {
-        font-size: 0.75rem;
-        background: var(--card-bg);
-    }
-    .signals-table th {
-        background: var(--secondary-color);
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.7rem;
-        text-align: center;
-        padding: 6px 3px;
-        border: 1px solid var(--border-color);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        white-space: nowrap;
-    }
-    .signals-table td {
-        padding: 4px 3px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-        vertical-align: middle;
-        white-space: nowrap;
-        font-size: 0.75rem;
-    }
-    .profit { color: var(--success-color); }
-    .loss { color: var(--danger-color); }
-    .neutral { color: var(--warning-color); }
-    .table-container {
-        height: 70vh;
-        overflow: auto;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-    }
     .portfolio-summary {
         background: var(--card-bg);
         border-radius: 8px;
@@ -52,6 +21,7 @@
         margin-bottom: 20px;
         border: 1px solid var(--border-color);
     }
+
     .summary-card {
         background: var(--dark-bg);
         border-radius: 6px;
@@ -59,6 +29,7 @@
         text-align: center;
         border: 1px solid var(--border-color);
     }
+
     .live-indicator {
         width: 8px;
         height: 8px;
@@ -66,18 +37,44 @@
         display: inline-block;
         margin-right: 5px;
     }
+
     .live-indicator.connected {
         background: var(--success-color);
         animation: pulse 2s infinite;
     }
+
     .live-indicator.disconnected {
         background: var(--danger-color);
     }
+
     @keyframes pulse {
         0% { opacity: 1; }
         50% { opacity: 0.5; }
         100% { opacity: 1; }
     }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        color: var(--text-primary);
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        background-color: var(--dark-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .dataTables_wrapper .dataTables_length select {
+        background-color: var(--dark-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .profit { color: var(--success-color); }
+    .loss { color: var(--danger-color); }
+    .neutral { color: var(--warning-color); }
 </style>
 {% endblock %}
 
@@ -88,18 +85,15 @@
         <p class="text-muted mb-0">Real-time admin signals tracking and analysis</p>
     </div>
     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
-                            <i class="fas fa-sync-alt me-1"></i>Refresh
-                        </button>
-                        <span class="badge bg-success me-2" id="liveIndicator">
-                            <span class="live-indicator connected"></span>Live Quotes
-                        </span>
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
-            <i class="fas fa-cog me-1"></i>Columns
+        <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
         </button>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDealModal">
-            <i class="fas fa-plus me-1"></i>Add Position
-        </button>
+        <span class="badge bg-success me-2" id="liveIndicator">
+            <span class="live-indicator connected"></span>Live Data
+        </span>
+        <a href="{{ url_for('admin_signals') }}" class="btn btn-primary">
+            <i class="fas fa-user-shield me-1"></i>Admin Panel
+        </a>
     </div>
 </div>
 
@@ -113,7 +107,7 @@
             <div class="row" id="portfolioSummary">
                 <div class="col-md-2 mb-3">
                     <div class="summary-card">
-                        <div class="text-muted small">Total Positions</div>
+                        <div class="text-muted small">Total Signals</div>
                         <div class="h5 mb-0" id="totalPositions">0</div>
                     </div>
                 </div>
@@ -143,8 +137,8 @@
                 </div>
                 <div class="col-md-2 mb-3">
                     <div class="summary-card">
-                        <div class="text-muted small">Active/Closed</div>
-                        <div class="h5 mb-0"><span id="activePositions">0</span>/<span id="closedPositions">0</span></div>
+                        <div class="text-muted small">Active/Total</div>
+                        <div class="h5 mb-0"><span id="activePositions">0</span>/<span id="totalSignals">0</span></div>
                     </div>
                 </div>
             </div>
@@ -152,14 +146,12 @@
     </div>
 </div>
 
-
-
-<!-- ETF Signals Table -->
+<!-- Admin Trading Signals DataTable -->
 <div class="card bg-secondary border-0 shadow-lg">
     <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-light">
             <i class="fas fa-signal me-2 text-primary"></i>Admin Trading Signals
-            <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
+            <span class="badge bg-primary ms-2" id="signalsCount">0</span>
         </h5>
         <div class="d-flex gap-2">
             <div class="form-check form-switch">
@@ -168,25 +160,36 @@
                     Auto Refresh
                 </label>
             </div>
-            <a href="{{ url_for('admin_signals') }}" class="btn btn-sm btn-outline-light">
-                <i class="fas fa-user-shield me-1"></i>Admin Panel
-            </a>
             <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                 <i class="fas fa-download me-1"></i>Export
             </button>
         </div>
     </div>
 
-    <div class="card-body p-0">
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 signals-table" id="signalsTable">
+            <table id="adminSignalsTable" class="table table-dark table-hover" style="width:100%">
                 <thead>
-                    <tr id="tableHeaders">
-                        <!-- Dynamic headers will be generated here -->
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>User</th>
+                        <th>Qty</th>
+                        <th>Entry Price</th>
+                        <th>Current Price</th>
+                        <th>Change %</th>
+                        <th>Investment</th>
+                        <th>Target</th>
+                        <th>P&L</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Created</th>
+                        <th>Days</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="signalsTableBody">
-                    <!-- Dynamic content will be loaded here -->
+                <tbody>
+                    <!-- Data will be loaded via AJAX -->
                 </tbody>
             </table>
         </div>
@@ -194,1616 +197,362 @@
 
     <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
         <div class="d-flex align-items-center gap-3">
-            <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> signals</small>
+            <small>Last Updated: <span id="lastUpdate">Loading...</span></small>
         </div>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
-                <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light" disabled>
-                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
-                Next <i class="fas fa-chevron-right"></i>
-            </button>
+        <div class="d-flex align-items-center gap-3">
+            <small>Total Records: <span id="totalRecords">0</span></small>
         </div>
     </div>
 </div>
 
-<!-- Column Settings Modal -->
-<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+<!-- Signal Details Modal -->
+<div class="modal fade" id="signalDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark">
             <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light">
-                    <i class="fas fa-cog me-2"></i>Column Settings
-                </h5>
+                <h5 class="modal-title text-light">Signal Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p class="text-muted">Select which columns to display in the trading signals table:</p>
-                <div class="row" id="columnCheckboxes">
-                    <!-- Column checkboxes will be populated here -->
-                </div>
-                <hr class="border-secondary">
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
-                </div>
+            <div class="modal-body" id="signalDetailsBody">
+                <!-- Signal details will be loaded here -->
             </div>
             <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Signal Filters Modal -->
-<div class="modal fade" id="signalFiltersModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light">
-                    <i class="fas fa-filter me-2"></i>Signal Filters
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label text-light">Position Type</label>
-                    <select class="form-select bg-secondary text-light" id="positionTypeFilter">
-                        <option value="">All Positions</option>
-                        <option value="LONG">Long Positions</option>
-                        <option value="SHORT">Short Positions</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-light">Profit/Loss Status</label>
-                    <select class="form-select bg-secondary text-light" id="pnlStatusFilter">
-                        <option value="">All Positions</option>
-                        <option value="profit">In Profit</option>
-                        <option value="loss">In Loss</option>
-                        <option value="neutral">Neutral</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-light">Symbol</label>
-                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label text-light">Min Investment</label>
-                        <input type="number" class="form-control bg-secondary text-light" id="minInvestmentFilter" placeholder="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-light">Max Investment</label>
-                        <input type="number" class="form-control bg-secondary text-light" id="maxInvestmentFilter" placeholder="100000">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
-                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Deal Modal -->
-<div class="modal fade" id="addDealModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light">
-                    <i class="fas fa-handshake me-2"></i>Add New Deal
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addDealForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input type="text" class="form-control bg-secondary text-light" id="dealSymbol" required readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Position</label>
-                            <select class="form-select bg-secondary text-light" id="dealPos" required>
-                                <option value="1">Long (1)</option>
-                                <option value="0">Short (0)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="dealQty" required min="1">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Entry Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="dealEP" required step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Target Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="dealTP" step="0.01" min="0">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Current Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="dealCMP" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-light">Notes</label>
-                        <textarea class="form-control bg-secondary text-light" id="dealNotes" rows="2" placeholder="Enter any notes about this deal..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="saveDeal()">
-                    <i class="fas fa-save me-1"></i>Add Deal
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
 {% endblock %}
 
 {% block scripts %}
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
 <script>
-class ETFSignalsManager {
-    constructor() {
-        this.positions = [];
-        this.filteredPositions = [];
-        this.currentPage = 1;
-        this.pageSize = 20;
-        this.autoRefresh = true;
-        this.refreshInterval = null;
-        this.searchTimeout = null;
+let adminSignalsTable;
+let autoRefreshInterval;
 
-        // Column configuration matching your CSV structure exactly
-        this.availableColumns = {
-            'etf': { label: 'ETF', default: true, width: '90px' },
-            'thirty': { label: '30', default: false, width: '50px' },
-            'dh': { label: 'DH', default: false, width: '50px' },
-            'date': { label: 'Date', default: true, width: '90px' },
-            'pos': { label: 'Pos', default: true, width: '45px' },
-            'qty': { label: 'Qty', default: true, width: '60px' },
-            'ep': { label: 'EP', default: true, width: '70px' },
-            'cmp': { label: 'CMP', default: true, width: '70px' },
-            'change_pct': { label: '%Chan', default: true, width: '70px' },
-            'inv': { label: 'Inv.', default: true, width: '80px' },
-            'tp': { label: 'TP', default: true, width: '70px' },
-            'tva': { label: 'TVA', default: true, width: '80px' },
-            'tpr': { label: 'TPR', default: true, width: '80px' },
-            'pl': { label: 'PL', default: true, width: '70px' },
-            'ed': { label: 'ED', default: false, width: '90px' },
-            'exp': { label: 'EXP', default: false, width: '70px' },
-            'pr': { label: 'PR', default: false, width: '70px' },
-            'pp': { label: 'PP', default: false, width: '50px' },
-            'iv': { label: 'IV', default: false, width: '80px' },
-            'ip': { label: 'IP', default: false, width: '50px' },
-            'nt': { label: 'NT', default: false, width: '100px' },
-            'qt': { label: 'Qt', default: false, width: '60px' },
-            'seven': { label: '7', default: false, width: '40px' },
-            'change2': { label: '%Ch', default: false, width: '60px' },
-            'actions': { label: 'Actions', default: true, width: '100px' }
-        };
+$(document).ready(function() {
+    initializeDataTable();
+    loadPortfolioSummary();
+    setupAutoRefresh();
 
-        this.selectedColumns = this.getDefaultColumns();
-        this.init();
-    }
+    // Auto refresh toggle
+    $('#autoRefreshToggle').change(function() {
+        if (this.checked) {
+            setupAutoRefresh();
+        } else {
+            clearInterval(autoRefreshInterval);
+        }
+    });
+});
 
-    getDefaultColumns() {
-        return Object.keys(this.availableColumns).filter(col => this.availableColumns[col].default);
-    }
-
-    init() {
-        this.generateColumnCheckboxes();
-        this.updateTableHeaders();
-        this.loadPositions();
-        this.startAutoRefresh();
-        this.setupEventListeners();
-
-        // Auto refresh toggle
-        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
-        if (autoRefreshToggle) {
-            autoRefreshToggle.addEventListener('change', (e) => {
-                this.autoRefresh = e.target.checked;
-                if (this.autoRefresh) {
-                    this.startAutoRefresh();
-                } else {
-                    this.stopAutoRefresh();
+function initializeDataTable() {
+    adminSignalsTable = $('#adminSignalsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/etf/datatable/admin-signals',
+            type: 'POST',
+            contentType: 'application/json',
+            data: function(d) {
+                return JSON.stringify(d);
+            },
+            error: function(xhr, error, thrown) {
+                console.error('DataTable AJAX error:', error);
+                showAlert('Error loading data: ' + error, 'danger');
+            }
+        },
+        columns: [
+            { 
+                data: 'etf',
+                render: function(data, type, row) {
+                    return `<strong class="text-primary">${data}</strong>`;
                 }
-            });
-        }
-    }
-
-    generateColumnCheckboxes() {
-        const container = document.getElementById('columnCheckboxes');
-        container.innerHTML = '';
-
-        Object.keys(this.availableColumns).forEach(column => {
-            const colInfo = this.availableColumns[column];
-            const colDiv = document.createElement('div');
-            colDiv.className = 'col-md-4 col-lg-3 mb-2';
-
-            colDiv.innerHTML = `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="col_${column}" 
-                           ${this.selectedColumns.includes(column) ? 'checked' : ''}>
-                    <label class="form-check-label text-light" for="col_${column}">
-                        ${colInfo.label}
-                    </label>
-                </div>
-            `;
-
-            container.appendChild(colDiv);
-        });
-    }
-
-    updateTableHeaders() {
-        const headersRow = document.getElementById('tableHeaders');
-        headersRow.innerHTML = '';
-
-        this.selectedColumns.forEach(column => {
-            const th = document.createElement('th');
-            const colInfo = this.availableColumns[column];
-            th.style.width = colInfo.width;
-            th.className = 'text-center';
-            th.style.backgroundColor = 'var(--secondary-color)';
-            th.style.color = 'var(--text-primary)';
-            th.style.fontWeight = '600';
-            th.style.fontSize = '0.7rem';
-            th.style.padding = '6px 3px';
-            th.style.border = '1px solid var(--border-color)';
-            th.style.position = 'sticky';
-            th.style.top = '0';
-            th.style.zIndex = '10';
-            th.style.whiteSpace = 'nowrap';
-            th.textContent = colInfo.label;
-            th.title = this.getColumnTooltip(column);
-            headersRow.appendChild(th);
-        });
-    }
-
-    getColumnTooltip(column) {
-        const tooltips = {
-            'symbol': 'ETF Symbol',
-            'thirty': '30 Day Performance',
-            'dh': 'Days Held',
-            'date': 'Entry Date',
-            'pos': 'Position Type',
-            'qty': 'Quantity',
-            'ep': 'Entry Price',
-            'cmp': 'Current Market Price',
-            'change_pct': 'Percentage Change',
-            'inv': 'Investment Amount',
-            'tp': 'Target Price',
-            'tva': 'Target Value Amount',
-            'tpr': 'Target Profit Return',
-            'pl': 'Profit/Loss',
-            'ed': 'Entry Date',
-            'exp': 'Expected/Expiry',
-            'pr': 'Price Range',
-            'pp': 'Performance Points',
-            'iv': 'Implied Volatility',
-            'ip': 'Intraday Performance',
-            'nt': 'Notes/Tags',
-            'qt': 'Quote Time',
-            'seven': '7 Day Change',
-            'change2': 'Percentage Change',
-            'actions': 'Actions'
-        };
-        return tooltips[column] || column.toUpperCase();
-    }
-
-    setupEventListeners() {
-        // No position editing functionality
-    }
-
-    async loadPositions() {
-        // Show loading state
-        this.showLoading();
-
-        console.log('Loading admin trade signals...');
-        try {
-            // First try the ETF signals API
-            console.log('Fetching from ETF signals API...');
-            const response = await fetch('/etf/signals', {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            },
+            { 
+                data: 'signal_type',
+                render: function(data, type, row) {
+                    const badgeClass = data === 'BUY' ? 'bg-success' : 'bg-danger';
+                    return `<span class="badge ${badgeClass}">${data}</span>`;
                 }
-            });
-
-            console.log('Response status:', response.status);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('ETF signals response:', data);
-
-            if (data.success && data.signals && data.signals.length > 0) {
-                this.positions = this.convertETFSignalsToPositions(data.signals);
-                this.filteredPositions = [...this.positions];
-                this.renderPositionsTable();
-                this.updatePagination();
-                this.calculateAndUpdateSummary();
-                this.updateLiveIndicator(true);
-                console.log(`✅ Loaded ${this.positions.length} ETF signals`);
-            } else if (data.success && data.signals && data.signals.length === 0) {
-                console.log('No signals found in response, showing message');
-                this.showNoDataMessage();
-            } else {
-                console.error('API returned error or invalid format:', data);
-                this.showErrorMessage(data.message || 'Invalid response format');
-            }
-        } catch (error) {
-            console.error('❌ Error loading ETF signals:', error);
-            if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                this.showErrorMessage('Authentication required. Please refresh the page and try again.');
-            } else if (error.message.includes('404')) {
-                this.showErrorMessage('API endpoint not found. Please check server configuration.');
-            } else {
-                this.showErrorMessage(error.message);
-            }
-            this.updateLiveIndicator(false);
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    convertETFSignalsToPositions(signals) {
-        return signals.map((signal, index) => {
-            // Convert ETF signals data to position format
-            const entryPrice = parseFloat(signal.entry_price) || 0;
-            const currentPrice = parseFloat(signal.current_price) || entryPrice;
-            const quantity = parseInt(signal.quantity) || 0;
-            const changePercent = parseFloat(signal.change_percent) || 0;
-
-            // Calculate investment and values
-            const investment = entryPrice * quantity;
-            const currentValue = currentPrice * quantity;
-            const pnl = parseFloat(signal.profit_loss) || (currentValue - investment);
-            const targetPrice = parseFloat(signal.target_price) || 0;
-            const targetValue = targetPrice * quantity;
-            const targetProfit = targetValue - investment;
-
-            // Calculate days held
-            const createdDate = new Date(signal.created_at);
-            const today = new Date();
-            const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-
-            return {
-                id: signal.id,
-                etf: signal.symbol,
-                symbol: signal.symbol,
-                trading_symbol: signal.trading_symbol || signal.symbol + '-EQ',
-                thirty: '',
-                dh: daysHeld,
-                date: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                pos: signal.signal_type === 'BUY' ? 1 : 0,
-                qty: quantity,
-                ep: entryPrice,
-                cmp: currentPrice,
-                change_pct: changePercent,
-                inv: investment,
-                tp: targetPrice,
-                tva: targetValue,
-                tpr: targetProfit,
-                pl: pnl,
-                ed: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}) : '',
-                pr: `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}`,
-                pp: this.getPerformanceStars(changePercent),
-                iv: Math.abs(changePercent) > 3 ? 'High' : Math.abs(changePercent) > 1 ? 'Med' : 'Low',
-                ip: changePercent > 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`,
-                nt: signal.signal_description || signal.signal_title || '',
-                qt: signal.last_updated || '',
-                seven: '',
-                change2: changePercent,
-                signal_type: signal.signal_type,
-                status: signal.status,
-                priority: signal.priority || 'MEDIUM'
-            };
-        });
-    }
-
-    convertAdminSignalsToPositions(signals) {
-        return signals.map((signal, index) => {
-            // Convert admin_trade_signals data to position format
-            const entryPrice = parseFloat(signal.entry_price) || 0;
-            const currentPrice = parseFloat(signal.current_price) || entryPrice;
-            const quantity = parseInt(signal.quantity) || 0;
-            const changePercent = parseFloat(signal.change_percent) || 0;
-
-            // Calculate investment and values
-            const investment = entryPrice * quantity;
-            const currentValue = currentPrice * quantity;
-            const pnl = currentValue - investment;
-            const targetPrice = parseFloat(signal.target_price) || 0;
-            const targetValue = targetPrice * quantity;
-            const targetProfit = targetValue - investment;
-
-            // Calculate days held
-            const createdDate = new Date(signal.created_at);
-            const today = new Date();
-            const daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-
-            return {
-                id: signal.id,
-                etf: signal.symbol,
-                symbol: signal.symbol,
-                trading_symbol: signal.trading_symbol || signal.symbol + '-EQ',
-                thirty: '',
-                dh: daysHeld,
-                date: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                pos: signal.signal_type === 'BUY' ? 1 : 0,
-                qty: quantity,
-                ep: entryPrice,
-                cmp: currentPrice,
-                change_pct: changePercent,
-                inv: investment,
-                tp: targetPrice,
-                tva: targetValue,
-                tpr: targetProfit,
-                pl: pnl,
-                ed: createdDate.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}) : '',
-                pr: `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}`,
-                pp: this.getPerformanceStars(changePercent),
-                iv: Math.abs(changePercent) > 3 ? 'High' : Math.abs(changePercent) > 1 ? 'Med' : 'Low',
-                ip: changePercent > 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`,
-                nt: signal.signal_description || signal.signal_title || '',
-                qt: signal.last_update ? new Date(signal.last_update).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '',
-                seven: '',
-                change2: changePercent,
-                signal_type: signal.signal_type,
-                status: signal.status,
-                priority: signal.priority || 'MEDIUM',
-                target_user_ucc: signal.target_user_ucc || '',
-                target_user_name: signal.target_user_name || '',
-                admin_name: signal.admin_name || ''
-            };
-        });
-    }
-
-    convertSignalsToPositions(signals) {
-        return signals.map((signal, index) => {
-            // Use the data structure returned from the API
-            return {
-                id: signal.id,
-                etf: signal.etf,
-                symbol: signal.etf,
-                trading_symbol: signal.etf + '-EQ',
-                thirty: signal.thirty || '',
-                dh: signal.dh || '',
-                date: signal.date,
-                pos: signal.pos,
-                qty: signal.qty,
-                ep: signal.ep,
-                cmp: signal.cmp,
-                change_pct: signal.change_pct,
-                inv: signal.inv,
-                tp: signal.tp,
-                tva: signal.tva,
-                tpr: signal.tpr,
-                pl: signal.pl,
-                ed: signal.ed,
-                exp: signal.exp,
-                pr: signal.pr,
-                pp: this.getPerformanceStars(signal.pr),
-                iv: signal.iv,
-                ip: signal.ip,
-                nt: signal.nt,
-                qt: signal.qt,
-                seven: signal.seven,
-                change2: signal.change2,
-                signal_type: signal.signal_type,
-                status: signal.status,
-                priority: signal.priority || 'MEDIUM'
-            };
-        });
-    }
-
-    getPerformanceStars(pnlPercent) {
-        if (pnlPercent > 5) return '★★★';
-        if (pnlPercent > 2) return '★★';
-        if (pnlPercent > 0) return '★';
-        return '☆';
-    }
-
-    showEmptyState() {
-        this.positions = [];
-        this.filteredPositions = [];
-        this.renderPositionsTable();
-        this.updatePagination();
-        this.updateSummaryCards({
-            total_positions: 0,
-            total_investment: 0,
-            current_value: 0,
-            total_pnl: 0,
-            return_percent: 0,
-            active_positions: 0,
-            closed_positions: 0,
-            profit_trades: 0,
-            loss_trades: 0
-        });
-        console.log('No ETF data available - showing empty state');
-    }
-
-    showNoDataMessage() {
-        this.positions = [];
-        this.filteredPositions = [];
-
-        const tbody = document.getElementById('signalsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="${this.selectedColumns.length}" class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center">
-                            <i class="fas fa-chart-line fa-4x mb-3 text-muted"></i>
-                            <h5 class="text-light mb-2">No Admin Signals Available</h5>
-                            <p class="text-muted mb-3">No trading signals have been created by admin yet.</p>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-primary btn-sm" onclick="window.location.reload()">
-                                    <i class="fas fa-sync me-1"></i>Refresh Page
-                                </button>
-                                <a href="/admin-signals" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-user-shield me-1"></i>Go to Admin Panel
-                                </a>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        this.updatePagination();
-        this.updateSummaryCards({
-            total_positions: 0,
-            total_investment: 0,
-            current_value: 0,
-            total_pnl: 0,
-            return_percent: 0,
-            active_positions: 0,
-            closed_positions: 0
-        });
-    }
-
-    showErrorMessage(message) {
-        this.positions = [];
-        this.filteredPositions = [];
-
-        const tbody = document.getElementById('signalsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="${this.selectedColumns.length}" class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center">
-                            <i class="fas fa-exclamation-triangle fa-4x mb-3 text-warning"></i>
-                            <h5 class="text-light mb-2">Error Loading Signals</h5>
-                            <p class="text-muted mb-3">${message}</p>
-                            <button class="btn btn-outline-primary btn-sm" onclick="etfManager.loadPositions()">
-                                <i class="fas fa-sync me-1"></i>Try Again
+            },
+            { 
+                data: 'target_user_name',
+                render: function(data, type, row) {
+                    return `<div class="text-truncate" style="max-width: 120px;" title="${data} (${row.target_user_ucc})">${data}<br><small class="text-muted">${row.target_user_ucc}</small></div>`;
+                }
+            },
+            { 
+                data: 'qty',
+                render: function(data, type, row) {
+                    return data ? data.toLocaleString() : '0';
+                }
+            },
+            { 
+                data: 'ep',
+                render: function(data, type, row) {
+                    return `₹${parseFloat(data).toFixed(2)}`;
+                }
+            },
+            { 
+                data: 'cmp',
+                render: function(data, type, row) {
+                    return `₹${parseFloat(data).toFixed(2)}`;
+                }
+            },
+            { 
+                data: 'change_pct',
+                render: function(data, type, row) {
+                    const change = parseFloat(data);
+                    const className = change >= 0 ? 'text-success' : 'text-danger';
+                    return `<span class="${className} fw-bold">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+                }
+            },
+            { 
+                data: 'inv',
+                render: function(data, type, row) {
+                    return `₹${parseFloat(data).toLocaleString()}`;
+                }
+            },
+            { 
+                data: 'tp',
+                render: function(data, type, row) {
+                    return data > 0 ? `₹${parseFloat(data).toFixed(2)}` : 'N/A';
+                }
+            },
+            { 
+                data: 'pl',
+                render: function(data, type, row) {
+                    const pnl = parseFloat(data);
+                    const className = pnl >= 0 ? 'text-success' : 'text-danger';
+                    return `<span class="${className} fw-bold">₹${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</span>`;
+                }
+            },
+            { 
+                data: 'status',
+                render: function(data, type, row) {
+                    const badgeClass = data === 'ACTIVE' ? 'bg-success' : 'bg-secondary';
+                    return `<span class="badge ${badgeClass}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'priority',
+                render: function(data, type, row) {
+                    const badgeClass = data === 'HIGH' ? 'bg-danger' : data === 'MEDIUM' ? 'bg-warning' : 'bg-info';
+                    return `<span class="badge ${badgeClass}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'date',
+                render: function(data, type, row) {
+                    return `<small>${data}</small>`;
+                }
+            },
+            { 
+                data: 'dh',
+                render: function(data, type, row) {
+                    return `${data}d`;
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewSignalDetails(${row.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="createDealFromSignal(${row.id})" title="Create Deal">
+                                <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        this.updatePagination();
-        this.updateSummaryCards({
-            total_positions: 0,
-            total_investment: 0,
-            current_value: 0,
-            total_pnl: 0,
-            return_percent: 0,
-            active_positions: 0,
-            closed_positions: 0
-        });
-    }
-
-    updateLiveIndicator(isConnected) {
-        const indicator = document.getElementById('liveIndicator');
-        if (indicator) {
-            if (isConnected) {
-                indicator.innerHTML = '<span class="live-indicator connected"></span>Live Quotes';
-                indicator.className = 'badge bg-success me-2';
-            } else {
-                indicator.innerHTML = '<span class="live-indicator disconnected"></span>Disconnected';
-                indicator.className = 'badge bg-danger me-2';
-            }
-        }
-    }
-
-    showLoading() {
-        const tbody = document.getElementById('signalsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                        <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary"></i>
-                        <h6 class="text-light">Loading Admin Signals...</h6>
-                        <p class="text-muted mb-0">Please wait while we fetch your data</p>
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    hideLoading() {
-        // Loading state will be replaced by actual data or empty state
-    }
-
-    showLoading() {
-        const tbody = document.getElementById('signalsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                        <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary"></i>
-                        <h6 class="text-light">Loading ETF Positions...</h6>
-                        <p class="text-muted mb-0">Please wait while we fetch your data</p>
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    hideLoading() {
-        // Loading state will be replaced by actual data or empty state
-    }
-
-
-
-    convertETFPositionsToSignals(positions) {
-        return positions.map(position => {
-            const daysHeld = Math.floor((new Date() - new Date(position.entry_date)) / (1000 * 60 * 60 * 24));
-            const currentPrice = position.current_price || position.entry_price;
-            const percentChange = position.percentage_change || 0;
-            const pnl = position.profit_loss || 0;
-            const investment = position.investment_amount || 0;
-            const targetValue = position.target_value || 0;
-            const targetProfit = position.target_profit || 0;
-
-            // Calculate performance metrics
-            const priceRange = currentPrice ? `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}` : '-';
-            const performancePoints = percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-';
-            const impliedVolatility = Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low';
-            const quoteTime = position.last_update_time ? new Date(position.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '-';
-
-            return {
-                symbol: position.etf_symbol,
-                thirty: '-',
-                dh: daysHeld,
-                date: new Date(position.entry_date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                pos: position.position_type === 'LONG' ? 1 : 0,
-                qty: position.quantity,
-                ep: position.entry_price,
-                cmp: currentPrice,
-                change_pct: percentChange,
-                inv: investment,
-                tp: position.target_price || 0,
-                tva: targetValue,
-                tpr: targetProfit,
-                pl: pnl,
-                ed: new Date(position.entry_date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-                exp: '-',
-                pr: priceRange,
-                pp: performancePoints,
-                iv: impliedVolatility,
-                ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
-                nt: position.notes || '-',
-                qt: quoteTime,
-                seven: '-',
-                change2: percentChange,
-                id: position.id,
-                position_type: position.position_type,
-                is_active: position.is_active
-            };
-        });
-    }
-
-    renderPositionsTable() {
-        const tbody = document.getElementById('signalsTableBody');
-        const startIndex = (this.currentPage - 1) * this.pageSize;
-        const endIndex = startIndex + this.pageSize;
-        const pagePositions = this.filteredPositions.slice(startIndex, endIndex);
-
-        tbody.innerHTML = '';
-
-        if (pagePositions.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
-                    <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
-                    <h6 class="text-light">No ETF Data Available</h6>
-                    <p class="text-muted mb-0">No ETF positions found to display</p>
-                </td>
-            `;
-            tbody.appendChild(row);
-            return;
-        }
-
-        pagePositions.forEach(position => {
-            const row = document.createElement('tr');
-
-            this.selectedColumns.forEach(columnKey => {
-                const cell = document.createElement('td');
-                cell.className = 'text-center';
-                cell.style.padding = '4px 3px';
-                cell.style.border = '1px solid var(--border-color)';
-                cell.style.fontSize = '0.75rem';
-
-                let cellContent = '';
-                let bgColor = '';
-
-                switch(columnKey) {
-                    case 'etf':
-                        cellContent = `<strong>${position.etf || ''}</strong>`;
-                        break;
-                    case 'thirty':
-                        cellContent = position.thirty || '-';
-                        break;
-                    case 'dh':
-                        cellContent = position.dh !== undefined && position.dh !== '#N/A' ? (typeof position.dh === 'number' ? position.dh + 'd' : position.dh) : '#N/A';
-                        break;
-                    case 'date':
-                        cellContent = position.date || '';
-                        break;
-                    case 'pos':
-                        cellContent = `<span class="badge ${position.pos === 1 ? 'bg-success' : 'bg-danger'}">${position.pos}</span>`;
-                        break;
-                    case 'qty':
-                        cellContent = position.qty ? position.qty.toLocaleString('en-IN') : '';
-                        break;
-                    case 'ep':
-                        cellContent = position.ep ? '₹' + position.ep.toFixed(2) : '';
-                        break;
-                    case 'cmp':
-                        cellContent = position.cmp ? '₹' + position.cmp.toFixed(2) : '';
-                        break;
-                    case 'change_pct':
-                        if (position.change_pct !== undefined && position.change_pct !== 0) {
-                            const changeValue = parseFloat(position.change_pct);
-                            const isPositive = changeValue >= 0;
-                            bgColor = isPositive ? 'var(--success-color)' : 'var(--danger-color)';
-                            cellContent = `${isPositive ? '+' : ''}${changeValue.toFixed(2)}%`;
-                        } else {
-                            cellContent = '0.00%';
-                        }
-                        break;
-                    case 'inv':
-                        cellContent = position.inv ? '₹' + position.inv.toLocaleString('en-IN') : '';
-                        break;
-                    case 'tp':
-                        cellContent = position.tp ? '₹' + position.tp.toFixed(2) : '-';
-                        break;
-                    case 'tva':
-                        cellContent = position.tva ? '₹' + position.tva.toLocaleString('en-IN') : '';
-                        break;
-                    case 'tpr':
-                        cellContent = position.tpr || '₹0';
-                        break;
-                    case 'pl':
-                        if (position.pl !== undefined && position.pl !== 0) {
-                            bgColor = position.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-                            cellContent = `₹${position.pl >= 0 ? '+' : ''}${position.pl.toLocaleString('en-IN')}`;
-                        } else {
-                            cellContent = '₹0';
-                        }
-                        break;
-                    case 'ed':
-                        cellContent = position.ed || '';
-                        break;
-                    case 'exp':
-                        cellContent = position.exp || '-';
-                        break;
-                    case 'pr':
-                        cellContent = position.pr || '-';
-                        break;
-                    case 'pp':
-                        cellContent = position.pp || '-';
-                        break;
-                    case 'iv':
-                        cellContent = position.iv ? position.iv.toLocaleString('en-IN') : '0';
-                        break;
-                    case 'ip':
-                        cellContent = position.ip || '-';
-                        break;
-                    case 'nt':
-                        cellContent = `<small>${position.nt || '-'}</small>`;
-                        break;
-                    case 'qt':
-                        cellContent = `<small>${position.qt || '-'}</small>`;
-                        break;
-                    case 'seven':
-                        cellContent = position.seven || '#N/A';
-                        break;
-                    case 'change2':
-                        cellContent = position.change2 || '#N/A';
-                        break;
-                    case 'actions':
-                        cellContent = `
-                            <button class="btn btn-sm btn-primary" onclick="viewSignalDetails(${position.id})" title="View Details">
-                                <i class="fas fa-eye me-1"></i>Details
-                            </button>
-                            <button class="btn btn-sm btn-success ms-1" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
-                                <i class="fas fa-plus me-1"></i>Deal
-                            </button>
-                        `;
-                        break;
-                    default:
-                        cellContent = '';
+                    `;
                 }
-
-                if (bgColor) {
-                    cell.style.backgroundColor = bgColor;
-                    cell.style.color = 'white';
-                    cell.style.fontWeight = 'bold';
-                }
-
-                cell.innerHTML = cellContent;
-                row.appendChild(cell);
-            });
-
-            tbody.appendChild(row);
-        });
-
-        const visibleSignalsEl = document.getElementById('visibleSignalsCount');
-        if (visibleSignalsEl) visibleSignalsEl.textContent = this.filteredPositions.length;
-
-        const showingCountEl = document.getElementById('showingCount');
-        if (showingCountEl) showingCountEl.textContent = Math.min(endIndex, this.filteredPositions.length);
-
-        const totalCountEl = document.getElementById('totalCount');
-        if (totalCountEl) totalCountEl.textContent = this.filteredPositions.length;
-    }
-
-    calculateAndUpdateSummary() {
-        if (!this.positions || this.positions.length === 0) {
-            this.updateSummaryCards({
-                total_positions: 0,
-                total_investment: 0,
-                current_value: 0,
-                total_pnl: 0,
-                return_percent: 0,
-                active_positions: 0,
-                closed_positions: 0
-            });
-            return;
-        }
-
-        let totalInvestment = 0;
-        let currentValue = 0;
-        let totalPnl = 0;
-        let activePositions = 0;
-        let closedPositions = 0;
-
-        this.positions.forEach(position => {
-            totalInvestment += position.inv || 0;
-            currentValue += (position.cmp * position.qty) || position.inv || 0;
-            totalPnl += position.pl || 0;
-
-            if (position.status === 'ACTIVE') {
-                activePositions++;
-            } else {
-                closedPositions++;
             }
+        ],
+        order: [[12, 'desc']], // Order by created date descending
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        responsive: true,
+        dom: 'Blfrtip',
+        buttons: [
+            'copy', 'csv', 'excel',
+            {
+                text: 'Refresh',
+                action: function(e, dt, node, config) {
+                    refreshSignals();
+                }
+            }
+        ],
+        drawCallback: function(settings) {
+            updateSignalsCount();
+            updateLastUpdate();
+        }
+    });
+}
+
+function loadPortfolioSummary() {
+    fetch('/etf/api/etf-signals-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.portfolio) {
+                updatePortfolioSummary(data.portfolio);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading portfolio summary:', error);
         });
-
-        const returnPercent = totalInvestment > 0 ? (totalPnl / totalInvestment) * 100 : 0;
-
-        const summary = {
-            total_positions: this.positions.length,
-            total_investment: totalInvestment,
-            current_value: currentValue,
-            total_pnl: totalPnl,
-            return_percent: returnPercent,
-            active_positions: activePositions,
-            closed_positions: closedPositions
-        };
-
-        this.updateSummaryCards(summary);
-    }
-
-    updateSummaryCards(summary) {
-        if (!summary) return;
-
-        // Safely update elements with null checks
-        const totalPositionsEl = document.getElementById('totalPositions');
-        if (totalPositionsEl) totalPositionsEl.textContent = summary.total_positions || 0;
-
-        const totalInvestmentEl = document.getElementById('totalInvestment');
-        if (totalInvestmentEl) totalInvestmentEl.textContent = `₹${(summary.total_investment || 0).toLocaleString('en-IN')}`;
-
-        const currentValueEl = document.getElementById('currentValue');
-        if (currentValueEl) currentValueEl.textContent = `₹${(summary.current_value || 0).toLocaleString('en-IN')}`;
-
-        const totalPnl = summary.total_pnl || 0;
-        const pnlElement = document.getElementById('totalPnl');
-        if (pnlElement) {
-            pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
-            pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
-        }
-
-        const returnPercent = summary.return_percent || 0;
-        const returnElement = document.getElementById('returnPercent');
-        if (returnElement) {
-            returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
-            returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
-        }
-
-        const activePositionsEl = document.getElementById('activePositions');
-        if (activePositionsEl) activePositionsEl.textContent = summary.active_positions || 0;
-
-        const closedPositionsEl = document.getElementById('closedPositions');
-        if (closedPositionsEl) closedPositionsEl.textContent = summary.closed_positions || 0;
-    }
-
-    updatePagination() {
-        const totalPages = Math.ceil(this.filteredPositions.length / this.pageSize);
-
-        const currentPageEl = document.getElementById('currentPage');
-        if (currentPageEl) currentPageEl.textContent = this.currentPage;
-
-        const totalPagesEl = document.getElementById('totalPages');
-        if (totalPagesEl) totalPagesEl.textContent = totalPages;
-
-        const prevBtn = document.getElementById('prevBtn');
-        if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
-
-        const nextBtn = document.getElementById('nextBtn');
-        if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
-    }
-
-    clearPositionForm() {
-        document.getElementById('positionId').value = '';
-        document.getElementById('etfSymbol').value = '';
-        document.getElementById('tradingSymbol').value = '';
-        document.getElementById('instrumentToken').value = '';
-        document.getElementById('quantity').value = '';
-        document.getElementById('entryPrice').value = '';
-        document.getElementById('targetPrice').value = '';
-        document.getElementById('stopLoss').value = '';
-        document.getElementById('positionType').value = 'LONG';
-        document.getElementById('notes').value = '';
-        document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-    }
-
-    async editPosition(id) {
-        // Position editing disabled
-        this.showAlert('Position editing is currently disabled', 'info');
-    }
-
-    async deletePosition(id) {
-        // Position deletion disabled
-        this.showAlert('Position deletion is currently disabled', 'info');
-    }
-
-    startAutoRefresh() {
-        // Auto-refresh disabled for ETF signals display
-        if (this.refreshInterval) clearInterval(this.refreshInterval);
-    }
-
-    stopAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
-    }
-
-    showAlert(message, type) {
-        // Simple alert for now
-        alert(message);
-    }
 }
 
-// Global functions for column settings and filters
-function applyColumnSettings() {
-    etfManager.selectedColumns = [];
+function updatePortfolioSummary(portfolio) {
+    if (!portfolio) return;
 
-    Object.keys(etfManager.availableColumns).forEach(column => {
-        const checkbox = document.getElementById(`col_${column}`);
-        if (checkbox && checkbox.checked) {
-            etfManager.selectedColumns.push(column);
-        }
-    });
+    // Update summary cards
+    $('#totalPositions').text(portfolio.total_positions || 0);
+    $('#totalInvestment').text(`₹${(portfolio.total_investment || 0).toLocaleString()}`);
+    $('#currentValue').text(`₹${(portfolio.current_value || 0).toLocaleString()}`);
 
-    etfManager.updateTableHeaders();
-    etfManager.renderPositionsTable();
+    const totalPnl = portfolio.total_pnl || 0;
+    const pnlElement = $('#totalPnl');
+    pnlElement.text(`₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString()}`);
+    pnlElement.removeClass('text-success text-danger').addClass(totalPnl >= 0 ? 'text-success' : 'text-danger');
 
-    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
+    const returnPercent = portfolio.return_percent || 0;
+    const returnElement = $('#returnPercent');
+    returnElement.text(`${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`);
+    returnElement.removeClass('text-success text-danger').addClass(returnPercent >= 0 ? 'text-success' : 'text-danger');
+
+    $('#activePositions').text(portfolio.active_positions || 0);
+    $('#totalSignals').text(portfolio.total_positions || 0);
 }
 
-function selectAllColumns() {
-    Object.keys(etfManager.availableColumns).forEach(column => {
-        const checkbox = document.getElementById(`col_${column}`);
-        if (checkbox) checkbox.checked = true;
-    });
+function updateSignalsCount() {
+    const info = adminSignalsTable.page.info();
+    $('#signalsCount').text(info.recordsTotal);
+    $('#totalRecords').text(info.recordsTotal);
 }
 
-function resetDefaultColumns() {
-    Object.keys(etfManager.availableColumns).forEach(column => {
-        const checkbox = document.getElementById(`col_${column}`);
-        if (checkbox) {
-            checkbox.checked = etfManager.availableColumns[column].default;
-        }
-    });
+function updateLastUpdate() {
+    $('#lastUpdate').text(new Date().toLocaleTimeString());
 }
 
-function applyFilters() {
-    const positionType = document.getElementById('positionTypeFilter').value;
-    const pnlStatus = document.getElementById('pnlStatusFilter').value;
-    const symbol = document.getElementById('symbolFilter').value.toLowerCase();
-    const minInvestment = parseFloat(document.getElementById('minInvestmentFilter').value) || 0;
-    const maxInvestment = parseFloat(document.getElementById('maxInvestmentFilter').value) || Infinity;
-
-    etfManager.filteredPositions = etfManager.positions.filter(position => {
-        const matchesType = !positionType || position.position_type === positionType;
-        const matchesPnL = !pnlStatus || 
-            (pnlStatus === 'profit' && position.pl > 0) ||
-            (pnlStatus === 'loss' && position.pl < 0) ||
-            (pnlStatus === 'neutral' && position.pl === 0);
-        const matchesSymbol = !symbol || position.symbol.toLowerCase().includes(symbol);
-        const matchesInvestment = position.inv >= minInvestment && position.inv <= maxInvestment;
-
-        return matchesType && matchesPnL && matchesSymbol && matchesInvestment;
-    });
-
-    etfManager.currentPage = 1;
-    etfManager.renderPositionsTable();
-    etfManager.updatePagination();
-}
-
-function clearFilters() {
-    document.getElementById('positionTypeFilter').value = '';
-    document.getElementById('pnlStatusFilter').value = '';
-    document.getElementById('symbolFilter').value = '';
-    document.getElementById('minInvestmentFilter').value = '';
-    document.getElementById('maxInvestmentFilter').value = '';
-
-    etfManager.filteredPositions = [...etfManager.positions];
-    etfManager.currentPage = 1;
-    etfManager.renderPositionsTable();
-    etfManager.updatePagination();
+function setupAutoRefresh() {
+    // Refresh every 60 seconds
+    autoRefreshInterval = setInterval(function() {
+        refreshSignals();
+    }, 60000);
 }
 
 function refreshSignals() {
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-    }
+    const refreshBtn = $('#refreshBtn');
+    refreshBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...');
 
-    if (window.etfManager) {
-        window.etfManager.loadPositions().finally(() => {
-            if (refreshBtn) {
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
-            }
-        });
-    } else {
-        console.error('ETF Manager not initialized');
-        if (refreshBtn) {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
-        }
+    if (adminSignalsTable) {
+        adminSignalsTable.ajax.reload(function() {
+            loadPortfolioSummary();
+            refreshBtn.prop('disabled', false).html('<i class="fas fa-sync-alt me-1"></i>Refresh');
+        }, false);
     }
 }
 
-function previousPage() {
-    if (etfManager.currentPage > 1) {
-        etfManager.currentPage--;
-        etfManager.renderPositionsTable();
-        etfManager.updatePagination();
-    }
-}
-
-function nextPage() {
-    const totalPages = Math.ceil(etfManager.filteredPositions.length / etfManager.pageSize);
-    if (etfManager.currentPage < totalPages) {
-        etfManager.currentPage++;
-        etfManager.renderPositionsTable();
-        etfManager.updatePagination();
-    }
-}
-
-function exportSignals() {
-    const data = etfManager.filteredPositions;
-    if (!data || data.length === 0) {
-        alert('No data to export');
-        return;
-    }
-
-    const csvContent = "data:text/csv;charset=utf-8," + 
-        Object.keys(data[0]).join(",") + "\n" +
-        data.map(row => Object.values(row).join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `etf_signals_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-
-
-// Initialize ETF Signals Manager on page load
-document.addEventListener('DOMContentLoaded', function() {
-    window.etfManager = new ETFSignalsManager();
-});
-
-// Function to view signal details
 function viewSignalDetails(signalId) {
-    const signal = etfManager.positions.find(p => p.id === signalId);
+    // Find the signal data from the current table
+    const tableData = adminSignalsTable.rows().data();
+    let signal = null;
+
+    tableData.each(function(rowData) {
+        if (rowData.id === signalId) {
+            signal = rowData;
+            return false; // break loop
+        }
+    });
+
     if (!signal) {
-        alert('Signal not found');
+        showAlert('Signal not found', 'warning');
         return;
     }
 
-    const modalHtml = `
-        <div class="modal fade" id="signalDetailsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content bg-dark">
-                    <div class="modal-header border-bottom border-secondary">
-                        <h5 class="modal-title text-light">Signal Details - ${signal.symbol}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-light">Signal Information</h6>
-                                <table class="table table-dark table-sm">
-                                    <tr><td><strong>Symbol:</strong></td><td>${signal.symbol}</td></tr>
-                                    <tr><td><strong>Signal Type:</strong></td><td><span class="badge ${signal.signal_type === 'BUY' ? 'bg-success' : 'bg-danger'}">${signal.signal_type}</span></td></tr>
-                                    <tr><td><strong>Status:</strong></td><td><span class="badge bg-info">${signal.status}</span></td></tr>
-                                    <tr><td><strong>Priority:</strong></td><td><span class="badge bg-warning">${signal.priority}</span></td></tr>
-                                    <tr><td><strong>Days Held:</strong></td><td>${signal.dh} days</td></tr>
-                                    <tr><td><strong>Target User:</strong></td><td>${signal.target_user_name || 'N/A'} (${signal.target_user_ucc || 'N/A'})</td></tr>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-light">Price Information</h6>
-                                <table class="table table-dark table-sm">
-                                    <tr><td><strong>Entry Price:</strong></td><td>₹${signal.ep.toFixed(2)}</td></tr>
-                                    <tr><td><strong>Current Price:</strong></td><td>₹${signal.cmp.toFixed(2)}</td></tr>
-                                    <tr><td><strong>Target Price:</strong></td><td>₹${signal.tp ? signal.tp.toFixed(2) : 'N/A'}</td></tr>
-                                    <tr><td><strong>Quantity:</strong></td><td>${signal.qty.toLocaleString()}</td></tr>
-                                    <tr><td><strong>Investment:</strong></td><td>₹${signal.inv.toLocaleString()}</td></tr>
-                                    <tr><td><strong>P&L:</strong></td><td class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">₹${signal.pl.toLocaleString()}</td></tr>
-                                    <tr><td><strong>Change %:</strong></td><td class="${signal.change_pct >= 0 ? 'text-success' : 'text-danger'}">${signal.change_pct.toFixed(2)}%</td></tr>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <h6 class="text-light">Notes</h6>
-                                <p class="text-light">${signal.nt || 'No notes available'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top border-secondary">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-success" onclick="addDealFromSignal('${signal.symbol}', ${signal.pos}, ${signal.qty}, ${signal.ep}, ${signal.tp || 0}, ${signal.cmp})" data-bs-dismiss="modal">
-                            <i class="fas fa-plus me-1"></i>Create Deal
-                        </button>
-                    </div>
-                </div>
+    const modalBody = $('#signalDetailsBody');
+    const html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-light">Signal Information</h6>
+                <table class="table table-dark table-sm">
+                    <tr><td><strong>Symbol:</strong></td><td>${signal.etf}</td></tr>
+                    <tr><td><strong>Signal Type:</strong></td><td><span class="badge ${signal.signal_type === 'BUY' ? 'bg-success' : 'bg-danger'}">${signal.signal_type}</span></td></tr>
+                    <tr><td><strong>Status:</strong></td><td><span class="badge ${signal.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${signal.status}</span></td></tr>
+                    <tr><td><strong>Priority:</strong></td><td><span class="badge ${signal.priority === 'HIGH' ? 'bg-danger' : signal.priority === 'MEDIUM' ? 'bg-warning' : 'bg-info'}">${signal.priority}</span></td></tr>
+                    <tr><td><strong>Days Held:</strong></td><td>${signal.dh}</td></tr>
+                    <tr><td><strong>Target User:</strong></td><td>${signal.target_user_name} (${signal.target_user_ucc})</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-light">Price Information</h6>
+                <table class="table table-dark table-sm">
+                    <tr><td><strong>Entry Price:</strong></td><td>₹${parseFloat(signal.ep).toFixed(2)}</td></tr>
+                    <tr><td><strong>Current Price:</strong></td><td>₹${parseFloat(signal.cmp).toFixed(2)}</td></tr>
+                    <tr><td><strong>Target Price:</strong></td><td>₹${signal.tp > 0 ? parseFloat(signal.tp).toFixed(2) : 'N/A'}</td></tr>
+                    <tr><td><strong>Quantity:</strong></td><td>${signal.qty.toLocaleString()}</td></tr>
+                    <tr><td><strong>Investment:</strong></td><td>₹${parseFloat(signal.inv).toLocaleString()}</td></tr>
+                    <tr><td><strong>P&L:</strong></td><td class="${signal.pl >= 0 ? 'text-success' : 'text-danger'}">₹${parseFloat(signal.pl).toLocaleString()}</td></tr>
+                    <tr><td><strong>Change %:</strong></td><td class="${signal.change_pct >= 0 ? 'text-success' : 'text-danger'}">${parseFloat(signal.change_pct).toFixed(2)}%</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-light">Description</h6>
+                <p class="text-light">${signal.nt || 'No description available'}</p>
             </div>
         </div>
     `;
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('signalDetailsModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-
-    // Add modal to DOM
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('signalDetailsModal'));
-    modal.show();
+    modalBody.html(html);
+    $('#signalDetailsModal').modal('show');
 }
 
-// Function to add deal from ETF signal
-function addDealFromSignal(symbol, pos, qty, ep, tp, cmp) {
-    // Create deal object matching the deals page format
-    const dealEP = parseFloat(ep);
-    const dealCMP = parseFloat(cmp);
-    const dealTP = parseFloat(tp) || dealEP * 1.1;
-    const dealQty = parseInt(qty);
-    const dealPos = parseInt(pos);
-
-    const investment = dealEP * dealQty;
-    const currentValue = dealCMP * dealQty;
-    const pnl = (dealCMP - dealEP) * dealQty * (dealPos === 1 ? 1 : -1);
-    const percentChange = ((dealCMP - dealEP) / dealEP) * 100 * (dealPos === 1 ? 1 : -1);
-    const targetValue = dealTP * dealQty;
-    const targetProfit = (dealTP - dealEP) * dealQty;
-
-    const newDeal = {
-        symbol: symbol,
-        thirty: '-',
-        dh: 0,
-        date: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-        pos: dealPos,
-        qty: dealQty,
-        ep: dealEP,
-        cmp: dealCMP,
-        change_pct: percentChange,
-        inv: investment,
-        tp: dealTP,
-        tva: targetValue,
-        tpr: targetProfit,
-        pl: pnl,
-        ed: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-        pr: `${(dealCMP * 0.95).toFixed(1)}-${(dealCMP * 1.05).toFixed(1)}`,
-        pp: percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-',
-        iv: Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low',
-        ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
-        nt: `Deal from ETF signal: ${symbol}`,
-        qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-        seven: '-',
-        change2: percentChange,
-        id: 'DEAL' + Date.now(),
-        position_type: dealPos === 1 ? 'LONG' : 'SHORT',
-        status: 'EXECUTED'
-    };
-
-    // Get existing user deals from localStorage
-    let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-    userDeals.unshift(newDeal);
-    localStorage.setItem('userDeals', JSON.stringify(userDeals));
-
-    // Show success message
-    alert(`✅ Deal added successfully for ${symbol}!\n\nDetails:\n- Position: ${dealPos === 1 ? 'LONG' : 'SHORT'}\n- Quantity: ${dealQty}\n- Entry Price: ₹${dealEP}\n- Current Price: ₹${dealCMP}\n- P&L: ₹${pnl.toFixed(2)}\n\nView it in the Deals page.`);
-
-    // Optionally redirect to deals page
-    if (confirm('Would you like to view the deal in the Deals page?')) {
-        window.location.href = '/deals';
-    }
+function createDealFromSignal(signalId) {
+    // Implementation for creating a deal from signal
+    showAlert('Deal creation functionality will be implemented soon', 'info');
 }
 
-// Function to open Add Deal modal with pre-filled data
-function addDeal(symbol, pos, qty, ep, tp, cmp) {
-    // Pre-fill the form with signal data
-    document.getElementById('dealSymbol').value = symbol;
-    document.getElementById('dealPos').value = pos;
-    document.getElementById('dealQty').value = qty;
-    document.getElementById('dealEP').value = parseFloat(ep).toFixed(2);
-    document.getElementById('dealTP').value = tp ? parseFloat(tp).toFixed(2) : '';
-    document.getElementById('dealCMP').value = parseFloat(cmp).toFixed(2);
-    document.getElementById('dealNotes').value = `Deal created from ETF signal for ${symbol}`;
-
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('addDealModal'));
-    modal.show();
+function exportSignals() {
+    // Trigger DataTables export
+    adminSignalsTable.button('.buttons-csv').trigger();
 }
 
-// Function to save the deal
-function saveDeal() {
-    // Get values from the form
-    const dealSymbol = document.getElementById('dealSymbol').value;
-    const dealPos = parseInt(document.getElementById('dealPos').value);
-    const dealQty = parseInt(document.getElementById('dealQty').value);
-    const dealEP = parseFloat(document.getElementById('dealEP').value);
-    const dealTP = parseFloat(document.getElementById('dealTP').value) || dealEP * 1.1;
-    const dealCMP = parseFloat(document.getElementById('dealCMP').value);
-    const dealNotes = document.getElementById('dealNotes').value;
+function showAlert(message, type = 'info') {
+    // Simple alert implementation
+    const alertClass = type === 'danger' ? 'alert-danger' : type === 'success' ? 'alert-success' : type === 'warning' ? 'alert-warning' : 'alert-info';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 1050;" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
 
-    // Basic validation
-    if (!dealSymbol || dealPos === null || !dealQty || !dealEP) {
-        alert('Please fill in all required fields.');
-        return;
-    }
+    $('body').append(alertHtml);
 
-    // Calculate additional fields
-    const investment = dealEP * dealQty;
-    const currentValue = dealCMP * dealQty;
-    const pnl = (dealCMP - dealEP) * dealQty * (dealPos === 1 ? 1 : -1);
-    const percentChange = ((dealCMP - dealEP) / dealEP) * 100 * (dealPos === 1 ? 1 : -1);
-    const daysHeld = 0; // New deal
-    const targetValue = dealTP * dealQty;
-    const targetProfit = (dealTP - dealEP) * dealQty;
-
-    // Create deal object matching the deals page format
-    const newDeal = {
-        symbol: dealSymbol,
-        thirty: '-',
-        dh: daysHeld,
-        date: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-        pos:dealPos,
-        qty: dealQty,
-        ep: dealEP,
-        cmp: dealCMP,
-        change_pct: percentChange,
-        inv: investment,
-        tp: dealTP,
-        tva: targetValue,
-        tpr: targetProfit,
-        pl: pnl,
-        ed: new Date().toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}),
-        pr: `${(dealCMP * 0.95).toFixed(1)}-${(dealCMP * 1.05).toFixed(1)}`,
-        pp: percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-',
-        iv: Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low',
-        ip: percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
-        nt: dealNotes || 'Deal from ETF signal',
-        qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-        seven: '-',
-        change2: percentChange,
-        id: 'DEAL' + Date.now(),
-        position_type: dealPos === 1 ? 'LONG' : 'SHORT',
-        status: 'EXECUTED'
-    };
-
-    // Get existing user deals from localStorage
-    let userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-
-    // Add the new deal
-    userDeals.unshift(newDeal); // Add to beginning of array
-
-    // Save back to localStorage
-    localStorage.setItem('userDeals', JSON.stringify(userDeals));
-
-    // Close the modal
-    bootstrap.Modal.getInstance(document.getElementById('addDealModal')).hide();
-
-    // Clear the form
-    document.getElementById('addDealForm').reset();
-
-    // Show success message
-    alert(`Deal added successfully for ${dealSymbol}! View it in the Deals page.`);
-
-    // Optionally redirect to deals page
-    if (confirm('Would you like to view the deal in the Deals page?')) {
-        window.location.href = '/deals';
-    }
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        $('.alert').fadeOut();
+    }, 5000);
 }
-</script>
-<script>
-    function loadSignals() {
-        showLoading();
-        fetch('/etf/signals', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-                if (data.success) {
-                    const signals = data.signals || [];
-                    const portfolio = data.portfolio || {};
-                    const lastUpdate = data.last_update;
 
-                    // Update last update time
-                    updateLastUpdateTime(lastUpdate);
-
-                    // Update portfolio summary
-                    updatePortfolioSummary(portfolio);
-
-                    if (signals.length > 0) {
-                        populateSignalsTable(signals);
-                        showContent();
-                    } else {
-                        showError();
-                    }
-                } else {
-                    showError(data.message);
-                }
-            })
-        .catch(error => {
-            console.error('Error fetching signals:', error);
-            showError('Failed to load signals.');
-        });
+// Cleanup on page unload
+$(window).on('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
     }
-
-    function showLoading() {
-        document.getElementById('signals-loading').classList.remove('d-none');
-        document.getElementById('signals-content').classList.add('d-none');
-        document.getElementById('signals-error').classList.add('d-none');
-    }
-
-    function showContent() {
-        document.getElementById('signals-loading').classList.add('d-none');
-        document.getElementById('signals-content').classList.remove('d-none');
-        document.getElementById('signals-error').classList.add('d-none');
-    }
-
-    function showError(message = 'Failed to load data.') {
-        document.getElementById('signals-loading').classList.add('d-none');
-        document.getElementById('signals-content').classList.add('d-none');
-        document.getElementById('signals-error').classList.remove('d-none');
-
-        // Optionally, set the error message
-        const errorDiv = document.getElementById('signals-error');
-        if (errorDiv && message) {
-            errorDiv.innerHTML = `<div class="alert alert-warning"><h6>Error:</h6><p>${message}</p></div>`;
-        }
-    }
-
-    function populateSignalsTable(signals) {
-        const tbody = document.getElementById('signals-table-body');
-        tbody.innerHTML = '';
-
-        signals.forEach(signal => {
-            const row = document.createElement('tr');
-
-            // Determine P&L color and formatting
-            const pnlPercent = signal.profit_loss_percent || 0;
-            const pnlAmount = signal.profit_loss || 0;
-            const pnlClass = pnlPercent > 0 ? 'text-success' : pnlPercent < 0 ? 'text-danger' : 'text-muted';
-
-            // Format prices
-            const entryPrice = signal.entry_price ? `₹${parseFloat(signal.entry_price).toFixed(2)}` : 'N/A';
-            const currentPrice = signal.current_price ? `₹${parseFloat(signal.current_price).toFixed(2)}` : 'N/A';
-            const targetPrice = signal.target_price ? `₹${parseFloat(signal.target_price).toFixed(2)}` : 'N/A';
-            const stopLoss = signal.stop_loss ? `₹${parseFloat(signal.stop_loss).toFixed(2)}` : 'N/A';
-            const pnlAmountFormatted = `₹${Math.abs(pnlAmount).toFixed(2)}`;
-
-            // Status badge
-            const statusClass = signal.status === 'ACTIVE' ? 'bg-success' : 
-                               signal.status === 'CLOSED' ? 'bg-secondary' : 'bg-warning';
-
-            // Signal type badge
-            const signalClass = signal.signal_type === 'BUY' ? 'bg-success' : 'bg-danger';
-
-            // Add blinking effect for recent updates
-            const lastUpdated = signal.last_updated || 'N/A';
-            const isRecentUpdate = lastUpdated !== 'N/A' && isRecentlyUpdated(lastUpdated);
-            const rowClass = isRecentUpdate ? 'table-warning' : '';
-
-            row.className = rowClass;
-            row.innerHTML = `
-                <td><strong>${signal.symbol}</strong></td>
-                <td><span class="badge ${signalClass}">${signal.signal_type}</span></td>
-                <td>${signal.quantity || 0}</td>
-                <td>${entryPrice}</td>
-                <td id="price-${signal.id}" class="fw-bold">${currentPrice}</td>
-                <td>${targetPrice}</td>
-                <td>${stopLoss}</td>
-                <td class="${pnlClass} fw-bold" data-profit-loss="${pnlAmount}">${pnlAmount >= 0 ? '+' : ''}${pnlAmountFormatted}</td>
-                <td class="${pnlClass} fw-bold">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</td>
-                <td><span class="badge ${statusClass}">${signal.status}</span></td>
-                <td class="text-muted small">${lastUpdated}</td>
-            `;
-
-            tbody.appendChild(row);
-        });
-
-// Add profit/loss color styling
-            function updateProfitLossColors() {
-                const profitLossCells = document.querySelectorAll('[data-profit-loss]');
-                if (profitLossCells) {
-                    profitLossCells.forEach(cell => {
-                        if (cell && cell.dataset && cell.dataset.profitLoss) {
-                            const value = parseFloat(cell.dataset.profitLoss);
-                            if (value > 0) {
-                                cell.classList.add('text-success');
-                                cell.classList.remove('text-danger');
-                            } else if (value < 0) {
-                                cell.classList.add('text-danger');
-                                cell.classList.remove('text-success');
-                            }
-                        }
-                    });
-                }
-            }
-
-// Update live indicators
-            function updateLiveIndicators() {
-                const indicators = document.querySelectorAll('.live-indicator');
-                if (indicators) {
-                    indicators.forEach(indicator => {
-                        if (indicator && indicator.classList) {
-                            indicator.classList.toggle('animate-pulse');
-                        }
-                    });
-                }
-            }
-        updateProfitLossColors();
-        updateLiveIndicators();
-    }
-
-    function isRecentlyUpdated(lastUpdated) {
-        // Check if the update was within the last 2 minutes
-        const now = new Date();
-        const updateTime = new Date();
-        const timeParts = lastUpdated.split(':');
-        if (timeParts.length === 3) {
-            updateTime.setHours(parseInt(timeParts[0]));
-            updateTime.setMinutes(parseInt(timeParts[1]));
-            updateTime.setSeconds(parseInt(timeParts[2]));
-            return (now - updateTime) < 120000; // 2 minutes
-        }
-        return false;
-    }
-
-    function updateLastUpdateTime(timestamp) {
-        const badge = document.getElementById('last-update');
-        if (timestamp) {
-            const updateTime = new Date(timestamp);
-            badge.textContent = `Last Update: ${updateTime.toLocaleTimeString()}`;
-            badge.className = 'badge bg-success me-2';
-        }
-    }
-
-    function updatePortfolioSummary(portfolio) {
-        // Update total trades
-        const totalElement = document.getElementById('total-signals');
-        if (totalElement) {
-            totalElement.textContent = portfolio.total_trades || 0;
-        }
-
-        // Update active trades
-        const activeElement = document.getElementById('active-signals');
-        if (activeElement) {
-            activeElement.textContent = portfolio.active_trades || 0;
-        }
-
-        // Update profit trades
-        const profitElement = document.getElementById('profit-signals');
-        if (profitElement) {
-            profitElement.textContent = portfolio.profit_trades || 0;
-        }
-
-        // Update loss trades
-        const lossElement = document.getElementById('loss-signals');
-        if (lossElement) {
-            lossElement.textContent = portfolio.loss_trades || 0;
-        }
-
-        // Update investment metrics if elements exist
-        const investedElement = document.querySelector('.total-invested');
-        if (investedElement) {
-            investedElement.textContent = `₹${(portfolio.total_invested || 0).toFixed(2)}`;
-        }
-
-        const currentValueElement = document.querySelector('.current-value');
-        if (currentValueElement) {
-            currentValueElement.textContent = `₹${(portfolio.total_current_value || 0).toFixed(2)}`;
-        }
-
-        const totalPnlElement = document.querySelector('.total-pnl');
-        if (totalPnlElement) {
-            const pnl = portfolio.total_pnl || 0;
-            const pnlPercent = portfolio.total_pnl_percent || 0;
-            totalPnlElement.textContent = `₹${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`;
-            totalPnlElement.className = `fw-bold ${pnl >= 0 ? 'text-success' : 'text-danger'}`;
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        loadSignals();
-
-        // Refresh signals every 60 seconds (adjust as needed)
-        setInterval(loadSignals, 60000);
-    });
+});
 </script>
 <script>
 // Theme management
