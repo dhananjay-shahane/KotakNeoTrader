@@ -168,9 +168,6 @@
                     Auto Refresh
                 </label>
             </div>
-            <a href="{{ url_for('admin_signals') }}" class="btn btn-sm btn-outline-light">
-                <i class="fas fa-user-shield me-1"></i>Admin Panel
-            </a>
             <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                 <i class="fas fa-download me-1"></i>Export
             </button>
@@ -1038,10 +1035,7 @@ class ETFSignalsManager {
                         break;
                     case 'actions':
                         cellContent = `
-                            <button class="btn btn-sm btn-primary" onclick="viewSignalDetails(${position.id})" title="View Details">
-                                <i class="fas fa-eye me-1"></i>Details
-                            </button>
-                            <button class="btn btn-sm btn-success ms-1" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
+                            <button class="btn btn-sm btn-success" onclick="addDealFromSignal('${position.etf}', ${position.pos}, ${position.qty}, ${position.ep}, ${position.tp || 0}, ${position.cmp})" title="Add Deal">
                                 <i class="fas fa-plus me-1"></i>Deal
                             </button>
                         `;
