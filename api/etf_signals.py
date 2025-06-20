@@ -17,14 +17,14 @@ def get_admin_signals():
         from models import User
         from models_etf import AdminTradeSignal, KotakNeoQuote, RealtimeQuote
         from trading_functions import TradingFunctions
-        
+
         # Get target user (zhz3j or fallback to any user)
         target_user = User.query.filter(
             (User.ucc.ilike('%zhz3j%')) | 
             (User.greeting_name.ilike('%zhz3j%')) | 
             (User.user_id.ilike('%zhz3j%'))
         ).first()
-        
+
         if not target_user:
             # Create demo user if not exists
             target_user = User(
@@ -36,10 +36,10 @@ def get_admin_signals():
             )
             db.session.add(target_user)
             db.session.commit()
-        
+
         # Check if we need to populate initial data
         existing_signals = AdminTradeSignal.query.filter_by(target_user_id=target_user.id).count()
-        
+
         if existing_signals == 0:
             # Create initial ETF signals data in admin_trade_signals table
             csv_etf_data = [
@@ -64,7 +64,7 @@ def get_admin_signals():
                 {'etf': 'NIFTYBEES', 'pos': 0, 'qty': 400, 'ep': 265.43, 'tp': 256.06, 'date': '24-Dec-2024'},
                 {'etf': 'HDFCPVTBAN', 'pos': 0, 'qty': 4000, 'ep': 25.19, 'tp': 24.36, 'date': '24-Dec-2024'}
             ]
-            
+
             # Store data in admin_trade_signals table
             admin_user = User.query.filter_by(ucc='admin').first()
             if not admin_user:
@@ -77,13 +77,13 @@ def get_admin_signals():
                 )
                 db.session.add(admin_user)
                 db.session.commit()
-            
+
             for etf_data in csv_etf_data:
                 try:
                     entry_date = datetime.strptime(etf_data['date'], '%d-%b-%Y')
                 except:
                     entry_date = datetime.now()
-                
+
                 signal = AdminTradeSignal(
                     admin_user_id=admin_user.id,
                     target_user_id=target_user.id,
@@ -102,16 +102,16 @@ def get_admin_signals():
                     exchange='NSE'
                 )
                 db.session.add(signal)
-            
+
             db.session.commit()
             logger.info(f"Created {len(csv_etf_data)} initial ETF signals in admin_trade_signals table")
-        
+
         # Fetch all admin trade signals for the target user
         signals = AdminTradeSignal.query.filter_by(
             target_user_id=target_user.id,
             status='ACTIVE'
         ).order_by(AdminTradeSignal.created_at.desc()).all()
-        
+
         if not signals:
             logger.warning("No admin trade signals found")
             return jsonify({
@@ -127,7 +127,7 @@ def get_admin_signals():
                     'closed_positions': 0
                 },
                 'message': 'No signals found'
-            })</old_str>
+            })
 
         # Get comprehensive market data from KotakNeoQuote table with fallback to RealtimeQuote
         latest_quotes = {}
@@ -135,10 +135,10 @@ def get_admin_signals():
             from models_etf import KotakNeoQuote
             from sqlalchemy import func
             from trading_functions import TradingFunctions
-            
+
             # Get unique symbols from signals
             signal_symbols = list(set([signal.symbol for signal in signals]))
-            
+
             # Try to get fresh quotes from Kotak Neo API
             trading_functions = TradingFunctions()
             if hasattr(trading_functions, 'get_quotes_for_symbols'):
@@ -162,7 +162,7 @@ def get_admin_signals():
                     logger.info(f"✅ Retrieved {len(fresh_quotes)} fresh quotes from Kotak Neo API")
                 except Exception as api_error:
                     logger.warning(f"⚠️ Could not fetch fresh quotes from API: {api_error}")
-            
+
             # Fallback to database quotes if API fails
             if not latest_quotes:
                 # First try to get comprehensive data from KotakNeoQuote
@@ -237,13 +237,13 @@ def get_admin_signals():
         total_pnl = 0
 
         # Process each admin trade signal with real-time CMP calculations
-        for idx, signal in enumerate(signals):</old_str>
+        for idx, signal in enumerate(signals):
             # Get real-time CMP from Kotak Neo quotes or fallback to signal price
             entry_price = float(signal.entry_price)
             current_price = float(signal.current_price) if signal.current_price else entry_price
             quantity = signal.quantity
             target_price = float(signal.target_price) if signal.target_price else 0
-            
+
             # Default values
             change_percent = 0
             open_price = current_price
@@ -253,7 +253,7 @@ def get_admin_signals():
             bid_price = ask_price = 0
             week_52_high = week_52_low = 0
             data_source = 'SIGNAL_DATA'
-            
+
             # Override with real-time quote data if available
             if signal.symbol in latest_quotes:
                 quote_data = latest_quotes[signal.symbol]
@@ -268,7 +268,7 @@ def get_admin_signals():
                 week_52_high = quote_data['week_52_high']
                 week_52_low = quote_data['week_52_low']
                 data_source = quote_data['data_source']
-                
+
                 # Update signal with latest price
                 signal.current_price = current_price
                 signal.change_percent = change_percent
@@ -281,19 +281,19 @@ def get_admin_signals():
             invested_amount = entry_price * quantity
             current_value = current_price * quantity
             target_value_amount = target_price * quantity if target_price > 0 else 0
-            
+
             # P&L calculations based on signal type
             if signal.signal_type == 'BUY':  # Long position
                 pnl_amount = (current_price - entry_price) * quantity
             else:  # Short position
                 pnl_amount = (entry_price - current_price) * quantity
-            
+
             # Target profit return calculation
             target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0
-            
+
             # Calculate days held
             days_held = (datetime.now() - signal.created_at).days if signal.created_at else 0
-            
+
             # Format signal data with comprehensive market data
             signal_data = {
                 'id': signal.id,
@@ -322,7 +322,7 @@ def get_admin_signals():
                 'qt': datetime.now().strftime('%H:%M'),  # Qt (Quote time) - REAL-TIME
                 'seven': f"{change_percent * 0.8:.1f}%",  # 7-day performance (simulated)
                 'change2': change_percent,  # Alternative change field
-                
+
                 # Comprehensive market data from Kotak Neo API
                 'open_price': round(open_price, 2),
                 'high_price': round(high_price, 2),
@@ -333,7 +333,7 @@ def get_admin_signals():
                 'week_52_high': round(week_52_high, 2),
                 'week_52_low': round(week_52_low, 2),
                 'data_source': data_source,
-                
+
                 # Additional fields for compatibility
                 'signal_type': signal.signal_type,
                 'status': signal.status,
@@ -341,20 +341,20 @@ def get_admin_signals():
                 'priority': signal.priority,
                 'created_at': signal.created_at.isoformat() if signal.created_at else None,
                 'last_updated': datetime.now().strftime('%H:%M:%S'),
-                
+
                 # DataTable display fields
                 'display_price': f"₹{current_price:.2f}",
                 'display_change': f"{change_percent:+.2f}%",
                 'display_pnl': f"₹{pnl_amount:+,.2f}",
                 'display_volume': f"{volume:,}" if volume > 0 else "N/A"
             }
-            
+
             signals_data.append(signal_data)
-            
+
             # Update totals for portfolio summary
             total_invested += invested_amount
             total_current_value += current_value
-            total_pnl += pnl_amount</old_str>
+            total_pnl += pnl_amount
 
         logger.info(f"✅ Processed {len(signals_data)} admin trade signals with real-time CMP from Kotak Neo")
 
@@ -366,12 +366,12 @@ def get_admin_signals():
             logger.warning(f"⚠️ Could not commit price updates: {commit_error}")
             db.session.rollback()
 
-        # Calculate portfolio summary from processed signals</old_str>
+        # Calculate portfolio summary from processed signals
         try:
             admin_signals = db.session.query(AdminTradeSignal).filter_by(
                 assigned_to_ucc='zhz3j'  # Demo user
             ).order_by(AdminTradeSignal.created_at.desc()).limit(50).all()
-            
+
             # Get latest quotes from realtime_quotes table
             latest_quotes = {}
             try:
@@ -400,7 +400,7 @@ def get_admin_signals():
                 logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
             except Exception as quote_error:
                 logger.warning(f"⚠️ Could not fetch latest quotes from database: {quote_error}")
-            
+
             # Process each admin signal to match CSV format
             for signal in admin_signals:
                 # Get current price from latest quotes or use current_price field
@@ -408,89 +408,89 @@ def get_admin_signals():
                 change_percent = float(signal.change_percent) if signal.change_percent else 0
 
                 # Override with latest quote if available
-            if signal.symbol in latest_quotes:
-                current_price = latest_quotes[signal.symbol]['current_price']
-                change_percent = latest_quotes[signal.symbol]['change_percent']
+                if signal.symbol in latest_quotes:
+                    current_price = latest_quotes[signal.symbol]['current_price']
+                    change_percent = latest_quotes[signal.symbol]['change_percent']
 
-                # Update signal with latest price in database
-                signal.current_price = current_price
-                signal.change_percent = change_percent
-                signal.last_update_time = datetime.utcnow()
+                    # Update signal with latest price in database
+                    signal.current_price = current_price
+                    signal.change_percent = change_percent
+                    signal.last_update_time = datetime.utcnow()
 
-            # Calculate values matching the CSV format
-            entry_price = float(signal.entry_price)
-            quantity = signal.quantity
-            invested_amount = entry_price * quantity  # "Inv." column
-            current_value = current_price * quantity  # Current market value
+                # Calculate values matching the CSV format
+                entry_price = float(signal.entry_price)
+                quantity = signal.quantity
+                invested_amount = entry_price * quantity  # "Inv." column
+                current_value = current_price * quantity  # Current market value
 
-            # P&L calculations
-            if signal.signal_type.upper() == 'BUY':
-                pnl_amount = (current_price - entry_price) * quantity
-            else:  # SELL
-                pnl_amount = (entry_price - current_price) * quantity
+                # P&L calculations
+                if signal.signal_type.upper() == 'BUY':
+                    pnl_amount = (current_price - entry_price) * quantity
+                else:  # SELL
+                    pnl_amount = (entry_price - current_price) * quantity
 
-            pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+                pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
 
-            # Target calculations
-            target_price = float(signal.target_price) if signal.target_price else 0
-            target_value_amount = target_price * quantity if target_price > 0 else 0  # "TVA" column
-            target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0  # "TPR" column
+                # Target calculations
+                target_price = float(signal.target_price) if signal.target_price else 0
+                target_value_amount = target_price * quantity if target_price > 0 else 0  # "TVA" column
+                target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0  # "TPR" column
 
-            # Days held calculation
-            days_held = (datetime.utcnow() - signal.created_at).days if signal.created_at else 0
+                # Days held calculation
+                days_held = (datetime.utcnow() - signal.created_at).days if signal.created_at else 0
 
-            # Position status (1 for active positions, 0 for closed/inactive)
-            position_status = 1 if signal.status == 'ACTIVE' else 0
+                # Position status (1 for active positions, 0 for closed/inactive)
+                position_status = 1 if signal.status == 'ACTIVE' else 0
 
-            # Create signal data matching CSV columns
-            signal_data = {
-                'id': signal.id,
-                'etf': signal.symbol,  # ETF column
-                'thirty': f"{pnl_percent * 1.2:.1f}",  # 30-day performance (simulated)
-                'dh': str(days_held),  # DH (Days Held)
-                'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',  # Date
-                'pos': position_status,  # Pos (Position status)
-                'qty': quantity,  # Qty
-                'ep': entry_price,  # EP (Entry Price)
-                'cmp': current_price,  # CMP (Current Market Price)
-                'change_pct': change_percent,  # %Chan (Change %)
-                'inv': invested_amount,  # Inv. (Investment)
-                'tp': target_price,  # TP (Target Price)
-                'tva': target_value_amount,  # TVA (Target Value Amount)
-                'tpr': target_profit_return,  # TPR (Target Profit Return %)
-                'pl': pnl_amount,  # PL (Profit/Loss)
-                'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # ED (Expiry Date)
-                'exp': '',  # EXP (Expiry field - empty for now)
-                'pr': f"{pnl_percent:.1f}%",  # PR (Profit Return %)
-                'pp': signal.priority,  # PP (Priority)
-                'iv': invested_amount,  # IV (Investment Value)
-                'ip': f"{change_percent:.2f}%",  # IP (Investment Performance %)
-                'nt': signal.signal_description or f"Trading signal for {signal.symbol}",  # NT (Notes)
-                'qt': datetime.utcnow().strftime('%H:%M'),  # Qt (Quote time)
-                'seven': f"{pnl_percent * 0.8:.1f}%",  # 7-day performance (simulated)
-                'change2': change_percent,  # Alternative change field
+                # Create signal data matching CSV columns
+                signal_data = {
+                    'id': signal.id,
+                    'etf': signal.symbol,  # ETF column
+                    'thirty': f"{pnl_percent * 1.2:.1f}",  # 30-day performance (simulated)
+                    'dh': str(days_held),  # DH (Days Held)
+                    'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',  # Date
+                    'pos': position_status,  # Pos (Position status)
+                    'qty': quantity,  # Qty
+                    'ep': entry_price,  # EP (Entry Price)
+                    'cmp': current_price,  # CMP (Current Market Price)
+                    'change_pct': change_percent,  # %Chan (Change %)
+                    'inv': invested_amount,  # Inv. (Investment)
+                    'tp': target_price,  # TP (Target Price)
+                    'tva': target_value_amount,  # TVA (Target Value Amount)
+                    'tpr': target_profit_return,  # TPR (Target Profit Return %)
+                    'pl': pnl_amount,  # PL (Profit/Loss)
+                    'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # ED (Expiry Date)
+                    'exp': '',  # EXP (Expiry field - empty for now)
+                    'pr': f"{pnl_percent:.1f}%",  # PR (Profit Return %)
+                    'pp': signal.priority,  # PP (Priority)
+                    'iv': invested_amount,  # IV (Investment Value)
+                    'ip': f"{change_percent:.2f}%",  # IP (Investment Performance %)
+                    'nt': signal.signal_description or f"Trading signal for {signal.symbol}",  # NT (Notes)
+                    'qt': datetime.utcnow().strftime('%H:%M'),  # Qt (Quote time)
+                    'seven': f"{pnl_percent * 0.8:.1f}%",  # 7-day performance (simulated)
+                    'change2': change_percent,  # Alternative change field
 
-                # Additional fields for compatibility
-                'signal_type': signal.signal_type,
-                'status': signal.status,
-                'symbol': signal.symbol,
-                'trading_symbol': signal.trading_symbol,
-                'priority': signal.priority,
-                'invested_amount': invested_amount,
-                'current_value': current_value,
-                'profit_loss': pnl_amount,
-                'profit_loss_percent': pnl_percent,
-                'created_at': signal.created_at.isoformat() if signal.created_at else None,
-                'last_updated': datetime.utcnow().strftime('%H:%M:%S')
-            }
+                    # Additional fields for compatibility
+                    'signal_type': signal.signal_type,
+                    'status': signal.status,
+                    'symbol': signal.symbol,
+                    'trading_symbol': signal.trading_symbol,
+                    'priority': signal.priority,
+                    'invested_amount': invested_amount,
+                    'current_value': current_value,
+                    'profit_loss': pnl_amount,
+                    'profit_loss_percent': pnl_percent,
+                    'created_at': signal.created_at.isoformat() if signal.created_at else None,
+                    'last_updated': datetime.utcnow().strftime('%H:%M:%S')
+                }
 
-            signals_data.append(signal_data)
+                signals_data.append(signal_data)
 
-            # Update totals for portfolio summary
-            if signal.status == 'ACTIVE':
-                total_invested += invested_amount
-                total_current_value += current_value
-                total_pnl += pnl_amount
+                # Update totals for portfolio summary
+                if signal.status == 'ACTIVE':
+                    total_invested += invested_amount
+                    total_current_value += current_value
+                    total_pnl += pnl_amount
 
         except Exception as db_error:
             logger.error(f"Error fetching admin trade signals: {db_error}")
@@ -568,8 +568,7 @@ def send_admin_signal():
             if field not in data:
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
 
-        # Get target users
-        target_user_ids = data['target_user_ids']
+        # Get target userstarget_user_ids = data['target_user_ids']
         if not isinstance(target_user_ids, list):
             target_user_ids = [target_user_ids]
 
