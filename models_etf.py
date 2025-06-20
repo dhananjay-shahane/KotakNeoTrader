@@ -71,6 +71,64 @@ class AdminTradeSignal(db.Model):
             'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
         }
 
+class RealtimeQuote(db.Model):
+    """Real-time market quotes table for CMP storage"""
+    __tablename__ = 'realtime_quotes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(50), nullable=False, index=True)
+    trading_symbol = db.Column(db.String(100), nullable=True)
+    token = db.Column(db.String(50), nullable=True)
+    exchange = db.Column(db.String(20), default='NSE')
+    
+    # Market Data
+    current_price = db.Column(db.Numeric(10, 2), nullable=False)
+    open_price = db.Column(db.Numeric(10, 2), nullable=True)
+    high_price = db.Column(db.Numeric(10, 2), nullable=True)
+    low_price = db.Column(db.Numeric(10, 2), nullable=True)
+    close_price = db.Column(db.Numeric(10, 2), nullable=True)
+    
+    # Change Calculations
+    change_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    change_percent = db.Column(db.Numeric(5, 2), nullable=True)
+    
+    # Volume and Liquidity
+    volume = db.Column(db.BigInteger, nullable=True)
+    avg_volume = db.Column(db.BigInteger, nullable=True)
+    
+    # Timestamp
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    market_status = db.Column(db.String(20), default='OPEN')  # OPEN, CLOSED, PRE_OPEN
+    
+    # Data Source
+    data_source = db.Column(db.String(50), default='KOTAK_NEO')
+    fetch_status = db.Column(db.String(20), default='SUCCESS')  # SUCCESS, ERROR, STALE
+    
+    def __repr__(self):
+        return f'<RealtimeQuote {self.symbol} @ {self.current_price}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'symbol': self.symbol,
+            'trading_symbol': self.trading_symbol,
+            'token': self.token,
+            'exchange': self.exchange,
+            'current_price': float(self.current_price) if self.current_price else None,
+            'open_price': float(self.open_price) if self.open_price else None,
+            'high_price': float(self.high_price) if self.high_price else None,
+            'low_price': float(self.low_price) if self.low_price else None,
+            'close_price': float(self.close_price) if self.close_price else None,
+            'change_amount': float(self.change_amount) if self.change_amount else None,
+            'change_percent': float(self.change_percent) if self.change_percent else None,
+            'volume': self.volume,
+            'avg_volume': self.avg_volume,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'market_status': self.market_status,
+            'data_source': self.data_source,
+            'fetch_status': self.fetch_status
+        }
+
 class UserNotification(db.Model):
     __tablename__ = 'user_notifications'
 

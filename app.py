@@ -465,13 +465,25 @@ def charts():
 @app.route('/etf-signals')
 @require_auth
 def etf_signals():
-    """ETF Trading Signals page"""
+    """ETF Trading Signals page with advanced datatable"""
+    return render_template('etf_signals_datatable.html')
+
+@app.route('/etf-signals-basic')
+@require_auth
+def etf_signals_basic():
+    """Basic ETF Trading Signals page"""
     return render_template('etf_signals.html')
 
 @app.route('/admin-signals')
 @require_auth
 def admin_signals():
-    """Admin Panel for sending trading signals"""
+    """Admin Panel for managing trading signals with advanced datatable"""
+    return render_template('admin_signals_datatable.html')
+
+@app.route('/admin-signals-basic')
+@require_auth
+def admin_signals_basic():
+    """Basic Admin Panel for sending trading signals"""
     return render_template('admin_signals.html')
 
 # API endpoints
@@ -547,11 +559,24 @@ try:
     from api.etf_signals import etf_bp
     from api.admin import admin_bp
     from api.notifications import notifications_bp
+    from api.realtime_quotes import quotes_bp
+    from api.signals_datatable import datatable_bp
 
     app.register_blueprint(etf_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(notifications_bp)
+    app.register_blueprint(quotes_bp)
+    app.register_blueprint(datatable_bp)
     print("✓ Additional blueprints registered successfully")
+    
+    # Initialize realtime quotes scheduler
+    try:
+        from realtime_quotes_manager import start_quotes_scheduler
+        start_quotes_scheduler()
+        print("✓ Realtime quotes scheduler started")
+    except Exception as e:
+        print(f"Warning: Could not start quotes scheduler: {e}")
+        
 except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
 
