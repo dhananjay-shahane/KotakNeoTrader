@@ -72,7 +72,8 @@ body {
 
 /* Fix 3-dot menu overlapping issues */
 .table-responsive {
-    overflow: visible !important;
+    overflow-x: auto;
+    overflow-y: visible !important;
 }
 
 .dropdown {
@@ -81,38 +82,47 @@ body {
 }
 
 .dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 1050 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    z-index: 9999 !important;
     min-width: 160px;
     margin: 0.125rem 0 0;
     font-size: 0.875rem;
     color: #212529;
     text-align: left;
     list-style: none;
-    background-color: #343a40;
+    background-color: #1e293b !important;
     background-clip: padding-box;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 0.375rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
+    transform: none !important;
+    will-change: auto !important;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    position: absolute !important;
+    z-index: 9999 !important;
 }
 
 .dropdown-menu.dropdown-menu-dark {
-    background-color: #2d3436 !important;
+    background-color: #1e293b !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
 }
 
 .dropdown-menu.dropdown-menu-dark .dropdown-item {
     color: #ffffff !important;
     padding: 0.5rem 1rem;
     transition: all 0.15s ease-in-out;
+    background: transparent !important;
 }
 
 .dropdown-menu.dropdown-menu-dark .dropdown-item:hover,
 .dropdown-menu.dropdown-menu-dark .dropdown-item:focus {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(37, 99, 235, 0.2) !important;
     color: #ffffff !important;
 }
 
@@ -143,6 +153,8 @@ body {
     background-color: transparent;
     color: #adb5bd;
     transition: all 0.15s ease-in-out;
+    position: relative;
+    z-index: 1;
 }
 
 .btn-xs.dropdown-toggle:hover {
@@ -153,22 +165,44 @@ body {
 
 .btn-xs.dropdown-toggle:focus {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.btn-xs.dropdown-toggle[aria-expanded="true"] {
+    background-color: rgba(37, 99, 235, 0.2);
+    border-color: rgba(37, 99, 235, 0.5);
+    color: #ffffff;
 }
 
 /* Fix table cell overflow for actions column */
 .table td:last-child {
     position: relative;
-    overflow: visible;
+    overflow: visible !important;
+}
+
+.table td {
+    overflow: visible !important;
 }
 
 /* Ensure table container allows overflow for dropdowns */
 .table-container {
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: visible !important;
 }
 
 .card-body {
-    overflow: visible;
+    overflow: visible !important;
+}
+
+/* Prevent table from cutting off dropdowns */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th,
+.table tbody td {
+    position: relative;
+    overflow: visible !important;
 }
 
 /* Fix for mobile responsiveness */
@@ -186,6 +220,29 @@ body {
         padding: 0.2rem 0.4rem;
         font-size: 0.7rem;
     }
+}
+
+/* Additional fixes for Bootstrap dropdown issues */
+.dropdown-toggle::after {
+    display: inline-block;
+    margin-left: 0.255em;
+    vertical-align: 0.255em;
+    content: "";
+    border-top: 0.3em solid;
+    border-right: 0.3em solid transparent;
+    border-bottom: 0;
+    border-left: 0.3em solid transparent;
+}
+
+.dropup .dropdown-toggle::after {
+    display: inline-block;
+    margin-left: 0.255em;
+    vertical-align: 0.255em;
+    content: "";
+    border-top: 0;
+    border-right: 0.3em solid transparent;
+    border-bottom: 0.3em solid;
+    border-left: 0.3em solid transparent;
 }
 
 /* Position row highlighting */

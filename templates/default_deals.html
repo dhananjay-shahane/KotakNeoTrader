@@ -1041,24 +1041,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const menu = dropdown.querySelector('.dropdown-menu');
         
         if (menu) {
-            const rect = dropdown.getBoundingClientRect();
-            const tableContainer = dropdown.closest('.table-responsive');
+            // Reset any previous positioning
+            menu.style.top = '';
+            menu.style.bottom = '';
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.transform = '';
             
-            if (tableContainer) {
-                const containerRect = tableContainer.getBoundingClientRect();
-                
-                // Check if dropdown would overflow bottom
-                if (rect.bottom + menu.offsetHeight > containerRect.bottom) {
-                    menu.style.top = 'auto';
-                    menu.style.bottom = '100%';
-                }
-                
-                // Check if dropdown would overflow right
-                if (rect.right + menu.offsetWidth > containerRect.right) {
-                    menu.style.left = 'auto';
-                    menu.style.right = '0';
-                }
+            // Force absolute positioning
+            menu.style.position = 'absolute';
+            menu.style.zIndex = '9999';
+            
+            const rect = dropdown.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // Check if dropdown would overflow bottom of viewport
+            if (rect.bottom + menuRect.height > viewportHeight - 20) {
+                menu.classList.add('dropup');
+                menu.style.top = 'auto';
+                menu.style.bottom = '100%';
+                menu.style.marginTop = '0';
+                menu.style.marginBottom = '0.125rem';
+            } else {
+                menu.classList.remove('dropup');
+                menu.style.top = '100%';
+                menu.style.bottom = 'auto';
+                menu.style.marginTop = '0.125rem';
+                menu.style.marginBottom = '0';
             }
+            
+            // Check if dropdown would overflow right of viewport
+            if (rect.right + menuRect.width > viewportWidth - 20) {
+                menu.style.left = 'auto';
+                menu.style.right = '0';
+            } else {
+                menu.style.left = '0';
+                menu.style.right = 'auto';
+            }
+        }
+    });
+
+    // Reset dropdown positioning when hidden
+    document.addEventListener('hidden.bs.dropdown', function(e) {
+        const dropdown = e.target.closest('.dropdown');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        
+        if (menu) {
+            menu.classList.remove('dropup');
+            menu.style.top = '';
+            menu.style.bottom = '';
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.transform = '';
+            menu.style.marginTop = '';
+            menu.style.marginBottom = '';
         }
     });
 });
