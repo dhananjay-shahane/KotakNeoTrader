@@ -49,6 +49,7 @@ def get_admin_signals():
                     'total_pnl': 0,
                     'total_pnl_percent': 0,
                     'total_positions': 0,
+                    'total_investment': 0,
                     'current_value': 0,
                     'return_percent': 0,
                     'active_positions': 0,
@@ -186,6 +187,7 @@ def get_admin_signals():
             'profit_trades': profit_signals,
             'loss_trades': loss_signals,
             'total_invested': total_invested,
+            'total_investment': total_invested,  # Add both keys for compatibility
             'total_current_value': total_current_value,
             'total_pnl': total_pnl,
             'total_pnl_percent': (total_pnl / total_invested * 100) if total_invested > 0 else 0,

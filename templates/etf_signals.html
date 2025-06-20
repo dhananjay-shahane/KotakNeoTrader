@@ -538,14 +538,16 @@ class ETFSignalsManager {
                 this.renderPositionsTable();
                 this.updatePagination();
                 this.updateSummaryCards(data.portfolio || {});
+                this.updateLiveIndicator(true);
                 console.log(`✅ Loaded ${this.positions.length} ETF trading signals`);
             } else {
-                console.log('No ETF signals found');
-                this.showEmptyState();
+                console.log('No ETF signals found, showing message');
+                this.showNoDataMessage();
             }
         } catch (error) {
             console.error('❌ Error loading ETF signals:', error);
-            this.showEmptyState();
+            this.showErrorMessage(error.message);
+            this.updateLiveIndicator(false);
         } finally {
             this.hideLoading();
         }
@@ -615,6 +617,92 @@ class ETFSignalsManager {
             loss_trades: 0
         });
         console.log('No ETF data available - showing empty state');
+    }
+
+    showNoDataMessage() {
+        this.positions = [];
+        this.filteredPositions = [];
+        
+        const tbody = document.getElementById('signalsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${this.selectedColumns.length}" class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-chart-line fa-4x mb-3 text-muted"></i>
+                            <h5 class="text-light mb-2">No Admin Signals Available</h5>
+                            <p class="text-muted mb-3">No trading signals have been created by admin yet.</p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="window.location.reload()">
+                                    <i class="fas fa-sync me-1"></i>Refresh Page
+                                </button>
+                                <a href="/admin-signals" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-user-shield me-1"></i>Go to Admin Panel
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        this.updatePagination();
+        this.updateSummaryCards({
+            total_positions: 0,
+            total_investment: 0,
+            current_value: 0,
+            total_pnl: 0,
+            return_percent: 0,
+            active_positions: 0,
+            closed_positions: 0
+        });
+    }
+
+    showErrorMessage(message) {
+        this.positions = [];
+        this.filteredPositions = [];
+        
+        const tbody = document.getElementById('signalsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${this.selectedColumns.length}" class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-4x mb-3 text-warning"></i>
+                            <h5 class="text-light mb-2">Error Loading Signals</h5>
+                            <p class="text-muted mb-3">${message}</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="etfManager.loadPositions()">
+                                <i class="fas fa-sync me-1"></i>Try Again
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        this.updatePagination();
+        this.updateSummaryCards({
+            total_positions: 0,
+            total_investment: 0,
+            current_value: 0,
+            total_pnl: 0,
+            return_percent: 0,
+            active_positions: 0,
+            closed_positions: 0
+        });
+    }
+
+    updateLiveIndicator(isConnected) {
+        const indicator = document.getElementById('liveIndicator');
+        if (indicator) {
+            if (isConnected) {
+                indicator.innerHTML = '<span class="live-indicator connected"></span>Live Quotes';
+                indicator.className = 'badge bg-success me-2';
+            } else {
+                indicator.innerHTML = '<span class="live-indicator disconnected"></span>Disconnected';
+                indicator.className = 'badge bg-danger me-2';
+            }
+        }
     }
 
     showLoading() {
@@ -829,40 +917,64 @@ class ETFSignalsManager {
             tbody.appendChild(row);
         });
 
-        document.getElementById('visibleSignalsCount').textContent = this.filteredPositions.length;
-        document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredPositions.length);
-        document.getElementById('totalCount').textContent = this.filteredPositions.length;
+        const visibleSignalsEl = document.getElementById('visibleSignalsCount');
+        if (visibleSignalsEl) visibleSignalsEl.textContent = this.filteredPositions.length;
+
+        const showingCountEl = document.getElementById('showingCount');
+        if (showingCountEl) showingCountEl.textContent = Math.min(endIndex, this.filteredPositions.length);
+
+        const totalCountEl = document.getElementById('totalCount');
+        if (totalCountEl) totalCountEl.textContent = this.filteredPositions.length;
     }
 
     updateSummaryCards(summary) {
         if (!summary) return;
 
-        document.getElementById('totalPositions').textContent = summary.total_positions || 0;
-        document.getElementById('totalInvestment').textContent = `₹${(summary.total_investment || 0).toLocaleString('en-IN')}`;
-        document.getElementById('currentValue').textContent = `₹${(summary.current_value || 0).toLocaleString('en-IN')}`;
+        // Safely update elements with null checks
+        const totalPositionsEl = document.getElementById('totalPositions');
+        if (totalPositionsEl) totalPositionsEl.textContent = summary.total_positions || 0;
+
+        const totalInvestmentEl = document.getElementById('totalInvestment');
+        if (totalInvestmentEl) totalInvestmentEl.textContent = `₹${(summary.total_investment || 0).toLocaleString('en-IN')}`;
+
+        const currentValueEl = document.getElementById('currentValue');
+        if (currentValueEl) currentValueEl.textContent = `₹${(summary.current_value || 0).toLocaleString('en-IN')}`;
 
         const totalPnl = summary.total_pnl || 0;
         const pnlElement = document.getElementById('totalPnl');
-        pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
-        pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        if (pnlElement) {
+            pnlElement.textContent = `₹${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-IN')}`;
+            pnlElement.className = totalPnl >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        }
 
         const returnPercent = summary.return_percent || 0;
         const returnElement = document.getElementById('returnPercent');
-        returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
-        returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        if (returnElement) {
+            returnElement.textContent = `${returnPercent >= 0 ? '+' : ''}${returnPercent.toFixed(2)}%`;
+            returnElement.className = returnPercent >= 0 ? 'h5 mb-0 text-success' : 'h5 mb-0 text-danger';
+        }
 
-        document.getElementById('activePositions').textContent = summary.active_positions || 0;
-        document.getElementById('closedPositions').textContent = summary.closed_positions || 0;
+        const activePositionsEl = document.getElementById('activePositions');
+        if (activePositionsEl) activePositionsEl.textContent = summary.active_positions || 0;
+
+        const closedPositionsEl = document.getElementById('closedPositions');
+        if (closedPositionsEl) closedPositionsEl.textContent = summary.closed_positions || 0;
     }
 
     updatePagination() {
         const totalPages = Math.ceil(this.filteredPositions.length / this.pageSize);
 
-        document.getElementById('currentPage').textContent = this.currentPage;
-        document.getElementById('totalPages').textContent = totalPages;
+        const currentPageEl = document.getElementById('currentPage');
+        if (currentPageEl) currentPageEl.textContent = this.currentPage;
 
-        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
-        document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+        const totalPagesEl = document.getElementById('totalPages');
+        if (totalPagesEl) totalPagesEl.textContent = totalPages;
+
+        const prevBtn = document.getElementById('prevBtn');
+        if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
+
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
     }
 
     clearPositionForm() {
@@ -978,8 +1090,26 @@ function clearFilters() {
 }
 
 function refreshSignals() {
-    // Refresh disabled for ETF signals display
-    console.log('ETF signals refresh - functionality disabled');
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    }
+    
+    if (window.etfManager) {
+        window.etfManager.loadPositions().finally(() => {
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+            }
+        });
+    } else {
+        console.error('ETF Manager not initialized');
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+        }
+    }
 }
 
 function previousPage() {
