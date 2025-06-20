@@ -186,26 +186,26 @@ def send_admin_signal():
 def get_target_users():
     """Get list of users to send signals to"""
     try:
-        if 'user_id' not in session:
+        # Check authentication using the same method as other endpoints
+        if not session.get('authenticated') and 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
         from models import User
         
-        # Get all active users except current user
-        users = User.query.filter(
-            User.is_active == True,
-            User.id != session['user_id']
-        ).all()
+        # Get all active users
+        users = User.query.filter(User.is_active == True).all()
 
         users_data = []
         for user in users:
             users_data.append({
                 'id': user.id,
                 'ucc': user.ucc,
-                'name': user.greeting_name or user.ucc,
-                'mobile': user.mobile_number
+                'name': user.greeting_name or user.ucc or f"User_{user.id}",
+                'mobile': user.mobile_number or 'N/A'
             })
 
+        logging.info(f"Found {len(users_data)} active users for admin panel")
+        
         return jsonify({
             'success': True,
             'users': users_data
