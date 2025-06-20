@@ -95,12 +95,19 @@ from trading_functions import TradingFunctions
 from user_manager import UserManager
 from session_helper import SessionHelper
 from websocket_handler import WebSocketHandler
+from supabase_client import supabase_client
 
 neo_client = NeoClient()
 trading_functions = TradingFunctions()
 user_manager = UserManager()
 session_helper = SessionHelper()
 websocket_handler = WebSocketHandler()
+
+# Log Supabase connection status
+if supabase_client.is_connected():
+    logging.info("✅ Supabase integration active")
+else:
+    logging.warning("⚠️ Supabase not configured, using local database only")
 
 def validate_current_session():
     """Validate current session and check expiration"""
@@ -566,6 +573,12 @@ def admin_signals_basic():
     """Basic Admin Panel for sending trading signals"""
     return render_template('admin_signals.html')
 
+@app.route('/supabase-admin')
+@require_auth
+def supabase_admin():
+    """Supabase Integration Admin Dashboard"""
+    return render_template('supabase_admin.html')
+
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
@@ -760,6 +773,7 @@ try:
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
+    from api.supabase_api import supabase_bp
 
     app.register_blueprint(etf_bp)
     app.register_blueprint(admin_bp)
@@ -768,6 +782,7 @@ try:
     app.register_blueprint(datatable_bp)
     app.register_blueprint(enhanced_etf_bp)
     app.register_blueprint(admin_signals_bp)
+    app.register_blueprint(supabase_bp, url_prefix='/api')
     print("✓ Additional blueprints registered successfully")
     
     # Initialize realtime quotes scheduler

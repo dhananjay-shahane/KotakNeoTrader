@@ -4,10 +4,21 @@ from datetime import timedelta
 class Config:
     """Base configuration class"""
     SECRET_KEY = os.environ.get('SESSION_SECRET')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    
+    # Supabase PostgreSQL configuration
+    SUPABASE_URL = os.environ.get('SUPABASE_URL')
+    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    # Database URI - use Supabase if available, fallback to DATABASE_URL
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SUPABASE_DATABASE_URL') or os.environ.get('DATABASE_URL')
+    
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+        "echo": False
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
