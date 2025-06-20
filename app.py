@@ -548,6 +548,12 @@ def etf_signals_advanced():
     """Advanced ETF Trading Signals page with datatable"""
     return render_template('etf_signals_datatable.html')
 
+@app.route('/admin-signals-datatable')
+@require_auth
+def admin_signals_datatable():
+    """Admin Trade Signals Datatable with Kotak Neo integration"""
+    return render_template('admin_signals_datatable.html')
+
 @app.route('/admin-signals')
 @require_auth
 def admin_signals():
@@ -753,6 +759,7 @@ try:
     from api.realtime_quotes import quotes_bp
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
+    from api.admin_signals_api import admin_signals_bp
 
     app.register_blueprint(etf_bp)
     app.register_blueprint(admin_bp)
@@ -760,6 +767,7 @@ try:
     app.register_blueprint(quotes_bp)
     app.register_blueprint(datatable_bp)
     app.register_blueprint(enhanced_etf_bp)
+    app.register_blueprint(admin_signals_bp)
     print("✓ Additional blueprints registered successfully")
     
     # Initialize realtime quotes scheduler
@@ -785,13 +793,13 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error(f"❌ Failed to start ETF scheduler: {str(e)}")
 
-    # Initialize Kotak data collector for admin signals (5-minute intervals)
+    # Initialize admin signals scheduler for comprehensive Kotak Neo data updates (5-minute intervals)
     try:
-        logging.info("Starting Kotak data collector for admin signals...")
-        from kotak_data_collector import start_kotak_data_collector
-        start_kotak_data_collector()
-        logging.info("✅ Kotak data collector started (5-minute intervals)")
+        logging.info("Starting admin signals scheduler with Kotak Neo integration...")
+        from admin_signals_scheduler import start_admin_signals_scheduler
+        start_admin_signals_scheduler()
+        logging.info("✅ Admin signals scheduler started - automatic updates every 5 minutes")
     except Exception as e:
-        logging.error(f"❌ Failed to start Kotak data collector: {e}")
+        logging.error(f"❌ Failed to start admin signals scheduler: {e}")
 
     app.run(host='0.0.0.0', port=5000, debug=True)

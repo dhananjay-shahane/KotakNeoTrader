@@ -1,216 +1,183 @@
 {% extends "base.html" %}
 
-{% block title %}Admin - Trading Signals Management{% endblock %}
+{% block title %}Admin Trade Signals - Kotak Neo{% endblock %}
 
 {% block extra_css %}
-<!-- DataTables CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-
 <style>
-.admin-header {
-    background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
-    color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
-
-.signals-card {
-    border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-.table-responsive {
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.btn-create-signal {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    border: none;
-    color: white;
-}
-
-.btn-create-signal:hover {
-    background: linear-gradient(45deg, #20c997, #28a745);
-    color: white;
-}
-
-.admin-stats {
-    background: linear-gradient(135deg, #17a2b8 0%, #6610f2 100%);
-    color: white;
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.live-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background-color: #28a745;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-    margin-right: 5px;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.user-badge {
-    background: linear-gradient(45deg, #fd7e14, #e83e8c);
-    color: white;
-    border: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-}
-
-.column-toggle {
-    margin-bottom: 1rem;
-}
-
-.column-toggle .btn {
-    margin: 2px;
-    font-size: 0.875rem;
-}
+    .signals-table {
+        font-size: 0.85rem;
+        background: var(--card-bg);
+    }
+    
+    .signals-table th {
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-align: center;
+        padding: 8px 6px;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    
+    .signals-table td {
+        padding: 6px 4px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+        white-space: nowrap;
+        font-size: 0.8rem;
+    }
+    
+    .profit { color: var(--success-color); font-weight: 600; }
+    .loss { color: var(--danger-color); font-weight: 600; }
+    .neutral { color: var(--warning-color); }
+    
+    .table-container {
+        height: 75vh;
+        overflow: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .portfolio-summary {
+        background: var(--card-bg);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .signal-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .signal-buy {
+        background: rgba(40, 167, 69, 0.2);
+        color: var(--success-color);
+        border: 1px solid var(--success-color);
+    }
+    
+    .signal-sell {
+        background: rgba(220, 53, 69, 0.2);
+        color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+    }
+    
+    .status-active {
+        background: rgba(23, 162, 184, 0.2);
+        color: #17a2b8;
+        border: 1px solid #17a2b8;
+    }
+    
+    .summary-card {
+        background: var(--dark-bg);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .auto-refresh-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #28a745;
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .data-source-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        border-radius: 8px;
+        background: rgba(108, 117, 125, 0.2);
+        color: var(--text-secondary);
+    }
+    
+    .price-highlight {
+        font-weight: 600;
+        color: var(--primary-color);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-header">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="mb-0">
-                    <i class="fas fa-cogs me-3"></i>Trading Signals Management
-                </h1>
-                <p class="mb-0 mt-2">Admin panel for creating and managing ETF trading signals</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-create-signal me-2" data-bs-toggle="modal" data-bs-target="#createSignalModal">
-                    <i class="fas fa-plus me-2"></i>Create Signal
-                </button>
-                <button class="btn btn-outline-light" id="refreshData">
-                    <i class="fas fa-sync-alt me-2"></i>Refresh
-                </button>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Admin Trade Signals</h1>
+        <p class="text-muted mb-0">
+            <span class="auto-refresh-indicator"></span>
+            Real-time Kotak Neo data - Auto updates every 5 minutes
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <span class="badge bg-success me-2" id="liveIndicator">
+            <span class="auto-refresh-indicator"></span>Live Updates
+        </span>
     </div>
 </div>
 
-<div class="container-fluid">
-    <!-- Admin Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="admin-stats">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Signals</h6>
-                        <h4 class="mb-0" id="totalSignals">0</h4>
-                    </div>
-                    <i class="fas fa-signal fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stats">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Active Signals</h6>
-                        <h4 class="mb-0" id="activeSignals">0</h4>
-                    </div>
-                    <i class="fas fa-play-circle fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stats">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">Total Users</h6>
-                        <h4 class="mb-0" id="totalUsers">0</h4>
-                    </div>
-                    <i class="fas fa-users fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stats">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">ETF Symbols</h6>
-                        <h4 class="mb-0" id="totalSymbols">0</h4>
-                    </div>
-                    <i class="fas fa-chart-pie fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Signals Management Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card signals-card">
-                <div class="card-header bg-white">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="mb-0">
-                                <span class="live-indicator"></span>
-                                All Trading Signals
-                            </h5>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <small class="text-muted">
-                                Last updated: <span id="lastUpdate">Loading...</span>
-                            </small>
-                        </div>
+<!-- Portfolio Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="portfolio-summary">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>Portfolio Summary
+            </h5>
+            <div class="row" id="portfolioSummary">
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Total Signals</div>
+                        <div class="h5 mb-0" id="totalSignals">0</div>
                     </div>
                 </div>
-
-                <div class="card-body">
-                    <!-- Column Toggle Buttons -->
-                    <div class="column-toggle">
-                        <label class="form-label fw-bold">Show/Hide Columns:</label>
-                        <div id="columnToggles">
-                            <!-- Column toggle buttons will be generated here -->
-                        </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Investment</div>
+                        <div class="h5 mb-0" id="totalInvestment">₹0.00</div>
                     </div>
-
-                    <!-- DataTable -->
-                    <div class="table-responsive">
-                        <table id="adminSignalsTable" class="table table-striped table-hover" style="width:100%">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Trading Symbol</th>
-                                    <th>Signal Type</th>
-                                    <th>User</th>
-                                    <th>Entry Price</th>
-                                    <th>Current Price</th>
-                                    <th>Target</th>
-                                    <th>Stop Loss</th>
-                                    <th>Quantity</th>
-                                    <th>Change %</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Expires</th>
-                                    <th>Last Update</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be loaded via AJAX -->
-                            </tbody>
-                        </table>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Current Value</div>
+                        <div class="h5 mb-0" id="currentValue">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">P&L</div>
+                        <div class="h5 mb-0" id="totalPnL">₹0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Buy Signals</div>
+                        <div class="h5 mb-0 text-success" id="buySignals">0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="summary-card">
+                        <div class="text-muted small">Sell Signals</div>
+                        <div class="h5 mb-0 text-danger" id="sellSignals">0</div>
                     </div>
                 </div>
             </div>
@@ -218,528 +185,216 @@
     </div>
 </div>
 
-<!-- Create Signal Modal -->
-<div class="modal fade" id="createSignalModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create New Trading Signal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="createSignalForm">
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Target User</label>
-                                <select class="form-select" name="target_user_id" required>
-                                    <option value="">Select User</option>
-                                    <!-- Users will be loaded dynamically -->
-                                </select>
+<!-- Admin Trade Signals Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-signal me-2"></i>Admin Trade Signals
+            <span class="badge bg-info ms-2" id="signalsCount">Loading...</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-container">
+            <table class="table table-hover signals-table mb-0" id="adminSignalsTable">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Entry Price</th>
+                        <th>Current Price</th>
+                        <th>Target</th>
+                        <th>Stop Loss</th>
+                        <th>Quantity</th>
+                        <th>Investment</th>
+                        <th>Current Value</th>
+                        <th>P&L</th>
+                        <th>P&L %</th>
+                        <th>Day Change</th>
+                        <th>Volume</th>
+                        <th>Bid/Ask</th>
+                        <th>52W Range</th>
+                        <th>Data Source</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody id="signalsTableBody">
+                    <tr>
+                        <td colspan="18" class="text-center py-4">
+                            <div class="spinner-border text-primary me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Symbol</label>
-                                <input type="text" class="form-control" name="symbol" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Signal Type</label>
-                                <select class="form-select" name="signal_type" required>
-                                    <option value="BUY">BUY</option>
-                                    <option value="SELL">SELL</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Priority</label>
-                                <select class="form-select" name="priority">
-                                    <option value="HIGH">HIGH</option>
-                                    <option value="MEDIUM" selected>MEDIUM</option>
-                                    <option value="LOW">LOW</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Entry Price</label>
-                                <input type="number" class="form-control" name="entry_price" step="0.01" required>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Target Price</label>
-                                <input type="number" class="form-control" name="target_price" step="0.01">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Stop Loss</label>
-                                <input type="number" class="form-control" name="stop_loss" step="0.01">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control" name="quantity" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Exchange</label>
-                                <select class="form-select" name="exchange">
-                                    <option value="NSE" selected>NSE</option>
-                                    <option value="BSE">BSE</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Signal Title</label>
-                        <input type="text" class="form-control" name="signal_title" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" name="signal_description" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-create-signal">Create Signal</button>
-                </div>
-            </form>
+                            Loading admin trade signals...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- Signal Details Modal -->
-<div class="modal fade" id="signalDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Signal Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="signalDetailsBody">
-                <!-- Signal details will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+<!-- Data Sources Info -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Data Sources</h6>
+                <div class="row" id="dataSourcesInfo">
+                    <div class="col-md-4">
+                        <span class="data-source-badge">KOTAK_NEO_API</span>
+                        <span class="ms-2" id="kotakNeoCount">0 signals</span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-source-badge">REALTIME_QUOTES</span>
+                        <span class="ms-2" id="realtimeCount">0 signals</span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-source-badge">SIGNAL_DATA</span>
+                        <span class="ms-2" id="signalDataCount">0 signals</span>
+                    </div>
+                </div>
+                <small class="text-muted">Last updated: <span id="lastUpdateTime">-</span></small>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
-<!-- DataTables JS -->
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-
 <script>
-let adminSignalsTable;
-let autoRefreshInterval;
+let refreshInterval;
+let isRefreshing = false;
 
-$(document).ready(function() {
-    initializeDataTable();
-    setupAutoRefresh();
-    setupColumnToggles();
-    loadUsers();
+// Auto-refresh every 5 minutes (300000 ms)
+const AUTO_REFRESH_INTERVAL = 300000;
 
-    // Refresh button click
-    $('#refreshData').click(function() {
-        refreshData();
-    });
+function refreshSignals() {
+    if (isRefreshing) return;
+    
+    isRefreshing = true;
+    const refreshBtn = document.getElementById('refreshBtn');
+    const originalHtml = refreshBtn.innerHTML;
+    
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    fetch('/api/admin-trade-signals')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateSignalsTable(data.data);
+                updatePortfolioSummary(data.portfolio_summary);
+                updateDataSources(data.data_sources);
+                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString();
+                document.getElementById('signalsCount').textContent = `${data.total_count} Active`;
+                
+                // Update live indicator
+                const liveIndicator = document.getElementById('liveIndicator');
+                liveIndicator.className = 'badge bg-success me-2';
+                liveIndicator.innerHTML = '<span class="auto-refresh-indicator"></span>Live Updates';
+            } else {
+                console.error('Error fetching signals:', data.error);
+                showError('Failed to fetch admin trade signals');
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+            showError('Network error while fetching signals');
+            
+            // Update live indicator to show disconnected state
+            const liveIndicator = document.getElementById('liveIndicator');
+            liveIndicator.className = 'badge bg-danger me-2';
+            liveIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Connection Error';
+        })
+        .finally(() => {
+            isRefreshing = false;
+            refreshBtn.innerHTML = originalHtml;
+            refreshBtn.disabled = false;
+        });
+}
 
-    // Create signal form submission
-    $('#createSignalForm').submit(function(e) {
-        e.preventDefault();
-        createSignal();
-    });
+function updateSignalsTable(signals) {
+    const tbody = document.getElementById('signalsTableBody');
+    
+    if (!signals || signals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="18" class="text-center py-4">No admin trade signals found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = signals.map(signal => {
+        const pnlClass = signal.pnl > 0 ? 'profit' : signal.pnl < 0 ? 'loss' : 'neutral';
+        const changeClass = signal.day_change_percent > 0 ? 'profit' : signal.day_change_percent < 0 ? 'loss' : 'neutral';
+        
+        return `
+            <tr>
+                <td><strong>${signal.symbol}</strong></td>
+                <td><span class="signal-badge signal-${signal.signal_type_badge}">${signal.signal_type}</span></td>
+                <td><span class="signal-badge status-${signal.status_badge}">${signal.status}</span></td>
+                <td>₹${signal.entry_price}</td>
+                <td class="price-highlight">₹${signal.current_price}</td>
+                <td>₹${signal.target_price}</td>
+                <td>₹${signal.stop_loss}</td>
+                <td>${signal.quantity}</td>
+                <td>₹${signal.investment.toLocaleString()}</td>
+                <td>₹${signal.current_value.toLocaleString()}</td>
+                <td class="${pnlClass}">₹${signal.pnl >= 0 ? '+' : ''}${signal.pnl.toLocaleString()}</td>
+                <td class="${pnlClass}">${signal.pnl_percent >= 0 ? '+' : ''}${signal.pnl_percent}%</td>
+                <td class="${changeClass}">${signal.day_change_percent >= 0 ? '+' : ''}${signal.day_change_percent}%</td>
+                <td>${signal.display_volume}</td>
+                <td>₹${signal.bid_price}/₹${signal.ask_price}</td>
+                <td>₹${signal.week_52_low} - ₹${signal.week_52_high}</td>
+                <td><span class="data-source-badge">${signal.data_source}</span></td>
+                <td>${new Date(signal.last_update).toLocaleString()}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePortfolioSummary(summary) {
+    if (!summary) return;
+    
+    document.getElementById('totalSignals').textContent = summary.total_signals;
+    document.getElementById('totalInvestment').textContent = `₹${summary.total_investment.toLocaleString()}`;
+    document.getElementById('currentValue').textContent = `₹${summary.total_current_value.toLocaleString()}`;
+    
+    const pnlElement = document.getElementById('totalPnL');
+    pnlElement.textContent = `₹${summary.total_pnl >= 0 ? '+' : ''}${summary.total_pnl.toLocaleString()}`;
+    pnlElement.className = `h5 mb-0 ${summary.total_pnl > 0 ? 'text-success' : summary.total_pnl < 0 ? 'text-danger' : 'text-warning'}`;
+    
+    document.getElementById('buySignals').textContent = summary.buy_signals;
+    document.getElementById('sellSignals').textContent = summary.sell_signals;
+}
+
+function updateDataSources(sources) {
+    if (!sources) return;
+    
+    document.getElementById('kotakNeoCount').textContent = `${sources.kotak_neo_quotes} signals`;
+    document.getElementById('realtimeCount').textContent = `${sources.realtime_quotes} signals`;
+    document.getElementById('signalDataCount').textContent = `${sources.signal_data} signals`;
+}
+
+function showError(message) {
+    // Simple error display - could be enhanced with toast notifications
+    console.error(message);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial load
+    refreshSignals();
+    
+    // Set up auto-refresh
+    refreshInterval = setInterval(refreshSignals, AUTO_REFRESH_INTERVAL);
+    
+    console.log('Admin Trade Signals page initialized with 5-minute auto-refresh');
 });
-
-function initializeDataTable() {
-    adminSignalsTable = $('#adminSignalsTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '/api/datatable/admin-signals',
-            type: 'POST',
-            contentType: 'application/json',
-            data: function(d) {
-                return JSON.stringify(d);
-            },
-            error: function(xhr, error, thrown) {
-                console.error('DataTable AJAX error:', error);
-                showAlert('Error loading data: ' + error, 'danger');
-            }
-        },
-        columns: [
-            { data: 'symbol', name: 'symbol' },
-            { data: 'trading_symbol', name: 'trading_symbol' },
-            { data: 'signal_type_badge', name: 'signal_type', orderable: false },
-            { 
-                data: 'target_user_ucc', 
-                name: 'target_user_ucc',
-                render: function(data, type, row) {
-                    return `<span class="user-badge">${row.target_user_name}</span><br><small>${data}</small>`;
-                }
-            },
-            { data: 'entry_price_formatted', name: 'entry_price' },
-            { data: 'current_price_formatted', name: 'current_price' },
-            { data: 'target_price_formatted', name: 'target_price', orderable: false },
-            { data: 'stop_loss_formatted', name: 'stop_loss', orderable: false },
-            { data: 'quantity', name: 'quantity' },
-            { 
-                data: 'change_percent_formatted', 
-                name: 'change_percent',
-                render: function(data, type, row) {
-                    const change = parseFloat(row.change_percent) || 0;
-                    const className = change >= 0 ? 'text-success' : 'text-danger';
-                    return `<span class="${className}">${data}</span>`;
-                }
-            },
-            { data: 'priority_badge', name: 'priority', orderable: false },
-            { data: 'status_badge', name: 'status', orderable: false },
-            { 
-                data: 'created_at', 
-                name: 'created_at',
-                render: function(data) {
-                    return data ? new Date(data).toLocaleDateString() : 'N/A';
-                }
-            },
-            { 
-                data: 'expires_at', 
-                name: 'expires_at',
-                render: function(data) {
-                    return data ? new Date(data).toLocaleDateString() : 'No Expiry';
-                }
-            },
-            { data: 'last_update', name: 'last_update', orderable: false },
-            {
-                data: null,
-                orderable: false,
-                render: function(data, type, row) {
-                    return `
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewSignalDetails(${row.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning me-1" onclick="editSignal(${row.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSignal(${row.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                }
-            }
-        ],
-        order: [[12, 'desc']], // Order by created_at descending
-        pageLength: 25,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-        responsive: true,
-        colReorder: true,
-        fixedHeader: true,
-        dom: 'Blfrtip',
-        buttons: [
-            'copy', 'csv', 'excel', 'pdf', 'print',
-            {
-                text: 'Column visibility',
-                extend: 'colvis'
-            }
-        ],
-        drawCallback: function(settings) {
-            updateStatistics();
-            updateLastUpdate();
-        }
-    });
-}
-
-function setupColumnToggles() {
-    const columns = [
-        { idx: 1, name: 'Trading Symbol' },
-        { idx: 6, name: 'Target' },
-        { idx: 7, name: 'Stop Loss' },
-        { idx: 8, name: 'Quantity' },
-        { idx: 13, name: 'Expires' },
-        { idx: 14, name: 'Last Update' }
-    ];
-
-    const togglesContainer = $('#columnToggles');
-
-    columns.forEach(col => {
-        const btn = $(`<button class="btn btn-sm btn-outline-secondary" data-column="${col.idx}">
-            ${col.name}
-        </button>`);
-
-        btn.click(function() {
-            const column = adminSignalsTable.column(col.idx);
-            column.visible(!column.visible());
-            $(this).toggleClass('btn-outline-secondary btn-secondary');
-        });
-
-        togglesContainer.append(btn);
-    });
-}
-
-function setupAutoRefresh() {
-    // Refresh data every 60 seconds for admin view
-    autoRefreshInterval = setInterval(function() {
-        refreshData();
-    }, 60000);
-}
-
-function refreshData() {
-    if (adminSignalsTable) {
-        adminSignalsTable.ajax.reload(null, false);
-    }
-
-    // Force quote update
-    fetch('/api/quotes/force-update', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }).catch(error => {
-        console.error('Error forcing quote update:', error);
-    });
-}
-
-function updateStatistics() {
-    const data = adminSignalsTable.data();
-    let totalSignals = data.length;
-    let activeSignals = 0;
-    let uniqueUsers = new Set();
-    let uniqueSymbols = new Set();
-
-    data.each(function(row) {
-        if (row.status === 'ACTIVE') {
-            activeSignals++;
-        }
-        uniqueUsers.add(row.target_user_ucc);
-        uniqueSymbols.add(row.symbol);
-    });
-
-    $('#totalSignals').text(totalSignals);
-    $('#activeSignals').text(activeSignals);
-    $('#totalUsers').text(uniqueUsers.size);
-    $('#totalSymbols').text(uniqueSymbols.size);
-}
-
-function updateLastUpdate() {
-    $('#lastUpdate').text(new Date().toLocaleTimeString());
-}
-
-function loadUsers() {
-    fetch('/api/admin/users')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const userSelect = $('select[name="target_user_id"]');
-                userSelect.empty().append('<option value="">Select User</option>');
-
-                data.users.forEach(user => {
-                    userSelect.append(`<option value="${user.id}">${user.greeting_name} (${user.ucc})</option>`);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading users:', error);
-        });
-}
-
-function createSignal() {
-    const formData = new FormData($('#createSignalForm')[0]);
-    const signalData = {};
-
-    for (let [key, value] of formData.entries()) {
-        signalData[key] = value;
-    }
-
-    fetch('/api/admin/create-signal', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(signalData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Signal created successfully!', 'success');
-            $('#createSignalModal').modal('hide');
-            $('#createSignalForm')[0].reset();
-            refreshData();
-        } else {
-            showAlert('Error creating signal: ' + data.message, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error creating signal:', error);
-        showAlert('Error creating signal', 'danger');
-    });
-}
-
-function viewSignalDetails(signalId) {
-    fetch(`/api/admin/signal/${signalId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displaySignalDetails(data.signal);
-            } else {
-                showAlert('Error loading signal details: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('Error loading signal details', 'danger');
-        });
-}
-
-function displaySignalDetails(signal) {
-    const modalBody = $('#signalDetailsBody');
-
-    const html = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Signal Information</h6>
-                <table class="table table-sm">
-                    <tr><td><strong>Symbol:</strong></td><td>${signal.symbol}</td></tr>
-                    <tr><td><strong>Trading Symbol:</strong></td><td>${signal.trading_symbol}</td></tr>
-                    <tr><td><strong>Signal Type:</strong></td><td>${signal.signal_type}</td></tr>
-                    <tr><td><strong>Status:</strong></td><td>${signal.status}</td></tr>
-                    <tr><td><strong>Priority:</strong></td><td>${signal.priority}</td></tr>
-                    <tr><td><strong>Exchange:</strong></td><td>${signal.exchange}</td></tr>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <h6>Price Information</h6>
-                <table class="table table-sm">
-                    <tr><td><strong>Entry Price:</strong></td><td>₹${parseFloat(signal.entry_price).toLocaleString()}</td></tr>
-                    <tr><td><strong>Current Price:</strong></td><td>₹${signal.current_price ? parseFloat(signal.current_price).toLocaleString() : 'N/A'}</td></tr>
-                    <tr><td><strong>Target Price:</strong></td><td>₹${signal.target_price ? parseFloat(signal.target_price).toLocaleString() : 'N/A'}</td></tr>
-                    <tr><td><strong>Stop Loss:</strong></td><td>₹${signal.stop_loss ? parseFloat(signal.stop_loss).toLocaleString() : 'N/A'}</td></tr>
-                    <tr><td><strong>Quantity:</strong></td><td>${signal.quantity}</td></tr>
-                    <tr><td><strong>Change %:</strong></td><td class="${parseFloat(signal.change_percent || 0) >= 0 ? 'text-success' : 'text-danger'}">${parseFloat(signal.change_percent || 0).toFixed(2)}%</td></tr>
-                </table>
-            </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col-12">
-                <h6>Description</h6>
-                <p>${signal.signal_description || 'No description provided'}</p>
-
-                <h6>Target User</h6>
-                <p><strong>${signal.target_user_name}</strong> (${signal.target_user_ucc})</p>
-
-                <h6>Timing</h6>
-                <table class="table table-sm">
-                    <tr><td><strong>Created:</strong></td><td>${new Date(signal.created_at).toLocaleString()}</td></tr>
-                    <tr><td><strong>Updated:</strong></td><td>${signal.updated_at ? new Date(signal.updated_at).toLocaleString() : 'N/A'}</td></tr>
-                    <tr><td><strong>Expires:</strong></td><td>${signal.expires_at ? new Date(signal.expires_at).toLocaleString() : 'No expiry'}</td></tr>
-                </table>
-            </div>
-        </div>
-    `;
-
-    modalBody.html(html);
-    $('#signalDetailsModal').modal('show');
-}
-
-function editSignal(signalId) {
-    // Implement edit functionality
-    showAlert('Edit functionality will be implemented soon', 'info');
-}
-
-function deleteSignal(signalId) {
-    if (confirm('Are you sure you want to delete this signal? This action cannot be undone.')) {
-        fetch(`/api/admin/signal/${signalId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('Signal deleted successfully!', 'success');
-                refreshData();
-            } else {
-                showAlert('Error deleting signal: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            console.error('Error deleting signal:', error);
-            showAlert('Error deleting signal', 'danger');
-        });
-    }
-}
-
-function showAlert(message, type = 'info') {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-
-    $('.alert').remove();
-    $('.container-fluid').prepend(alertHtml);
-
-    setTimeout(() => {
-        $('.alert').fadeOut();
-    }, 5000);
-}
 
 // Cleanup on page unload
-$(window).on('beforeunload', function() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
     }
 });
-
-// Theme management
-        function initializeTheme() {
-            const themeToggle = document.getElementById('theme-toggle');
-
-            // Only proceed if theme toggle exists
-            if (!themeToggle) {
-                return;
-            }
-
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-
-                // Update icon if it exists
-                const icon = themeToggle.querySelector('i');
-                if (icon) {
-                    icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                }
-            });
-        }
 </script>
 {% endblock %}
