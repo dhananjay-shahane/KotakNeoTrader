@@ -412,14 +412,17 @@ class ETFSignalsManager {
         this.setupEventListeners();
 
         // Auto refresh toggle
-        document.getElementById('autoRefreshToggle').addEventListener('change', (e) => {
-            this.autoRefresh = e.target.checked;
-            if (this.autoRefresh) {
-                this.startAutoRefresh();
-            } else {
-                this.stopAutoRefresh();
-            }
-        });
+        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+        if (autoRefreshToggle) {
+            autoRefreshToggle.addEventListener('change', (e) => {
+                this.autoRefresh = e.target.checked;
+                if (this.autoRefresh) {
+                    this.startAutoRefresh();
+                } else {
+                    this.stopAutoRefresh();
+                }
+            });
+        }
     }
 
     generateColumnCheckboxes() {
@@ -555,6 +558,7 @@ class ETFSignalsManager {
 
             return {
                 id: signal.id,
+                etf: signal.symbol || signal.trading_symbol,
                 symbol: signal.symbol || signal.trading_symbol,
                 trading_symbol: signal.trading_symbol,
                 thirty: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
@@ -564,22 +568,22 @@ class ETFSignalsManager {
                 qty: signal.quantity,
                 ep: parseFloat(signal.entry_price || 0),
                 cmp: parseFloat(signal.current_price || signal.entry_price || 0),
-                change_pct: signal.pnl_percent || 0,
+                change_pct: signal.profit_loss_percent || signal.pnl_percent || 0,
                 inv: parseFloat(signal.entry_price || 0) * signal.quantity,
                 tp: parseFloat(signal.target_price || 0),
                 tva: signal.target_price ? parseFloat(signal.target_price) * signal.quantity : 0,
                 tpr: signal.target_price ? (parseFloat(signal.target_price) - parseFloat(signal.entry_price || 0)) * signal.quantity : 0,
-                pl: signal.pnl_percent ? (parseFloat(signal.current_price || signal.entry_price || 0) - parseFloat(signal.entry_price || 0)) * signal.quantity : 0,
+                pl: signal.profit_loss || signal.pnl_amount || 0,
                 ed: entryDate.toLocaleDateString('en-GB'),
                 exp: signal.expires_at ? new Date(signal.expires_at).toLocaleDateString('en-GB') : '-',
                 pr: signal.stop_loss ? `${signal.stop_loss}-${signal.target_price || signal.entry_price}` : '-',
-                pp: this.getPerformanceStars(signal.pnl_percent || 0),
+                pp: this.getPerformanceStars(signal.profit_loss_percent || signal.pnl_percent || 0),
                 iv: signal.priority || 'MED',
                 ip: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
                 nt: signal.signal_title || signal.signal_description || 'Trading Signal',
                 qt: signal.last_update_time ? new Date(signal.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
                 seven: signal.change_percent ? `${signal.change_percent.toFixed(2)}%` : '0.00%',
-                change2: signal.pnl_percent || 0,
+                change2: signal.profit_loss_percent || signal.pnl_percent || 0,
                 signal_type: signal.signal_type,
                 status: signal.status,
                 priority: signal.priority
@@ -736,7 +740,8 @@ class ETFSignalsManager {
                         cellContent = position.qty ? position.qty.toLocaleString('en-IN') : '';
                         break;
                     case 'ep':
-                        cellContent = position.ep ? '₹' + position` + position.ep.toFixed(2) : '';break;
+                        cellContent = position.ep ? '₹' + position.ep.toFixed(2) : '';
+                        break;
                     case 'cmp':
                         cellContent = position.cmp ? '₹' + position.cmp.toFixed(2) : '';
                         break;

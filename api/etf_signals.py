@@ -31,8 +31,11 @@ def get_admin_signals():
         admin_signals = AdminTradeSignal.query.filter_by(
             status='ACTIVE'
         ).order_by(AdminTradeSignal.created_at.desc()).all()
+        
+        logger.info(f"Found {len(admin_signals)} admin trade signals for user {current_user.ucc}")
 
         if not admin_signals:
+            logger.info("No admin trade signals found in database")
             return jsonify({
                 'success': True,
                 'signals': [],
@@ -44,7 +47,12 @@ def get_admin_signals():
                     'total_invested': 0,
                     'total_current_value': 0,
                     'total_pnl': 0,
-                    'total_pnl_percent': 0
+                    'total_pnl_percent': 0,
+                    'total_positions': 0,
+                    'current_value': 0,
+                    'return_percent': 0,
+                    'active_positions': 0,
+                    'closed_positions': 0
                 },
                 'message': 'No admin trade signals found. Please add signals from admin panel.',
                 'last_update': datetime.utcnow().isoformat(),
