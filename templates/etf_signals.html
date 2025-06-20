@@ -1803,34 +1803,47 @@ function saveDeal() {
 
         // Refresh signals every 60 seconds (adjust as needed)
         setInterval(loadSignals, 60000);
+        
+        // Initialize theme safely
+        initializeTheme();
     });
-</script>
-<script>
-// Theme management
-        function initializeTheme() {
-            const themeToggle = document.getElementById('theme-toggle');
 
-            // Only proceed if theme toggle exists
-            if (!themeToggle) {
-                return;
-            }
+    // Theme management with safe DOM access
+    function initializeTheme() {
+        try {
+            const themeToggle = document.getElementById('theme-toggle');
+            console.log('Theme toggle element:', themeToggle);
 
             const savedTheme = localStorage.getItem('theme') || 'dark';
+            console.log('Saved theme:', savedTheme);
+            
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            console.log('Current theme attribute:', currentTheme);
+
+            // Set theme even if toggle doesn't exist
             document.documentElement.setAttribute('data-theme', savedTheme);
 
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            // Only set up toggle if it exists
+            if (themeToggle && themeToggle.classList) {
+                themeToggle.addEventListener('click', function() {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
 
-                // Update icon if it exists
-                const icon = themeToggle.querySelector('i');
-                if (icon) {
-                    icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                }
-            });
+                    // Update icon if it exists
+                    const icon = themeToggle.querySelector('i');
+                    if (icon) {
+                        icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Theme initialization error:', error);
+            // Fallback to dark theme
+            document.documentElement.setAttribute('data-theme', 'dark');
         }
+    }
 </script>
 {% endblock %}
