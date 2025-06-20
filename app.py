@@ -465,14 +465,14 @@ def charts():
 @app.route('/etf-signals')
 @require_auth
 def etf_signals():
-    """ETF Trading Signals page with advanced datatable"""
-    return render_template('etf_signals_datatable.html')
-
-@app.route('/etf-signals-basic')
-@require_auth
-def etf_signals_basic():
-    """Basic ETF Trading Signals page"""
+    """ETF Trading Signals page"""
     return render_template('etf_signals.html')
+
+@app.route('/etf-signals-advanced')
+@require_auth
+def etf_signals_advanced():
+    """Advanced ETF Trading Signals page with datatable"""
+    return render_template('etf_signals_datatable.html')
 
 @app.route('/admin-signals')
 @require_auth

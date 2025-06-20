@@ -133,3 +133,4 @@ The application follows a modern Flask architecture with clear separation of con
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+UI Preferences: Keep original ETF signals page UI unchanged - user prefers existing design.
