@@ -514,6 +514,7 @@ class ETFSignalsManager {
 
         console.log('Loading ETF trading signals...');
         try {
+            console.log('Fetching ETF signals from API...');
             const response = await fetch('/api/etf-signals-data', {
                 method: 'GET',
                 credentials: 'same-origin',

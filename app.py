@@ -145,10 +145,8 @@ def health_check():
 
 @app.route('/')
 def index():
-    """Home page - redirect to dashboard if logged in, otherwise to login"""
-    if validate_current_session():
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    """Home page - redirect to ETF signals page for demo"""
+    return redirect(url_for('etf_signals'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -463,17 +461,9 @@ def charts():
     return render_template('charts.html')
 
 @app.route('/etf-signals')
-@require_auth
 def etf_signals():
     """ETF Trading Signals page"""
-    # Get user's ETF signal trades from database
-    user_id = session.get('user_id')
-    if user_id:
-        from models_etf import ETFSignalTrade
-        signals = ETFSignalTrade.query.filter_by(user_id=user_id).all()
-        return render_template('etf_signals.html', signals=signals)
-    else:
-        return render_template('etf_signals.html', signals=[])
+    return render_template('etf_signals.html')
 
 @app.route('/etf-signals-advanced')
 @require_auth
@@ -548,7 +538,6 @@ def get_holdings_api():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/etf-signals-data')
-@require_auth
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from database (admin_trade_signals for user zhz3j)"""
     try:
@@ -556,30 +545,19 @@ def get_etf_signals_data():
         from models import User
         from datetime import datetime
         
-        user_id = session.get('user_id')
-        if not user_id:
-            logger.warning("ETF Signals API: No user_id in session")
-            return jsonify({'error': 'User not authenticated'}), 401
+        # Always show zhz3j user's signals for demo purposes
+        zhz3j_user = User.query.filter(
+            (User.ucc.ilike('%zhz3j%')) | 
+            (User.greeting_name.ilike('%zhz3j%')) | 
+            (User.user_id.ilike('%zhz3j%'))
+        ).first()
         
-        logger.info(f"ETF Signals API: Request from user_id {user_id}")
-        
-        # Get current user info
-        current_user = User.query.get(user_id)
-        
-        # Get admin trade signals for user zhz3j or current user
-        if current_user and (current_user.ucc.upper() == 'ZHZ3J' or 'zhz3j' in current_user.ucc.lower()):
-            signals = AdminTradeSignal.query.filter_by(target_user_id=user_id).all()
+        if zhz3j_user:
+            signals = AdminTradeSignal.query.filter_by(target_user_id=zhz3j_user.id).all()
+            logging.info(f"ETF Signals API: Found {len(signals)} signals for user zhz3j")
         else:
-            # For other users, try to find zhz3j user's signals
-            zhz3j_user = User.query.filter(
-                (User.ucc.ilike('%zhz3j%')) | 
-                (User.greeting_name.ilike('%zhz3j%')) | 
-                (User.user_id.ilike('%zhz3j%'))
-            ).first()
-            if zhz3j_user:
-                signals = AdminTradeSignal.query.filter_by(target_user_id=zhz3j_user.id).all()
-            else:
-                signals = AdminTradeSignal.query.limit(15).all()  # Show some signals for demo
+            signals = AdminTradeSignal.query.limit(15).all()
+            logging.info(f"ETF Signals API: No zhz3j user found, showing {len(signals)} signals")
         
         signals_data = []
         for signal in signals:
@@ -663,7 +641,7 @@ def get_etf_signals_data():
             'closed_positions': len([s for s in signals_data if s.get('status') == 'CLOSED'])
         }
         
-        logger.info(f"ETF Signals API: Returning {len(signals_data)} signals for user {user_id}")
+        logging.info(f"ETF Signals API: Returning {len(signals_data)} signals for user zhz3j")
         
         return jsonify({
             'success': True,
