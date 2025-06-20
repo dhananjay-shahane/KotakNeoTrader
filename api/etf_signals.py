@@ -732,341 +732,168 @@ def update_etf_signal_trade():
         logger.error(f"Error updating ETF signal trade: {e}")
         return jsonify({'error': str(e)}), 500
 
-@etf_bp.route('/datatable/admin-signals', methods=['POST'])
-def get_admin_signals_datatable():
-    """DataTables endpoint for admin trade signals with server-side processing"""
-    try:
-        from models_etf import AdminTradeSignal, RealtimeQuote
-        from models import User
-        from datetime import datetime
-        
-        # Get DataTables parameters
-        draw = int(request.json.get('draw', 1))
-        start = int(request.json.get('start', 0))
-        length = int(request.json.get('length', 10))
-        search_value = request.json.get('search', {}).get('value', '')
-        
-        # Base query for admin trade signals
-        query = db.session.query(AdminTradeSignal).join(
-            User, AdminTradeSignal.target_user_id == User.id
-        )
-        
-        # Apply search filter if provided
-        if search_value:
-            search_filter = db.or_(
-                AdminTradeSignal.symbol.ilike(f'%{search_value}%'),
-                AdminTradeSignal.signal_type.ilike(f'%{search_value}%'),
-                AdminTradeSignal.status.ilike(f'%{search_value}%'),
-                User.ucc.ilike(f'%{search_value}%')
-            )
-            query = query.filter(search_filter)
-        
-        # Get total records
-        records_total = AdminTradeSignal.query.count()
-        records_filtered = query.count()
-        
-        # Apply pagination
-        signals = query.offset(start).limit(length).all()
-        
-        # Format data for DataTables
-        data = []
-        for signal in signals:
-            # Get latest quote for current price
-            latest_quote = RealtimeQuote.query.filter_by(
-                symbol=signal.symbol
-            ).order_by(RealtimeQuote.timestamp.desc()).first()
-            
-            current_price = float(signal.current_price) if signal.current_price else float(signal.entry_price)
-            if latest_quote:
-                current_price = float(latest_quote.current_price)
-                # Update signal with latest price
-                signal.current_price = current_price
-                signal.last_update_time = datetime.utcnow()
-            
-            entry_price = float(signal.entry_price) if signal.entry_price else 0
-            quantity = int(signal.quantity) if signal.quantity else 0
-            
-            # Calculate values
-            invested_amount = entry_price * quantity
-            current_value = current_price * quantity
-            profit_loss = current_value - invested_amount
-            profit_loss_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
-            target_price = float(signal.target_price) if signal.target_price else 0
-            
-            # Get target user info
-            target_user = User.query.get(signal.target_user_id)
-            
-            # Days held
-            days_held = (datetime.utcnow() - signal.created_at).days if signal.created_at else 0
-            
-            # Format data matching ETF signals structure
-            signal_data = {
-                'id': signal.id,
-                'etf': signal.symbol,
-                'symbol': signal.symbol,
-                'trading_symbol': signal.trading_symbol or f"{signal.symbol}-EQ",
-                'thirty': f"{profit_loss_percent * 1.2:.1f}%",
-                'dh': str(days_held),
-                'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',
-                'pos': 1 if signal.signal_type == 'BUY' else 0,
-                'qty': quantity,
-                'ep': entry_price,
-                'cmp': current_price,
-                'change_pct': profit_loss_percent,
-                'inv': invested_amount,
-                'tp': target_price,
-                'tva': target_price * quantity if target_price > 0 else 0,
-                'tpr': ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0,
-                'pl': profit_loss,
-                'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',
-                'exp': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',
-                'pr': f"{profit_loss_percent:.1f}%",
-                'pp': '★★★' if signal.priority == 'HIGH' else '★★' if signal.priority == 'MEDIUM' else '★',
-                'iv': invested_amount,
-                'ip': f"{profit_loss_percent:.2f}%",
-                'nt': signal.signal_description or f"Trading signal for {signal.symbol}",
-                'qt': datetime.utcnow().strftime('%H:%M'),
-                'seven': f"{profit_loss_percent * 0.8:.1f}%",
-                'change2': profit_loss_percent,
-                'signal_type': signal.signal_type,
-                'status': signal.status,
-                'priority': signal.priority,
-                'target_user_ucc': target_user.ucc if target_user else 'N/A',
-                'target_user_name': target_user.greeting_name if target_user else 'N/A',
-                'created_at': signal.created_at.isoformat() if signal.created_at else None,
-                'last_updated': datetime.utcnow().strftime('%H:%M:%S')
-            }
-            data.append(signal_data)
-        
-        # Commit price updates
-        try:
-            db.session.commit()
-        except Exception as commit_error:
-            logger.warning(f"Could not update prices: {commit_error}")
-            db.session.rollback()
-        
-        return jsonify({
-            'draw': draw,
-            'recordsTotal': records_total,
-            'recordsFiltered': records_filtered,
-            'data': data
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in admin signals datatable: {str(e)}")
-        return jsonify({
-            'draw': int(request.json.get('draw', 1)),
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'data': [],
-            'error': str(e)
-        }), 500
-
 @etf_bp.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from admin_trade_signals table"""
+    """API endpoint to get ETF signals data from database (admin_trade_signals for user zhz3j)"""
     try:
         from models_etf import AdminTradeSignal, RealtimeQuote
         from models import User
         from datetime import datetime
-        
-        # Get all admin trade signals
-        signals = AdminTradeSignal.query.order_by(AdminTradeSignal.created_at.desc()).all()
-        
-        logger.info(f"ETF Signals API: Found {len(signals)} admin trade signals")
-        
+
+        # Initialize default response
+        signals_data = []
+        portfolio_summary = {
+            'total_positions': 0,
+            'total_investment': 0,
+            'current_value': 0,
+            'total_pnl': 0,
+            'return_percent': 0,
+            'active_positions': 0,
+            'closed_positions': 0
+        }
+
+        # Always show zhz3j user's signals for demo purposes
+        zhz3j_user = User.query.filter(
+            (User.ucc.ilike('%zhz3j%')) | 
+            (User.greeting_name.ilike('%zhz3j%')) | 
+            (User.user_id.ilike('%zhz3j%'))
+        ).first()
+
+        if zhz3j_user:
+            signals = AdminTradeSignal.query.filter_by(target_user_id=zhz3j_user.id).all()
+            logging.info(f"ETF Signals API: Found {len(signals)} signals for user zhz3j")
+        else:
+            signals = AdminTradeSignal.query.limit(15).all()
+            logging.info(f"ETF Signals API: No zhz3j user found, showing {len(signals)} signals")
+
         if not signals:
-            logger.info("ETF Signals API: No signals found, returning empty response")
+            logging.info("ETF Signals API: No signals found, returning empty response")
             return jsonify({
                 'success': True,
                 'signals': [],
                 'total': 0,
-                'portfolio': {
-                    'total_positions': 0,
-                    'total_investment': 0,
-                    'current_value': 0,
-                    'total_pnl': 0,
-                    'return_percent': 0,
-                    'active_positions': 0,
-                    'closed_positions': 0
-                },
-                'message': 'No admin trade signals found'
+                'portfolio': portfolio_summary,
+                'message': 'No signals found'
             })
-        
+
         signals_data = []
-        total_invested = 0
-        total_current_value = 0
-        total_pnl = 0
-        
-        # Get latest quotes from realtime_quotes table
-        latest_quotes = {}
-        try:
-            from sqlalchemy import func
-            subquery = db.session.query(
-                RealtimeQuote.symbol,
-                func.max(RealtimeQuote.timestamp).label('max_timestamp')
-            ).group_by(RealtimeQuote.symbol).subquery()
-
-            quotes_query = db.session.query(RealtimeQuote).join(
-                subquery,
-                db.and_(
-                    RealtimeQuote.symbol == subquery.c.symbol,
-                    RealtimeQuote.timestamp == subquery.c.max_timestamp
-                )
-            ).all()
-
-            for quote in quotes_query:
-                latest_quotes[quote.symbol] = {
-                    'current_price': float(quote.current_price),
-                    'change_percent': float(quote.change_percent),
-                    'last_update': quote.timestamp
-                }
-
-            logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
-        except Exception as quote_error:
-            logger.warning(f"⚠️ Could not fetch latest quotes from database: {quote_error}")
-        
-        # Process each admin signal
         for signal in signals:
             try:
-                # Get current price from latest quotes or use current_price field
+                # Get latest quote for real-time current price
+                latest_quote = RealtimeQuote.query.filter_by(
+                    symbol=signal.symbol
+                ).order_by(RealtimeQuote.timestamp.desc()).first()
+
+                # Calculate real-time values based on current database structure
                 current_price = float(signal.current_price) if signal.current_price else float(signal.entry_price)
-                change_percent = float(signal.change_percent) if signal.change_percent else 0
+                if latest_quote:
+                    current_price = float(latest_quote.current_price)
+                    try:
+                        signal.current_price = latest_quote.current_price
+                        signal.last_update_time = datetime.utcnow()
+                        db.session.commit()
+                    except Exception as db_error:
+                        logging.warning(f"Could not update signal {signal.id}: {db_error}")
 
-                # Override with latest quote if available
-                if signal.symbol in latest_quotes:
-                    current_price = latest_quotes[signal.symbol]['current_price']
-                    change_percent = latest_quotes[signal.symbol]['change_percent']
+                entry_price = float(signal.entry_price) if signal.entry_price else 0
+                quantity = int(signal.quantity) if signal.quantity else 0
 
-                    # Update signal with latest price in database
-                    signal.current_price = current_price
-                    signal.change_percent = change_percent
-                    signal.last_update_time = datetime.utcnow()
+                if entry_price == 0 or quantity == 0:
+                    logging.warning(f"Skipping signal {signal.id} due to invalid entry_price or quantity")
+                    continue
 
-                # Calculate values
-                entry_price = float(signal.entry_price)
-                quantity = signal.quantity
                 invested_amount = entry_price * quantity
                 current_value = current_price * quantity
-
-                # P&L calculations
-                if signal.signal_type.upper() == 'BUY':
-                    pnl_amount = (current_price - entry_price) * quantity
-                else:  # SELL
-                    pnl_amount = (entry_price - current_price) * quantity
-
-                pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
-
-                # Target calculations
+                profit_loss = current_value - invested_amount
+                profit_loss_percent = ((current_price - entry_price) / entry_price) * 100
                 target_price = float(signal.target_price) if signal.target_price else 0
                 target_value_amount = target_price * quantity if target_price > 0 else 0
-                target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 and entry_price > 0 else 0
+                target_profit_return = ((target_price - entry_price) / entry_price) * 100 if target_price > 0 else 0
 
-                # Days held calculation
-                days_held = (datetime.utcnow() - signal.created_at).days if signal.created_at else 0
+                # Calculate days held
+                entry_date = signal.created_at
+                days_held = (datetime.utcnow() - entry_date).days if entry_date else 0
 
-                # Position status
-                position_status = 1 if signal.status == 'ACTIVE' else 0
+                # Simulate 30-day and 7-day performance
+                thirty_day_perf = profit_loss_percent * 1.2  # Simulate historical performance
+                seven_day_perf = profit_loss_percent * 0.8
 
-                # Get target user info
-                target_user = User.query.get(signal.target_user_id) if signal.target_user_id else None
-
-                # Create signal data matching the expected format
-                signal_data = {
+                # Format data for frontend with all required fields
+                signal_dict = {
                     'id': signal.id,
-                    'etf': signal.symbol,
-                    'thirty': f"{pnl_percent * 1.2:.1f}%",
-                    'dh': str(days_held),
-                    'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',
-                    'pos': position_status,
-                    'qty': quantity,
-                    'ep': entry_price,
-                    'cmp': current_price,
-                    'change_pct': change_percent,
-                    'inv': invested_amount,
-                    'tp': target_price,
-                    'tva': target_value_amount,
-                    'tpr': target_profit_return,
-                    'pl': pnl_amount,
-                    'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',
-                    'exp': '',
-                    'pr': f"{pnl_percent:.1f}%",
-                    'pp': '★★★' if signal.priority == 'HIGH' else '★★' if signal.priority == 'MEDIUM' else '★',
-                    'iv': invested_amount,
-                    'ip': f"{change_percent:.2f}%",
-                    'nt': signal.signal_description or f"Trading signal for {signal.symbol}",
-                    'qt': datetime.utcnow().strftime('%H:%M'),
-                    'seven': f"{pnl_percent * 0.8:.1f}%",
-                    'change2': change_percent,
-                    'signal_type': signal.signal_type,
-                    'status': signal.status,
-                    'symbol': signal.symbol,
-                    'trading_symbol': signal.trading_symbol,
-                    'priority': signal.priority,
-                    'target_user_ucc': target_user.ucc if target_user else 'N/A',
-                    'target_user_name': target_user.greeting_name if target_user else 'N/A',
-                    'invested_amount': invested_amount,
-                    'current_value': current_value,
-                    'profit_loss': pnl_amount,
-                    'profit_loss_percent': pnl_percent,
-                    'created_at': signal.created_at.isoformat() if signal.created_at else None,
-                    'last_updated': datetime.utcnow().strftime('%H:%M:%S')
+                    'etf': signal.symbol or '',  # ETF
+                    'thirty': f"{thirty_day_perf:.2f}%" if thirty_day_perf else '',  # 30
+                    'dh': str(days_held),  # DH
+                    'date': entry_date.strftime('%Y-%m-%d') if entry_date else '',  # Date
+                    'pos': 1 if signal.signal_type == 'BUY' else 0,  # Pos
+                    'qty': quantity,  # Qty
+                    'ep': round(entry_price, 2),  # EP
+                    'cmp': round(current_price, 2),  # CMP
+                    'change_pct': round(profit_loss_percent, 2),  # %Chan
+                    'inv': round(invested_amount, 2),  # Inv.
+                    'tp': round(target_price, 2) if target_price > 0 else 0,  # TP
+                    'tva': round(target_value_amount, 2),  # TVA
+                    'tpr': round(target_profit_return, 2),  # TPR
+                    'pl': round(profit_loss, 2),  # PL
+                    'ed': signal.expires_at.strftime('%Y-%m-%d') if signal.expires_at else '',  # ED
+                    'exp': signal.expires_at.strftime('%Y-%m-%d') if signal.expires_at else '',  # EXP
+                    'pr': f"{profit_loss_percent:.2f}%",  # PR
+                    'pp': '★★★' if signal.priority == 'HIGH' else '★★' if signal.priority == 'MEDIUM' else '★',  # PP
+                    'iv': round(invested_amount, 2),  # IV
+                    'ip': f"{profit_loss_percent:.2f}%",  # IP
+                    'nt': signal.signal_description or '',  # NT
+                    'qt': signal.last_update_time.strftime('%H:%M') if signal.last_update_time else '',  # Qt
+                    'seven': f"{seven_day_perf:.2f}%",  # 7
+                    'change2': round(profit_loss_percent, 2),  # %Ch
+                    'status': signal.status or 'ACTIVE',
+                    'signal_type': signal.signal_type or 'BUY',
+                    'priority': signal.priority or 'LOW'
                 }
-
-                signals_data.append(signal_data)
-
-                # Update totals for portfolio summary
-                if signal.status == 'ACTIVE':
-                    total_invested += invested_amount
-                    total_current_value += current_value
-                    total_pnl += pnl_amount
+                signals_data.append(signal_dict)
 
             except Exception as signal_error:
-                logger.error(f"Error processing signal {signal.id}: {signal_error}")
+                logging.error(f"Error processing signal {signal.id}: {signal_error}")
                 continue
 
-        # Commit price updates to database
-        if latest_quotes:
-            try:
-                db.session.commit()
-                logger.info("✅ Updated signal prices in database")
-            except Exception as commit_error:
-                logger.warning(f"⚠️ Could not update prices: {commit_error}")
-                db.session.rollback()
+        # Calculate portfolio summary safely
+        try:
+            total_investment = sum(float(s.get('inv', 0)) for s in signals_data if s.get('inv'))
+            total_current_value = sum(float(s.get('inv', 0)) + float(s.get('pl', 0)) for s in signals_data if s.get('inv') and s.get('pl'))
+            total_pnl = sum(float(s.get('pl', 0)) for s in signals_data if s.get('pl'))
+            return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
 
-        # Calculate portfolio summary
-        active_signals = len([s for s in signals_data if s.get('status') == 'ACTIVE'])
-        profit_signals = len([s for s in signals_data if s.get('profit_loss', 0) > 0])
-        loss_signals = len([s for s in signals_data if s.get('profit_loss', 0) < 0])
+            portfolio_summary = {
+                'total_positions': len(signals_data),
+                'total_investment': round(total_investment, 2),
+                'current_value': round(total_current_value, 2),
+                'total_pnl': round(total_pnl, 2),
+                'return_percent': round(return_percent, 2),
+                'active_positions': len([s for s in signals_data if s.get('status') == 'ACTIVE']),
+                'closed_positions': len([s for s in signals_data if s.get('status') == 'CLOSED'])
+            }
+        except Exception as calc_error:
+            logging.error(f"Error calculating portfolio summary: {calc_error}")
+            portfolio_summary = {
+                'total_positions': len(signals_data),
+                'total_investment': 0,
+                'current_value': 0,
+                'total_pnl': 0,
+                'return_percent': 0,
+                'active_positions': 0,
+                'closed_positions': 0
+            }
 
-        portfolio_summary = {
-            'total_trades': len(signals_data),
-            'active_trades': active_signals,
-            'profit_trades': profit_signals,
-            'loss_trades': loss_signals,
-            'total_invested': total_invested,
-            'total_investment': total_invested,
-            'total_current_value': total_current_value,
-            'total_pnl': total_pnl,
-            'total_pnl_percent': (total_pnl / total_invested * 100) if total_invested > 0 else 0,
-            'total_positions': len(signals_data),
-            'current_value': total_current_value,
-            'return_percent': (total_pnl / total_invested * 100) if total_invested > 0 else 0,
-            'active_positions': active_signals,
-            'closed_positions': len([s for s in signals_data if s.get('status') != 'ACTIVE'])
-        }
+        logging.info(f"ETF Signals API: Returning {len(signals_data)} signals")
 
         return jsonify({
             'success': True,
             'signals': signals_data,
             'total': len(signals_data),
-            'portfolio': portfolio_summary,
-            'last_update': datetime.utcnow().isoformat(),
-            'quotes_fetched': len(latest_quotes)
+            'portfolio': portfolio_summary
         })
 
     except Exception as e:
-        logger.error(f"Error fetching ETF signals data: {str(e)}")
+        logging.error(f"Error fetching ETF signals data: {str(e)}")
         return jsonify({
             'error': 'Failed to fetch signals data',
             'success': False,
