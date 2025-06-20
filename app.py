@@ -55,16 +55,12 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Configure Flask for Replit deployment
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'https'
+app.config['SERVER_NAME'] = None  # Allow any host for Replit compatibility
 
-# Additional Replit-specific configurations
-replit_domain = os.environ.get('REPLIT_DOMAINS')
-if replit_domain:
-    app.config['PREFERRED_URL_SCHEME'] = 'https'
-    app.config['APPLICATION_ROOT'] = '/'
-    # Don't set SERVER_NAME to allow external access
-    app.config['SERVER_NAME'] = None
-else:
-    app.config['SERVER_NAME'] = None  # Allow any host
+# Additional configurations for proper external access
+app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for development
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
