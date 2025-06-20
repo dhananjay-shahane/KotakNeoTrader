@@ -43,7 +43,7 @@ db = SQLAlchemy(model_class=Base)
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET") or "877ec8603e82bb360d188674c9909e08e69fba8333bce85cdec7d2298c34f02d"
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
@@ -53,14 +53,18 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 # Configure Flask for Replit deployment
-app.config['SERVER_NAME'] = None  # Allow any host
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Additional Replit-specific configurations
-if os.environ.get('REPLIT_DOMAIN'):
+replit_domain = os.environ.get('REPLIT_DOMAINS')
+if replit_domain:
     app.config['PREFERRED_URL_SCHEME'] = 'https'
     app.config['APPLICATION_ROOT'] = '/'
+    # Don't set SERVER_NAME to allow external access
+    app.config['SERVER_NAME'] = None
+else:
+    app.config['SERVER_NAME'] = None  # Allow any host
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 

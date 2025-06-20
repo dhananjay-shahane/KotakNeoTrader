@@ -164,47 +164,48 @@ def get_admin_signals():
 
         logger.info(f"✅ Processed {len(signals_data)} CSV ETF signals with real-time CMP calculations")
 
-        signals_data = []
-        total_invested = 0
-        total_current_value = 0
-        total_pnl = 0
-
-        # Get latest quotes from realtime_quotes table
-        latest_quotes = {}
+        # Also fetch admin trade signals from database
         try:
-            # Get the latest quote for each symbol
-            from sqlalchemy import func
-            subquery = db.session.query(
-                RealtimeQuote.symbol,
-                func.max(RealtimeQuote.timestamp).label('max_timestamp')
-            ).group_by(RealtimeQuote.symbol).subquery()
+            admin_signals = db.session.query(AdminTradeSignal).filter_by(
+                assigned_to_ucc='zhz3j'  # Demo user
+            ).order_by(AdminTradeSignal.created_at.desc()).limit(50).all()
+            
+            # Get latest quotes from realtime_quotes table
+            latest_quotes = {}
+            try:
+                # Get the latest quote for each symbol
+                from sqlalchemy import func
+                subquery = db.session.query(
+                    RealtimeQuote.symbol,
+                    func.max(RealtimeQuote.timestamp).label('max_timestamp')
+                ).group_by(RealtimeQuote.symbol).subquery()
 
-            quotes_query = db.session.query(RealtimeQuote).join(
-                subquery,
-                db.and_(
-                    RealtimeQuote.symbol == subquery.c.symbol,
-                    RealtimeQuote.timestamp == subquery.c.max_timestamp
-                )
-            ).all()
+                quotes_query = db.session.query(RealtimeQuote).join(
+                    subquery,
+                    db.and_(
+                        RealtimeQuote.symbol == subquery.c.symbol,
+                        RealtimeQuote.timestamp == subquery.c.max_timestamp
+                    )
+                ).all()
 
-            for quote in quotes_query:
-                latest_quotes[quote.symbol] = {
-                    'current_price': float(quote.current_price),
-                    'change_percent': float(quote.change_percent),
-                    'last_update': quote.timestamp
-                }
+                for quote in quotes_query:
+                    latest_quotes[quote.symbol] = {
+                        'current_price': float(quote.current_price),
+                        'change_percent': float(quote.change_percent),
+                        'last_update': quote.timestamp
+                    }
 
-            logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
-        except Exception as quote_error:
-            logger.warning(f"⚠️ Could not fetch latest quotes from database: {quote_error}")
+                logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
+            except Exception as quote_error:
+                logger.warning(f"⚠️ Could not fetch latest quotes from database: {quote_error}")
+            
+            # Process each admin signal to match CSV format
+            for signal in admin_signals:
+                # Get current price from latest quotes or use current_price field
+                current_price = float(signal.current_price) if signal.current_price else float(signal.entry_price)
+                change_percent = float(signal.change_percent) if signal.change_percent else 0
 
-        # Process each admin signal to match CSV format
-        for signal in admin_signals:
-            # Get current price from latest quotes or use current_price field
-            current_price = float(signal.current_price) if signal.current_price else float(signal.entry_price)
-            change_percent = float(signal.change_percent) if signal.change_percent else 0
-
-            # Override with latest quote if available
+                # Override with latest quote if available
             if signal.symbol in latest_quotes:
                 current_price = latest_quotes[signal.symbol]['current_price']
                 change_percent = latest_quotes[signal.symbol]['change_percent']
@@ -288,6 +289,9 @@ def get_admin_signals():
                 total_invested += invested_amount
                 total_current_value += current_value
                 total_pnl += pnl_amount
+
+        except Exception as db_error:
+            logger.error(f"Error fetching admin trade signals: {db_error}")
 
         # Commit price updates to database
         if latest_quotes:
