@@ -1,5 +1,11 @@
 
+import logging
+
 from app import app  # noqa: F401
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 # Import the populate function after app is ready
 try:
     from populate_etf_quotes import populate_etf_signals_with_csv_data
