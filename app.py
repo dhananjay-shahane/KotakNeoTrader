@@ -109,6 +109,19 @@ websocket_handler = WebSocketHandler()
 def validate_current_session():
     """Validate current session and check expiration"""
     try:
+        # Demo mode - bypass authentication for testing navigation
+        demo_mode = os.environ.get('DEMO_MODE', 'true').lower() == 'true'
+        if demo_mode:
+            if not session.get('authenticated'):
+                session['authenticated'] = True
+                session['ucc'] = 'DEMO001'
+                session['greeting_name'] = 'Demo User'
+                session['access_token'] = 'demo_token'
+                session['session_token'] = 'demo_session'
+                session['client'] = 'demo_client'
+                session.permanent = True
+            return True
+            
         # Check if user is authenticated
         if not session.get('authenticated'):
             return False
@@ -154,8 +167,8 @@ def health_check():
 
 @app.route('/')
 def index():
-    """Home page - redirect to ETF signals page for demo"""
-    return redirect(url_for('etf_signals'))
+    """Home page - redirect to dashboard"""
+    return redirect(url_for('dashboard'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
