@@ -42,7 +42,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 # create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+app.secret_key = os.environ.get("SESSION_SECRET", "877ec8603e82bb360d188674c9909e08e69fba8333bce85cdec7d2298c34f02d")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
@@ -574,22 +574,18 @@ def api_get_portfolio_summary():
 def api_bulk_update_positions():
     return bulk_update_positions()
 
-# Register blueprints
+# Additional blueprints
 try:
-    from api.trading import trading_bp
-    from api.dashboard import dashboard_bp
-    from api.etf_signals import etf_signals_bp
+    from api.etf_signals import etf_bp
     from api.admin import admin_bp
     from api.notifications import notifications_bp
 
-    app.register_blueprint(trading_bp)
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(etf_signals_bp)
+    app.register_blueprint(etf_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(notifications_bp)
-    print("✓ All blueprints registered successfully")
+    print("✓ Additional blueprints registered successfully")
 except ImportError as e:
-    print(f"Warning: Could not import blueprint: {e}")
+    print(f"Warning: Could not import additional blueprint: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
