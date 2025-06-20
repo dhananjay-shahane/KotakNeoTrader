@@ -539,8 +539,8 @@ def charts():
 
 @app.route('/etf-signals')
 def etf_signals():
-    """ETF Trading Signals page with real-time Kotak Neo CMP"""
-    return render_template('etf_signals_with_kotak_cmp.html')
+    """ETF Trading Signals page"""
+    return render_template('etf_signals.html')
 
 @app.route('/etf-signals-advanced')
 @require_auth
