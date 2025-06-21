@@ -758,6 +758,157 @@ def get_etf_signals_data():
         logging.error(f"Error fetching ETF signals data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/populate-admin-signals')
+def populate_admin_signals_endpoint():
+    """API endpoint to populate admin_trade_signals table with sample ETF data"""
+    try:
+        from models_etf import AdminTradeSignal
+        from models import User
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        # Create admin user if not exists
+        admin_user = User.query.filter_by(ucc='admin').first()
+        if not admin_user:
+            admin_user = User(
+                ucc='admin',
+                mobile_number='9999999999',
+                greeting_name='Admin User',
+                user_id='admin',
+                is_active=True
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+        
+        # Create target user if not exists
+        target_user = User.query.filter_by(ucc='zhz3j').first()
+        if not target_user:
+            target_user = User(
+                ucc='zhz3j',
+                mobile_number='9876543210',
+                greeting_name='ETF Trader',
+                user_id='zhz3j',
+                is_active=True
+            )
+            db.session.add(target_user)
+            db.session.commit()
+        
+        # Clear existing signals
+        AdminTradeSignal.query.delete()
+        db.session.commit()
+        
+        # Sample ETF signals data (admin sends this data to the table)
+        etf_signals = [
+            {
+                'symbol': 'NIFTYBEES',
+                'signal_type': 'BUY',
+                'entry_price': Decimal('245.50'),
+                'target_price': Decimal('260.00'),
+                'stop_loss': Decimal('235.00'),
+                'quantity': 100,
+                'signal_title': 'NIFTY ETF - Bullish Breakout',
+                'signal_description': 'Strong momentum with volume surge. Target 260.',
+                'priority': 'HIGH'
+            },
+            {
+                'symbol': 'BANKBEES',
+                'signal_type': 'BUY',
+                'entry_price': Decimal('520.75'),
+                'target_price': Decimal('545.00'),
+                'stop_loss': Decimal('505.00'),
+                'quantity': 50,
+                'signal_title': 'Bank ETF - Sector Rotation',
+                'signal_description': 'Banking sector showing strength. Good risk-reward.',
+                'priority': 'MEDIUM'
+            },
+            {
+                'symbol': 'GOLDSHARE',
+                'signal_type': 'SELL',
+                'entry_price': Decimal('4850.00'),
+                'target_price': Decimal('4720.00'),
+                'stop_loss': Decimal('4920.00'),
+                'quantity': 10,
+                'signal_title': 'Gold ETF - Correction Expected',
+                'signal_description': 'Overbought levels, expect pullback to 4720.',
+                'priority': 'MEDIUM'
+            },
+            {
+                'symbol': 'ITBEES',
+                'signal_type': 'BUY',
+                'entry_price': Decimal('425.30'),
+                'target_price': Decimal('445.00'),
+                'stop_loss': Decimal('415.00'),
+                'quantity': 75,
+                'signal_title': 'IT ETF - Tech Recovery',
+                'signal_description': 'IT sector bouncing from support. Good entry.',
+                'priority': 'HIGH'
+            },
+            {
+                'symbol': 'LIQUIDBEES',
+                'signal_type': 'BUY',
+                'entry_price': Decimal('1000.00'),
+                'target_price': Decimal('1002.00'),
+                'stop_loss': Decimal('999.50'),
+                'quantity': 200,
+                'signal_title': 'Liquid ETF - Safe Haven',
+                'signal_description': 'Market volatility hedge, low risk trade.',
+                'priority': 'LOW'
+            }
+        ]
+        
+        # Create signals in admin_trade_signals table
+        for signal_data in etf_signals:
+            signal = AdminTradeSignal(
+                admin_user_id=admin_user.id,
+                target_user_id=target_user.id,
+                symbol=signal_data['symbol'],
+                trading_symbol=f"{signal_data['symbol']}-EQ",
+                signal_type=signal_data['signal_type'],
+                entry_price=signal_data['entry_price'],
+                target_price=signal_data['target_price'],
+                stop_loss=signal_data['stop_loss'],
+                quantity=signal_data['quantity'],
+                signal_title=signal_data['signal_title'],
+                signal_description=signal_data['signal_description'],
+                priority=signal_data['priority'],
+                status='ACTIVE',
+                created_at=datetime.now() - timedelta(days=1),
+                signal_date=datetime.now().date(),
+                expiry_date=(datetime.now() + timedelta(days=30)).date(),
+                investment_amount=signal_data['entry_price'] * signal_data['quantity'],
+                current_price=signal_data['entry_price'],
+                current_value=signal_data['entry_price'] * signal_data['quantity'],
+                pnl=Decimal('0.00'),
+                pnl_percentage=Decimal('0.00')
+            )
+            db.session.add(signal)
+        
+        db.session.commit()
+        
+        total_signals = AdminTradeSignal.query.count()
+        active_signals = AdminTradeSignal.query.filter_by(status='ACTIVE').count()
+        
+        logging.info(f"Successfully populated {len(etf_signals)} ETF signals in admin_trade_signals table")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Successfully populated admin trade signals table',
+            'total_signals': total_signals,
+            'active_signals': active_signals,
+            'created_signals': len(etf_signals),
+            'admin_user_id': admin_user.id,
+            'target_user_id': target_user.id,
+            'note': 'ETF signals page will now fetch data from admin_trade_signals table and show real-time CMP from Kotak Neo quotes'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error populating admin signals: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api

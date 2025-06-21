@@ -161,13 +161,13 @@ ETFSignalsManager.prototype.loadSignals = function() {
     var self = this;
     try {
         // Load ETF signals data from API and format it like deals
-        fetch('/api/etf/signals')
+        fetch('/api/etf-signals-data')
             .then(function(response) {
                 return response.json();
             })
             .then(function(data) {
                 if (data.success) {
-                    self.signals = self.formatSignalsAsDeals(data.signals || []);
+                    self.signals = data.signals || [];
                     self.filteredSignals = self.signals.slice();
                     self.renderSignalsTable();
                     self.updatePagination();
@@ -185,53 +185,7 @@ ETFSignalsManager.prototype.loadSignals = function() {
     }
 };
 
-ETFSignalsManager.prototype.formatSignalsAsDeals = function(signals) {
-    return signals.map(function(signal) {
-        var entryPrice = parseFloat(signal.entry_price) || 0;
-        var currentPrice = parseFloat(signal.current_price) || entryPrice;
-        var quantity = parseInt(signal.quantity) || 0;
-        var investment = entryPrice * quantity;
-        var currentValue = currentPrice * quantity;
-        var pnl = currentValue - investment;
-        var changePct = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0;
-        var targetPrice = parseFloat(signal.target_price) || 0;
-        var targetValue = targetPrice * quantity;
-        var targetProfit = targetValue - investment;
-        
-        // Calculate days held
-        var createdDate = new Date(signal.created_at);
-        var today = new Date();
-        var daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-        
-        return {
-            id: signal.id,
-            symbol: signal.symbol || '',
-            thirty: '-', // 30-day performance placeholder
-            dh: daysHeld,
-            date: createdDate.toLocaleDateString('en-GB'),
-            pos: signal.signal_type === 'BUY' ? 1 : 0,
-            qty: quantity,
-            ep: entryPrice,
-            cmp: currentPrice,
-            change_pct: changePct,
-            inv: investment,
-            tp: targetPrice,
-            tva: targetValue,
-            tpr: targetProfit,
-            pl: pnl,
-            ed: createdDate.toLocaleDateString('en-GB'),
-            pr: entryPrice.toFixed(2) + '-' + currentPrice.toFixed(2),
-            pp: Math.abs(changePct).toFixed(1),
-            iv: changePct > 5 ? 'High' : changePct < -5 ? 'Low' : 'Medium',
-            ip: changePct >= 0 ? '+' + changePct.toFixed(1) + '%' : changePct.toFixed(1) + '%',
-            nt: signal.notes || '-',
-            qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-            seven: '-', // 7-day change placeholder
-            change2: changePct,
-            status: signal.status || 'ACTIVE'
-        };
-    });
-};
+
 
 ETFSignalsManager.prototype.renderSignalsTable = function() {
     var tbody = document.getElementById('signalsTableBody');
