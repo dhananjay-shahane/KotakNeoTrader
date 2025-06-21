@@ -200,16 +200,18 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     // Ensure we have valid data with fallbacks
     var symbol = position.symbol || position.etf || 'N/A';
     var entryPrice = parseFloat(position.ep || position.entry_price || 0);
-    var currentPrice = parseFloat(position.cmp || position.current_price || entryPrice);
+    var currentPrice = parseFloat(position.cmp || position.current_price || 0);
     var quantity = parseInt(position.qty || position.quantity || 0);
     var pnl = parseFloat(position.pl || position.pnl_amount || 0);
     var changePct = parseFloat(position.change_pct || position.change_percent || 0);
     var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
     var targetPrice = parseFloat(position.tp || position.target_price || 0);
 
-    // Ensure current price is never 0 or undefined
-    if (!currentPrice || currentPrice <= 0) {
-        currentPrice = entryPrice || 100; // Use entry price or default fallback
+    // Ensure current price is realistic - reject ₹100 fallback values
+    if (!currentPrice || currentPrice <= 0 || currentPrice === 100) {
+        currentPrice = entryPrice; // Use actual entry price instead of generic ₹100
+        changePct = 0; // Set change to 0% when using entry price
+        console.log('Using entry price for', symbol, ':', currentPrice);
     }
 
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
@@ -224,7 +226,9 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>' + quantity + '</td>' +
         '<td>₹' + entryPrice.toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + 
-        (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">KN</span>' : ' <span class="badge bg-warning badge-sm">EP</span>') + '</td>' +
+        (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">LIVE</span>' : 
+         position.data_source && position.data_source.includes('SIMULATED') ? ' <span class="badge bg-info badge-sm">SIM</span>' : 
+         ' <span class="badge bg-secondary badge-sm">EP</span>') + '</td>' +
         '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>₹' + investment.toFixed(0) + '</td>' +
         '<td>₹' + targetPrice.toFixed(2) + '</td>' +
