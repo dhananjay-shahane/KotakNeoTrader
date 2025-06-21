@@ -4,7 +4,16 @@ function ETFSignalsManager() {
     this.liveDataInterval = null;
     this.autoRefreshInterval = 10000; // 10 seconds
     this.searchTimeout = null;
-    this.init();
+    
+    // Initialize after DOM is ready
+    var self = this;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+    } else {
+        this.init();
+    }
 }
 
 ETFSignalsManager.prototype.init = function() {
@@ -181,7 +190,7 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
     if (!this.positions || this.positions.length === 0) {
         var row = tbody.insertRow();
-        row.innerHTML = '<td colspan="25" class="text-center text-muted">No admin trade signals found in database. Only real database records are displayed.</td>';
+        row.innerHTML = '<td colspan="25" class="text-center text-muted">No admin trade signals found in database. Only real admin_trade_signals records are displayed.</td>';
         return;
     }
 
