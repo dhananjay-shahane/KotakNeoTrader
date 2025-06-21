@@ -1,420 +1,153 @@
-{% extends "base.html" %}
-
-{% block title %}Admin Trade Signals - Kotak Neo{% endblock %}
-
-{% block extra_css %}
-<style>
-    .signals-table {
-        font-size: 0.85rem;
-        background: var(--card-bg);
-    }
-    
-    .signals-table th {
-        background: var(--secondary-color);
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-align: center;
-        padding: 8px 6px;
-        border: 1px solid var(--border-color);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        white-space: nowrap;
-    }
-    
-    .signals-table td {
-        padding: 6px 4px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-        vertical-align: middle;
-        white-space: nowrap;
-        font-size: 0.8rem;
-    }
-    
-    .profit { color: var(--success-color); font-weight: 600; }
-    .loss { color: var(--danger-color); font-weight: 600; }
-    .neutral { color: var(--warning-color); }
-    
-    .table-container {
-        height: 75vh;
-        overflow: auto;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .portfolio-summary {
-        background: var(--card-bg);
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        padding: 15px;
-        border: 1px solid var(--border-color);
-    }
-    
-    .signal-badge {
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    
-    .signal-buy {
-        background: rgba(40, 167, 69, 0.2);
-        color: var(--success-color);
-        border: 1px solid var(--success-color);
-    }
-    
-    .signal-sell {
-        background: rgba(220, 53, 69, 0.2);
-        color: var(--danger-color);
-        border: 1px solid var(--danger-color);
-    }
-    
-    .status-active {
-        background: rgba(23, 162, 184, 0.2);
-        color: #17a2b8;
-        border: 1px solid #17a2b8;
-    }
-    
-    .summary-card {
-        background: var(--dark-bg);
-        border-radius: 6px;
-        padding: 10px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-    }
-    
-    .auto-refresh-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background: #28a745;
-        border-radius: 50%;
-        margin-right: 5px;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    
-    .data-source-badge {
-        font-size: 0.6rem;
-        padding: 2px 6px;
-        border-radius: 8px;
-        background: rgba(108, 117, 125, 0.2);
-        color: var(--text-secondary);
-    }
-    
-    .price-highlight {
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-1">Admin Trade Signals</h1>
-        <p class="text-muted mb-0">
-            <span class="auto-refresh-indicator"></span>
-            Real-time Kotak Neo data - Auto updates every 5 minutes
-        </p>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-light" onclick="refreshSignals()" id="refreshBtn">
-            <i class="fas fa-sync-alt me-1"></i>Refresh
-        </button>
-        <span class="badge bg-success me-2" id="liveIndicator">
-            <span class="auto-refresh-indicator"></span>Live Updates
-        </span>
-    </div>
-</div>
-
-<!-- Portfolio Summary -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="portfolio-summary">
-            <h5 class="mb-3">
-                <i class="fas fa-chart-pie me-2 text-primary"></i>Portfolio Summary
-            </h5>
-            <div class="row" id="portfolioSummary">
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">Total Signals</div>
-                        <div class="h5 mb-0" id="totalSignals">0</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Trade Signals DataTable</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .signals-table {
+            font-size: 12px;
+        }
+        .signals-table th,
+        .signals-table td {
+            padding: 4px 6px;
+            vertical-align: middle;
+            text-align: center;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .badge {
+            font-size: 10px;
+        }
+        .text-success { color: #28a745 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .text-warning { color: #ffc107 !important; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-3">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-signal me-2"></i>Admin Trade Signals
+                            <span class="badge bg-info ms-2" id="signalsCount">Loading...</span>
+                        </h5>
                     </div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">Investment</div>
-                        <div class="h5 mb-0" id="totalInvestment">₹0.00</div>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">Current Value</div>
-                        <div class="h5 mb-0" id="currentValue">₹0.00</div>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">P&L</div>
-                        <div class="h5 mb-0" id="totalPnL">₹0.00</div>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">Buy Signals</div>
-                        <div class="h5 mb-0 text-success" id="buySignals">0</div>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <div class="summary-card">
-                        <div class="text-muted small">Sell Signals</div>
-                        <div class="h5 mb-0 text-danger" id="sellSignals">0</div>
+                    <div class="card-body p-0">
+                        <div class="table-container">
+                            <table class="table table-hover signals-table mb-0" id="adminSignalsTable">
+                                <thead>
+                                    <tr>
+                                        <th>target_user_id</th>
+                                        <th>Symbol</th>
+                                        <th>30</th>
+                                        <th>DH</th>
+                                        <th>Date</th>
+                                        <th>Pos</th>
+                                        <th>Qty</th>
+                                        <th>EP</th>
+                                        <th>CMP</th>
+                                        <th>%Chan</th>
+                                        <th>Inv.</th>
+                                        <th>TP</th>
+                                        <th>TVA</th>
+                                        <th>TPR</th>
+                                        <th>PL</th>
+                                        <th>ED</th>
+                                        <th>PR</th>
+                                        <th>PP</th>
+                                        <th>IV</th>
+                                        <th>IP</th>
+                                        <th>NT</th>
+                                        <th>Qt</th>
+                                        <th>7</th>
+                                        <th>%Ch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Admin Trade Signals Table -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="fas fa-signal me-2"></i>Admin Trade Signals
-            <span class="badge bg-info ms-2" id="signalsCount">Loading...</span>
-        </h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-container">
-            <table class="table table-hover signals-table mb-0" id="adminSignalsTable">
-                <thead>
-                    <tr>
-                        <th>target_user_id</th>
-                        <th>Symbol</th>
-                        <th>30</th>
-                        <th>DH</th>
-                        <th>Date</th>
-                        <th>Pos</th>
-                        <th>Qty</th>
-                        <th>EP</th>
-                        <th>CMP</th>
-                        <th>%Chan</th>
-                        <th>Inv.</th>
-                        <th>TP</th>
-                        <th>TVA</th>
-                        <th>TPR</th>
-                        <th>PL</th>
-                        <th>ED</th>
-                        <th>PR</th>
-                        <th>PP</th>
-                        <th>IV</th>
-                        <th>IP</th>
-                        <th>NT</th>
-                        <th>Qt</th>
-                        <th>7</th>
-                        <th>%Ch</th>
-                    </tr>
-                </thead>
-                <tbody id="signalsTableBody">
-                    <tr>
-                        <td colspan="24" class="text-center py-4">
-                            <div class="spinner-border text-primary me-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            Loading admin trade signals...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-<!-- Data Sources Info -->
-<div class="row mt-3">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-title">Data Sources</h6>
-                <div class="row" id="dataSourcesInfo">
-                    <div class="col-md-4">
-                        <span class="data-source-badge">KOTAK_NEO_API</span>
-                        <span class="ms-2" id="kotakNeoCount">0 signals</span>
-                    </div>
-                    <div class="col-md-4">
-                        <span class="data-source-badge">REALTIME_QUOTES</span>
-                        <span class="ms-2" id="realtimeCount">0 signals</span>
-                    </div>
-                    <div class="col-md-4">
-                        <span class="data-source-badge">SIGNAL_DATA</span>
-                        <span class="ms-2" id="signalDataCount">0 signals</span>
-                    </div>
-                </div>
-                <small class="text-muted">Last updated: <span id="lastUpdateTime">-</span></small>
-            </div>
-        </div>
-    </div>
-</div>
+    <script>
+        $(document).ready(function() {
+            const table = $('#adminSignalsTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/datatable/admin-signals',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: function(d) {
+                        return JSON.stringify(d);
+                    }
+                },
+                columns: [
+                    { data: 'target_user_id', name: 'target_user_id' },
+                    { data: 'symbol', name: 'symbol' },
+                    { data: 'field_30', name: 'field_30', defaultContent: '-' },
+                    { data: 'day_high', name: 'day_high', defaultContent: '-' },
+                    { data: 'created_date', name: 'created_date' },
+                    { data: 'position_type', name: 'position_type' },
+                    { data: 'quantity', name: 'quantity' },
+                    { data: 'entry_price_formatted', name: 'entry_price' },
+                    { data: 'current_price_formatted', name: 'current_price' },
+                    { data: 'change_percent_formatted', name: 'change_percent' },
+                    { data: 'investment_formatted', name: 'investment' },
+                    { data: 'target_price_formatted', name: 'target_price' },
+                    { data: 'target_value_achieved', name: 'target_value_achieved', defaultContent: '-' },
+                    { data: 'target_percent_return', name: 'target_percent_return', defaultContent: '-' },
+                    { data: 'pnl_formatted', name: 'pnl' },
+                    { data: 'exit_date', name: 'exit_date', defaultContent: '-' },
+                    { data: 'profit_ratio', name: 'profit_ratio', defaultContent: '-' },
+                    { data: 'profit_percent', name: 'profit_percent', defaultContent: '-' },
+                    { data: 'initial_value', name: 'initial_value', defaultContent: '-' },
+                    { data: 'initial_percent', name: 'initial_percent', defaultContent: '-' },
+                    { data: 'net_total', name: 'net_total', defaultContent: '-' },
+                    { data: 'quote', name: 'quote', defaultContent: '-' },
+                    { data: 'field_7', name: 'field_7', defaultContent: '-' },
+                    { data: 'percent_change', name: 'percent_change', defaultContent: '-' }
+                ],
+                pageLength: 25,
+                responsive: true,
+                scrollX: true,
+                order: [[4, 'desc']], // Order by date
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                     '<"row"<"col-sm-12"tr>>' +
+                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                drawCallback: function(settings) {
+                    $('#signalsCount').text(settings.json.recordsTotal + ' signals');
+                },
+                language: {
+                    processing: '<i class="fas fa-spinner fa-spin"></i> Loading signals...',
+                    emptyTable: 'No admin trade signals found',
+                    zeroRecords: 'No matching signals found'
+                }
+            });
 
-{% endblock %}
-
-{% block extra_js %}
-<script>
-let refreshInterval;
-let isRefreshing = false;
-
-// Auto-refresh every 5 minutes (300000 ms)
-const AUTO_REFRESH_INTERVAL = 300000;
-
-function refreshSignals() {
-    if (isRefreshing) return;
-    
-    isRefreshing = true;
-    const refreshBtn = document.getElementById('refreshBtn');
-    const originalHtml = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-    refreshBtn.disabled = true;
-    
-    fetch('/api/admin-trade-signals')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateSignalsTable(data.data);
-                updatePortfolioSummary(data.portfolio_summary);
-                updateDataSources(data.data_sources);
-                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString();
-                document.getElementById('signalsCount').textContent = `${data.total_count} Active`;
-                
-                // Update live indicator
-                const liveIndicator = document.getElementById('liveIndicator');
-                liveIndicator.className = 'badge bg-success me-2';
-                liveIndicator.innerHTML = '<span class="auto-refresh-indicator"></span>Live Updates';
-            } else {
-                console.error('Error fetching signals:', data.error);
-                showError('Failed to fetch admin trade signals');
-            }
-        })
-        .catch(error => {
-            console.error('Network error:', error);
-            showError('Network error while fetching signals');
-            
-            // Update live indicator to show disconnected state
-            const liveIndicator = document.getElementById('liveIndicator');
-            liveIndicator.className = 'badge bg-danger me-2';
-            liveIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Connection Error';
-        })
-        .finally(() => {
-            isRefreshing = false;
-            refreshBtn.innerHTML = originalHtml;
-            refreshBtn.disabled = false;
+            // Auto refresh every 30 seconds
+            setInterval(function() {
+                table.ajax.reload(null, false);
+            }, 30000);
         });
-}
-
-function updateSignalsTable(signals) {
-    const tbody = document.getElementById('signalsTableBody');
-    
-    if (!signals || signals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="24" class="text-center py-4">No admin trade signals found</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = signals.map(signal => {
-        const pnlClass = signal.pnl > 0 ? 'profit' : signal.pnl < 0 ? 'loss' : 'neutral';
-        const changeClass = signal.day_change_percent > 0 ? 'profit' : signal.day_change_percent < 0 ? 'loss' : 'neutral';
-        
-        // Calculate fields according to your specification
-        var createdDate = new Date(signal.created_at || signal.signal_date);
-        var today = new Date();
-        var daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-        var targetValue = signal.target_price * signal.quantity;
-        var targetProfit = targetValue - signal.investment;
-        var changePct = signal.entry_price > 0 ? ((signal.current_price - signal.entry_price) / signal.entry_price) * 100 : 0;
-        
-        return `
-            <tr>
-                <td>${signal.target_user_id || 'zhz3j'}</td>
-                <td><strong>${signal.symbol}</strong></td>
-                <td>-</td>
-                <td>${daysHeld}</td>
-                <td>${createdDate.toLocaleDateString('en-GB')}</td>
-                <td>${signal.signal_type === 'BUY' ? 1 : 0}</td>
-                <td>${signal.quantity}</td>
-                <td>${signal.entry_price}</td>
-                <td class="price-highlight">${signal.current_price}</td>
-                <td class="${changeClass}">${changePct.toFixed(1)}%</td>
-                <td>₹${signal.investment.toLocaleString()}</td>
-                <td>${signal.target_price}</td>
-                <td>₹${targetValue.toLocaleString()}</td>
-                <td class="${pnlClass}">₹${targetProfit >= 0 ? '+' : ''}${targetProfit.toLocaleString()}</td>
-                <td class="${pnlClass}">₹${signal.pnl >= 0 ? '+' : ''}${signal.pnl.toLocaleString()}</td>
-                <td>${createdDate.toLocaleDateString('en-GB')}</td>
-                <td>${signal.entry_price.toFixed(2)}-${signal.current_price.toFixed(2)}</td>
-                <td>${Math.abs(changePct).toFixed(1)}</td>
-                <td>${changePct > 5 ? 'High' : changePct < -5 ? 'Low' : 'Medium'}</td>
-                <td>${changePct >= 0 ? '+' + changePct.toFixed(1) + '%' : changePct.toFixed(1) + '%'}</td>
-                <td>${signal.signal_description || '-'}</td>
-                <td>${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}</td>
-                <td>-</td>
-                <td class="${changeClass}">${changePct.toFixed(1)}%</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function updatePortfolioSummary(summary) {
-    if (!summary) return;
-    
-    document.getElementById('totalSignals').textContent = summary.total_signals;
-    document.getElementById('totalInvestment').textContent = `₹${summary.total_investment.toLocaleString()}`;
-    document.getElementById('currentValue').textContent = `₹${summary.total_current_value.toLocaleString()}`;
-    
-    const pnlElement = document.getElementById('totalPnL');
-    pnlElement.textContent = `₹${summary.total_pnl >= 0 ? '+' : ''}${summary.total_pnl.toLocaleString()}`;
-    pnlElement.className = `h5 mb-0 ${summary.total_pnl > 0 ? 'text-success' : summary.total_pnl < 0 ? 'text-danger' : 'text-warning'}`;
-    
-    document.getElementById('buySignals').textContent = summary.buy_signals;
-    document.getElementById('sellSignals').textContent = summary.sell_signals;
-}
-
-function updateDataSources(sources) {
-    if (!sources) return;
-    
-    document.getElementById('kotakNeoCount').textContent = `${sources.kotak_neo_quotes} signals`;
-    document.getElementById('realtimeCount').textContent = `${sources.realtime_quotes} signals`;
-    document.getElementById('signalDataCount').textContent = `${sources.signal_data} signals`;
-}
-
-function showError(message) {
-    // Simple error display - could be enhanced with toast notifications
-    console.error(message);
-}
-
-// Initialize page
-document.addEventListener('DOMContentLoaded', function() {
-    // Initial load
-    refreshSignals();
-    
-    // Set up auto-refresh
-    refreshInterval = setInterval(refreshSignals, AUTO_REFRESH_INTERVAL);
-    
-    console.log('Admin Trade Signals page initialized with 5-minute auto-refresh');
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', function() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>

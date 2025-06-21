@@ -97,6 +97,15 @@ def dashboard():
             if not isinstance(dashboard_data['holdings'], list):
                 dashboard_data['holdings'] = []
             if not isinstance(dashboard_data['recent_orders'], list):
+
+
+@main_bp.route('/admin-signals-datatable')
+def admin_signals_datatable():
+    """Admin Trade Signals DataTable page"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    return render_template('admin_signals_datatable.html')
+
                 dashboard_data['recent_orders'] = []
 
             dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))

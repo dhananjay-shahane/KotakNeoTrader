@@ -299,29 +299,45 @@ def get_admin_signals_datatable():
                 signal.last_update_time = datetime.utcnow()
                 db.session.commit()
             
-            signal_dict = signal.to_dict()
+            # Calculate values
+            entry_price = float(signal.entry_price) if signal.entry_price else 0
+            current_price = float(signal.current_price) if signal.current_price else entry_price
+            target_price = float(signal.target_price) if signal.target_price else 0
+            quantity = signal.quantity or 0
+            investment = entry_price * quantity
+            current_value = current_price * quantity
+            pnl = current_value - investment
+            change_percent = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0
             
-            # Add user information
-            signal_dict.update({
-                'admin_name': signal.admin_user.greeting_name if signal.admin_user else 'N/A',
-                'target_user_ucc': signal.target_user.ucc if signal.target_user else 'N/A',
-                'target_user_name': signal.target_user.greeting_name if signal.target_user else 'N/A'
-            })
+            # Format data according to new column structure
+            signal_data = {
+                'target_user_id': signal.target_user_id,
+                'symbol': signal.symbol,
+                'field_30': '-',  # Placeholder field
+                'day_high': f"₹{current_price:.2f}",  # Using current price as day high
+                'created_date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '-',
+                'position_type': 'LONG' if signal.signal_type == 'BUY' else 'SHORT',
+                'quantity': quantity,
+                'entry_price_formatted': f"₹{entry_price:.2f}",
+                'current_price_formatted': f"₹{current_price:.2f}",
+                'change_percent_formatted': f"{change_percent:.2f}%",
+                'investment_formatted': f"₹{investment:,.2f}",
+                'target_price_formatted': f"₹{target_price:.2f}" if target_price > 0 else '-',
+                'target_value_achieved': f"₹{target_price * quantity:,.2f}" if target_price > 0 else '-',
+                'target_percent_return': f"{((target_price - entry_price) / entry_price * 100):.2f}%" if target_price > 0 and entry_price > 0 else '-',
+                'pnl_formatted': f"₹{pnl:,.2f}",
+                'exit_date': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '-',
+                'profit_ratio': f"{(pnl / investment):.4f}" if investment > 0 else '0',
+                'profit_percent': f"{(pnl / investment * 100):.2f}%" if investment > 0 else '0%',
+                'initial_value': f"₹{investment:,.2f}",
+                'initial_percent': '100%',
+                'net_total': f"₹{current_value:,.2f}",
+                'quote': f"₹{current_price:.2f}",
+                'field_7': '-',  # Placeholder field
+                'percent_change': f"{change_percent:.2f}%"
+            }
             
-            # Format for display
-            signal_dict.update({
-                'entry_price_formatted': f"₹{float(signal.entry_price):,.2f}" if signal.entry_price else "₹0.00",
-                'current_price_formatted': f"₹{float(signal.current_price):,.2f}" if signal.current_price else "₹0.00",
-                'target_price_formatted': f"₹{float(signal.target_price):,.2f}" if signal.target_price else "N/A",
-                'stop_loss_formatted': f"₹{float(signal.stop_loss):,.2f}" if signal.stop_loss else "N/A",
-                'change_percent_formatted': f"{float(signal.change_percent):.2f}%" if signal.change_percent else "0.00%",
-                'status_badge': get_status_badge(signal.status),
-                'signal_type_badge': get_signal_type_badge(signal.signal_type),
-                'priority_badge': get_priority_badge(signal.priority),
-                'last_update': latest_quote.timestamp.strftime('%H:%M:%S') if latest_quote else 'N/A'
-            })
-            
-            formatted_data.append(signal_dict)
+            formatted_data.append(signal_data)
         
         result['data'] = formatted_data
         return jsonify(result)
