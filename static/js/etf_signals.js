@@ -181,7 +181,7 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
     if (!this.positions || this.positions.length === 0) {
         var row = tbody.insertRow();
-        row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF signals found</td>';
+        row.innerHTML = '<td colspan="25" class="text-center text-muted">No admin trade signals found in database. Only real database records are displayed.</td>';
         return;
     }
 

@@ -37,74 +37,7 @@ def get_admin_signals():
             db.session.add(target_user)
             db.session.commit()
 
-        # Check if we need to populate initial data
-        existing_signals = AdminTradeSignal.query.filter_by(target_user_id=target_user.id).count()
-
-        if existing_signals == 0:
-            # Create initial ETF signals data in admin_trade_signals table
-            csv_etf_data = [
-                {'etf': 'MID150BEES', 'pos': 1, 'qty': 200, 'ep': 227.02, 'tp': 254.26, 'date': '22-Nov-2024'},
-                {'etf': 'ITETF', 'pos': 1, 'qty': 500, 'ep': 47.13, 'tp': 52.79, 'date': '13-Dec-2024'},
-                {'etf': 'CONSUMBEES', 'pos': 0, 'qty': 700, 'ep': 124.0, 'tp': 127.83, 'date': '20-Dec-2024'},
-                {'etf': 'SILVERBEES', 'pos': 0, 'qty': 1100, 'ep': 86.85, 'tp': 88.49, 'date': '16-Dec-2024'},
-                {'etf': 'GOLDBEES', 'pos': 0, 'qty': 800, 'ep': 66.0, 'tp': 67.5, 'date': '22-Nov-2024'},
-                {'etf': 'FMCGIETF', 'pos': 1, 'qty': 1600, 'ep': 59.73, 'tp': 66.90, 'date': '16-Dec-2024'},
-                {'etf': 'JUNIORBEES', 'pos': 1, 'qty': 50, 'ep': 780.32, 'tp': 873.96, 'date': '16-Dec-2024'},
-                {'etf': 'AUTOIETF', 'pos': 1, 'qty': 2800, 'ep': 24.31, 'tp': 27.23, 'date': '16-Dec-2024'},
-                {'etf': 'PHARMABEES', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'tp': 25.42, 'date': '16-Dec-2024'},
-                {'etf': 'INFRABEES', 'pos': 1, 'qty': 120, 'ep': 880.51, 'tp': 986.17, 'date': '24-Dec-2024'},
-                {'etf': 'HDFCSML250', 'pos': 0, 'qty': 600, 'ep': 178.27, 'tp': 149.26, 'date': '30-Dec-2024'},
-                {'etf': 'NEXT50IETF', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
-                {'etf': 'NIF100BEES', 'pos': 1, 'qty': 400, 'ep': 259.64, 'tp': 290.80, 'date': '30-Dec-2024'},
-                {'etf': 'FINIETF', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'tp': 29.83, 'date': '3-Jan-2025'},
-                {'etf': 'TNIDETF', 'pos': 1, 'qty': 20, 'ep': 101.03, 'tp': 113.15, 'date': '6-Jan-2025'},
-                {'etf': 'MOM30IETF', 'pos': 1, 'qty': 3200, 'ep': 31.34, 'tp': 35.10, 'date': '13-Jan-2025'},
-                {'etf': 'MON100', 'pos': 0, 'qty': 550, 'ep': 192.0, 'tp': 196.81, 'date': '13-Jan-2025'},
-                {'etf': 'HEALTHIETF', 'pos': 0, 'qty': 750, 'ep': 145.05, 'tp': 149.01, 'date': '13-Jan-2025'},
-                {'etf': 'NIFTYBEES', 'pos': 0, 'qty': 400, 'ep': 265.43, 'tp': 256.06, 'date': '24-Dec-2024'},
-                {'etf': 'HDFCPVTBAN', 'pos': 0, 'qty': 4000, 'ep': 25.19, 'tp': 24.36, 'date': '24-Dec-2024'}
-            ]
-
-            # Store data in admin_trade_signals table
-            admin_user = User.query.filter_by(ucc='admin').first()
-            if not admin_user:
-                admin_user = User(
-                    ucc='admin',
-                    mobile_number='9999999999',
-                    greeting_name='Admin User',
-                    user_id='admin',
-                    is_active=True
-                )
-                db.session.add(admin_user)
-                db.session.commit()
-
-            for etf_data in csv_etf_data:
-                try:
-                    entry_date = datetime.strptime(etf_data['date'], '%d-%b-%Y')
-                except:
-                    entry_date = datetime.now()
-
-                signal = AdminTradeSignal(
-                    admin_user_id=admin_user.id,
-                    target_user_id=target_user.id,
-                    symbol=etf_data['etf'],
-                    trading_symbol=f"{etf_data['etf']}-EQ",
-                    signal_type='BUY' if etf_data['pos'] == 1 else 'SELL',
-                    entry_price=etf_data['ep'],
-                    target_price=etf_data['tp'],
-                    quantity=etf_data['qty'],
-                    signal_title=f"ETF Signal - {etf_data['etf']}",
-                    signal_description=f"{'Long' if etf_data['pos'] == 1 else 'Short'} position in {etf_data['etf']}",
-                    priority='MEDIUM',
-                    status='ACTIVE',
-                    created_at=entry_date,
-                    signal_date=entry_date.date(),
-                    exchange='NSE'
-                )
-                db.session.add(signal)
-
-            db.session.commit()
-            logger.info(f"Created {len(csv_etf_data)} initial ETF signals in admin_trade_signals table")
+        # No sample data creation - only show real admin_trade_signals data
 
         # Get all admin trade signals for the target user (zhz3j)
         signals = AdminTradeSignal.query.filter_by(
@@ -112,7 +45,7 @@ def get_admin_signals():
         ).order_by(AdminTradeSignal.created_at.desc()).all()
 
         if not signals:
-            logger.warning("No admin trade signals found")
+            logger.info("No real admin trade signals found in database")
             return jsonify({
                 'success': True,
                 'signals': [],
@@ -125,7 +58,7 @@ def get_admin_signals():
                     'active_positions': 0,
                     'closed_positions': 0
                 },
-                'message': 'No signals found'
+                'message': 'No admin trade signals found. Only real database records will be displayed.'
             })
 
         # Get comprehensive market data - PRIORITIZE Kotak Neo quotes for CMP
@@ -294,13 +227,12 @@ def get_admin_signals():
                     data_source = 'SIMULATED_MARKET_PRICE'
                     logger.info(f"📊 {signal.symbol}: Using simulated market price ₹{current_price:.2f} (variation: {change_percent:.2f}%)")
             else:
-                # Generate realistic current market price based on entry price with market simulation
-                import random
-                price_variation = random.uniform(-0.08, 0.12)  # Realistic market variation (-8% to +12%)
-                current_price = entry_price * (1 + price_variation)
-                change_percent = ((current_price - entry_price) / entry_price) * 100
-                data_source = 'SIMULATED_MARKET_PRICE'
-                logger.info(f"📊 {signal.symbol}: Using simulated market price ₹{current_price:.2f} (variation: {change_percent:.2f}%)")
+                # Use entry price as fallback when no live data available
+                if not current_price or current_price <= 0:
+                    current_price = entry_price
+                    change_percent = 0  # No change when using entry price
+                    data_source = 'ENTRY_PRICE_FALLBACK'
+                    logger.info(f"📊 {signal.symbol}: Using entry price as CMP ₹{current_price:.2f}")
 
             # Always update signal with calculated current price
             try:
