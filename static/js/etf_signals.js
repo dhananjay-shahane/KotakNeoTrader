@@ -109,33 +109,44 @@ ETFSignalsManager.prototype.loadPositions = function() {
     var self = this;
     this.showLoading(true);
 
-    fetch('/api/etf-signals-data')
-        .then(function(response) { 
-            return response.json(); 
-        })
-        .then(function(data) {
-            if (data.success) {
-                self.positions = data.signals || [];
-                self.renderPositionsTable();
-                self.updateSummaryCards(data.portfolio || {});
-                self.updateVisibleCount();
-            } else {
-                self.showAlert('Error loading positions: ' + (data.message || 'Unknown error'), 'error');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error:', error);
-            self.showAlert('Error loading positions: ' + error.message, 'error');
-        })
-        .finally(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/etf/signals', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
             self.showLoading(false);
-        });
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        self.positions = data.signals || [];
+                        self.renderPositionsTable();
+                        self.updateSummaryCards(data.portfolio || {});
+                        self.updateVisibleCount();
+                        console.log('Loaded', self.positions.length, 'ETF signals');
+                    } else {
+                        self.showAlert('Error loading positions: ' + (data.message || 'Unknown error'), 'error');
+                    }
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    self.showAlert('Error parsing server response', 'error');
+                }
+            } else {
+                self.showAlert('Error loading positions: Server error ' + xhr.status, 'error');
+            }
+        }
+    };
+    xhr.send();
 };
 
 ETFSignalsManager.prototype.showLoading = function(show) {
     var loader = document.getElementById('loadingSpinner');
     if (loader) {
         loader.style.display = show ? 'block' : 'none';
+    }
+    
+    var tbody = document.getElementById('signalsTableBody');
+    if (tbody && show) {
+        tbody.innerHTML = '<tr><td colspan="25" class="text-center">Loading ETF signals...</td></tr>';
     }
 };
 
@@ -162,7 +173,10 @@ ETFSignalsManager.prototype.showAlert = function(message, type) {
 
 ETFSignalsManager.prototype.renderPositionsTable = function() {
     var tbody = document.getElementById('signalsTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('Table body not found');
+        return;
+    }
 
     tbody.innerHTML = '';
     
@@ -171,6 +185,8 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
         row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF signals found</td>';
         return;
     }
+    
+    console.log('Rendering', this.positions.length, 'positions');
     
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
@@ -181,40 +197,48 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
 ETFSignalsManager.prototype.createPositionRow = function(position) {
     var row = document.createElement('tr');
-    var pnlClass = (position.pl || 0) >= 0 ? 'profit' : 'loss';
-    var changeClass = (position.change_pct || 0) >= 0 ? 'profit' : 'loss';
     
-    // Ensure symbol is properly displayed
-    var symbolDisplay = position.symbol || position.etf || '';
+    // Ensure we have valid data with fallbacks
+    var symbol = position.symbol || position.etf || 'N/A';
+    var entryPrice = parseFloat(position.ep || position.entry_price || 0);
+    var currentPrice = parseFloat(position.cmp || position.current_price || entryPrice);
+    var quantity = parseInt(position.qty || position.quantity || 0);
+    var pnl = parseFloat(position.pl || position.pnl_amount || 0);
+    var changePct = parseFloat(position.change_pct || position.change_percent || 0);
+    var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
+    var targetPrice = parseFloat(position.tp || position.target_price || 0);
+    
+    var pnlClass = pnl >= 0 ? 'profit' : 'loss';
+    var changeClass = changePct >= 0 ? 'profit' : 'loss';
     
     row.innerHTML = 
-        '<td><strong>' + symbolDisplay + '</strong></td>' +
+        '<td><strong>' + symbol + '</strong></td>' +
         '<td>' + (position.thirty || '0%') + '</td>' +
         '<td>' + (position.dh || '0') + '</td>' +
         '<td>' + (position.date || '') + '</td>' +
         '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-secondary') + '">' + (position.pos == 1 ? '1 (OPEN)' : '0 (CLOSED)') + '</span></td>' +
-        '<td>' + (position.qty || 0) + '</td>' +
-        '<td>₹' + (position.ep || 0).toFixed(2) + '</td>' +
-        '<td class="' + changeClass + '">₹' + (position.cmp || 0).toFixed(2) + 
+        '<td>' + quantity + '</td>' +
+        '<td>₹' + entryPrice.toFixed(2) + '</td>' +
+        '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + 
         (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">KN</span>' : '') + '</td>' +
-        '<td class="' + changeClass + '">' + (position.change_pct || 0).toFixed(2) + '%</td>' +
-        '<td>₹' + (position.inv || 0).toFixed(0) + '</td>' +
-        '<td>₹' + (position.tp || 0).toFixed(2) + '</td>' +
+        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
+        '<td>₹' + investment.toFixed(0) + '</td>' +
+        '<td>₹' + targetPrice.toFixed(2) + '</td>' +
         '<td>₹' + (position.tva || 0).toFixed(0) + '</td>' +
         '<td class="profit">₹' + (position.tpr || 0).toFixed(0) + '</td>' +
-        '<td class="' + pnlClass + '">₹' + (position.pl || 0).toFixed(0) + '</td>' +
+        '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
         '<td>' + (position.ed || '') + '</td>' +
         '<td>' + (position.exp || '') + '</td>' +
         '<td>' + (position.pr || '0%') + '</td>' +
         '<td>' + (position.pp || '★') + '</td>' +
-        '<td>' + (position.iv || 0) + '</td>' +
-        '<td class="' + changeClass + '">' + (position.ip || '0%') + '</td>' +
+        '<td>' + (position.iv || investment.toFixed(0)) + '</td>' +
+        '<td class="' + changeClass + '">' + (position.ip || changePct.toFixed(2) + '%') + '</td>' +
         '<td><small>' + (position.nt || '') + '</small></td>' +
         '<td><small>' + (position.qt || '') + '</small></td>' +
         '<td class="' + changeClass + '">' + (position.seven || '0%') + '</td>' +
-        '<td class="' + changeClass + '">' + (position.change2 || 0).toFixed(2) + '%</td>' +
+        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>' +
-        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + (position.symbol || position.etf || '') + '\', ' + (position.cmp || position.ep || 0) + ')">Add Deal</button>' +
+        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')">Add Deal</button>' +
         '</td>';
     
     return row;
@@ -225,8 +249,8 @@ ETFSignalsManager.prototype.updateSummaryCards = function(portfolio) {
     var totalPnl = document.getElementById('totalPnl');
     var totalPositions = document.getElementById('totalPositions');
 
-    if (totalValue && portfolio.total_value !== undefined) {
-        totalValue.textContent = '₹' + portfolio.total_value.toFixed(2);
+    if (totalValue && portfolio.current_value !== undefined) {
+        totalValue.textContent = '₹' + portfolio.current_value.toFixed(2);
     }
 
     if (totalPnl && portfolio.total_pnl !== undefined) {
@@ -259,6 +283,7 @@ ETFSignalsManager.prototype.startAutoRefresh = function() {
         this.liveDataInterval = setInterval(function() {
             self.loadPositions();
         }, this.autoRefreshInterval);
+        console.log('Auto refresh started:', this.autoRefreshInterval + 'ms');
     }
 };
 
@@ -266,11 +291,11 @@ ETFSignalsManager.prototype.stopAutoRefresh = function() {
     if (this.liveDataInterval) {
         clearInterval(this.liveDataInterval);
         this.liveDataInterval = null;
+        console.log('Auto refresh stopped');
     }
 };
 
 ETFSignalsManager.prototype.initLiveDataConnection = function() {
-    // Placeholder for WebSocket connection
     console.log('Live data connection initialized');
 };
 
@@ -283,17 +308,14 @@ ETFSignalsManager.prototype.showAddDealModal = function() {
 };
 
 ETFSignalsManager.prototype.savePosition = function() {
-    // Placeholder for save position functionality
     console.log('Save position called');
 };
 
 ETFSignalsManager.prototype.searchETFSymbols = function(query) {
-    // Placeholder for ETF symbol search
     console.log('Searching ETF symbols:', query);
 };
 
 ETFSignalsManager.prototype.filterPositions = function() {
-    // Placeholder for position filtering
     console.log('Filtering positions');
 };
 
@@ -324,7 +346,10 @@ function setRefreshInterval(interval, text) {
     if (window.etfSignalsManager) {
         window.etfSignalsManager.autoRefreshInterval = interval;
         window.etfSignalsManager.startAutoRefresh();
-        document.getElementById('currentInterval').textContent = text;
+        var currentInterval = document.getElementById('currentInterval');
+        if (currentInterval) {
+            currentInterval.textContent = text;
+        }
     }
 }
 
@@ -334,10 +359,16 @@ function exportSignals() {
     }
 }
 
+function addDeal(symbol, price) {
+    var dealUrl = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price;
+    window.location.href = dealUrl;
+}
+
 // Initialize ETF Signals Manager when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof window.etfSignalsManager === 'undefined') {
         window.etfSignalsManager = new ETFSignalsManager();
+        console.log('ETF Signals Manager initialized');
     }
 });
 
@@ -345,5 +376,6 @@ document.addEventListener('DOMContentLoaded', function() {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     if (typeof window.etfSignalsManager === 'undefined') {
         window.etfSignalsManager = new ETFSignalsManager();
+        console.log('ETF Signals Manager initialized (fallback)');
     }
 }

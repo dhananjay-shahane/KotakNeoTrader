@@ -294,9 +294,15 @@ def get_admin_signals():
                 else:
                     logger.warning(f"⚠️ {signal.symbol}: Invalid Kotak Neo CMP, using fallback")
             else:
+                # Ensure we always have a valid current price - use entry price as last resort
+                if not current_price or current_price <= 0:
+                    current_price = entry_price
+                    logger.info(f"📊 {signal.symbol}: Using entry price as CMP fallback ₹{current_price}")
+                
                 # Calculate change percent from entry price (fallback only)
                 change_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
-                logger.warning(f"⚠️ {signal.symbol}: No Kotak Neo data found, using signal CMP ₹{current_price}")
+                data_source = 'SIGNAL_DATA_FALLBACK'
+                logger.warning(f"⚠️ {signal.symbol}: No live data found, using signal/entry price ₹{current_price}")
 
             # Investment calculation
             invested_amount = entry_price * quantity
@@ -331,12 +337,19 @@ def get_admin_signals():
                 'pos': 1 if signal.signal_type == 'BUY' else 0,  # 1 for LONG, 0 for SHORT
                 'qty': qty,
                 'ep': round(ep, 2),
-                'cmp': round(cmp, 2),
-                'pl': round(pl, 2),
-                'chg': round(chg, 2),
-                'inv': round(inv, 2),
+                'cmp': round(current_price, 2),  # Use processed current_price
+                'pl': round(pnl_amount, 2),
+                'chg': round(change_percent, 2),
+                'change_pct': round(change_percent, 2),
+                'inv': round(invested_amount, 2),
                 'tp': signal.target_price or 0,
-                'status': signal.status or 'ACTIVE'
+                'status': signal.status or 'ACTIVE',
+                'data_source': data_source,
+                'entry_price': round(entry_price, 2),
+                'current_price': round(current_price, 2),
+                'invested_amount': round(invested_amount, 2),
+                'pnl_amount': round(pnl_amount, 2),
+                'change_percent': round(change_percent, 2)
             }
 
             signals_data.append(signal_data)
