@@ -95,7 +95,12 @@ from trading_functions import TradingFunctions
 from user_manager import UserManager
 from session_helper import SessionHelper
 from websocket_handler import WebSocketHandler
-from supabase_client import supabase_client
+try:
+    from supabase_client import SupabaseClient
+    supabase_client = SupabaseClient()
+except Exception as e:
+    print(f"Supabase client initialization failed: {e}")
+    supabase_client = None
 
 neo_client = NeoClient()
 trading_functions = TradingFunctions()
@@ -104,9 +109,12 @@ session_helper = SessionHelper()
 websocket_handler = WebSocketHandler()
 
 # Log Supabase connection status
-if supabase_client.is_connected():
-    logging.info("✅ Supabase integration active")
-else:
+try:
+    if supabase_client and supabase_client.is_connected():
+        logging.info("✅ Supabase integration active")
+    else:
+        logging.warning("⚠️ Supabase not configured, using local database only")
+except:
     logging.warning("⚠️ Supabase not configured, using local database only")
 
 def validate_current_session():
