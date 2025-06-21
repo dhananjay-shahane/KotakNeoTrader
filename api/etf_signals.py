@@ -54,7 +54,7 @@ def get_admin_signals():
                 {'etf': 'PHARMABEES', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'tp': 25.42, 'date': '16-Dec-2024'},
                 {'etf': 'INFRABEES', 'pos': 1, 'qty': 120, 'ep': 880.51, 'tp': 986.17, 'date': '24-Dec-2024'},
                 {'etf': 'HDFCSML250', 'pos': 0, 'qty': 600, 'ep': 178.27, 'tp': 149.26, 'date': '30-Dec-2024'},
-                {'etf': 'NEXT50IETF', 'pos': 1, 'qty: 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
+                {'etf': 'NEXT50IETF', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
                 {'etf': 'NIF100BEES', 'pos': 1, 'qty': 400, 'ep': 259.64, 'tp': 290.80, 'date': '30-Dec-2024'},
                 {'etf': 'FINIETF', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'tp': 29.83, 'date': '3-Jan-2025'},
                 {'etf': 'TNIDETF', 'pos': 1, 'qty': 20, 'ep': 101.03, 'tp': 113.15, 'date': '6-Jan-2025'},
