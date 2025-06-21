@@ -372,15 +372,13 @@ def api_live_quotes():
         }), 500
 
 @main_bp.route('/etf-signals')
-@login_required
 def etf_signals():
     """ETF Signals page"""
     try:
-        return render_template('etf_signals_clean.html')
+        return render_template('etf_signals_minimal.html')
     except Exception as e:
         logging.error(f"ETF signals page error: {str(e)}")
-        flash('Error loading ETF signals page', 'error')
-        return redirect(url_for('main.dashboard'))
+        return f"Error loading ETF signals page: {str(e)}"
 
 @main_bp.route('/api/etf_positions')
 @login_required
