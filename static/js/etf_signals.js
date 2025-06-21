@@ -1,3 +1,4 @@
+
 // ETF Signals Manager - ES5 Compatible
 function ETFSignalsManager() {
     this.positions = [];
@@ -108,7 +109,7 @@ ETFSignalsManager.prototype.loadPositions = function() {
     var self = this;
     this.showLoading(true);
 
-    fetch('/api/etf/signals')
+    fetch('/api/etf-signals-data')
         .then(function(response) { 
             return response.json(); 
         })
@@ -160,10 +161,16 @@ ETFSignalsManager.prototype.showAlert = function(message, type) {
 };
 
 ETFSignalsManager.prototype.renderPositionsTable = function() {
-    var tbody = document.getElementById('positionsTableBody');
+    var tbody = document.getElementById('signalsTableBody');
     if (!tbody) return;
 
     tbody.innerHTML = '';
+    
+    if (!this.positions || this.positions.length === 0) {
+        var row = tbody.insertRow();
+        row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF signals found</td>';
+        return;
+    }
     
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
@@ -174,19 +181,37 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
 ETFSignalsManager.prototype.createPositionRow = function(position) {
     var row = document.createElement('tr');
-    var pnlClass = (position.pnl || 0) >= 0 ? 'text-success' : 'text-danger';
+    var pnlClass = (position.pl || 0) >= 0 ? 'profit' : 'loss';
+    var changeClass = (position.change_pct || 0) >= 0 ? 'profit' : 'loss';
     
     row.innerHTML = 
-        '<td>' + (position.symbol || '') + '</td>' +
-        '<td>' + (position.signal_type || '') + '</td>' +
-        '<td>₹' + (position.entry_price || 0).toFixed(2) + '</td>' +
-        '<td>₹' + (position.current_price || 0).toFixed(2) + '</td>' +
-        '<td class="' + pnlClass + '">₹' + (position.pnl || 0).toFixed(2) + '</td>' +
-        '<td>' + (position.quantity || 0) + '</td>' +
-        '<td>' + (position.status || '') + '</td>' +
+        '<td><strong>' + (position.etf || position.symbol || '') + '</strong></td>' +
+        '<td>' + (position.thirty || '0%') + '</td>' +
+        '<td>' + (position.dh || '0') + '</td>' +
+        '<td>' + (position.date || '') + '</td>' +
+        '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-danger') + '">' + (position.pos == 1 ? 'LONG' : 'SHORT') + '</span></td>' +
+        '<td>' + (position.qty || 0) + '</td>' +
+        '<td>₹' + (position.ep || 0).toFixed(2) + '</td>' +
+        '<td class="' + changeClass + '">₹' + (position.cmp || 0).toFixed(2) + '</td>' +
+        '<td class="' + changeClass + '">' + (position.change_pct || 0).toFixed(2) + '%</td>' +
+        '<td>₹' + (position.inv || 0).toFixed(0) + '</td>' +
+        '<td>₹' + (position.tp || 0).toFixed(2) + '</td>' +
+        '<td>₹' + (position.tva || 0).toFixed(0) + '</td>' +
+        '<td class="profit">₹' + (position.tpr || 0).toFixed(0) + '</td>' +
+        '<td class="' + pnlClass + '">₹' + (position.pl || 0).toFixed(0) + '</td>' +
+        '<td>' + (position.ed || '') + '</td>' +
+        '<td>' + (position.exp || '') + '</td>' +
+        '<td>' + (position.pr || '0%') + '</td>' +
+        '<td>' + (position.pp || '★') + '</td>' +
+        '<td>' + (position.iv || 0) + '</td>' +
+        '<td class="' + changeClass + '">' + (position.ip || '0%') + '</td>' +
+        '<td><small>' + (position.nt || '') + '</small></td>' +
+        '<td><small>' + (position.qt || '') + '</small></td>' +
+        '<td class="' + changeClass + '">' + (position.seven || '0%') + '</td>' +
+        '<td class="' + changeClass + '">' + (position.change2 || 0).toFixed(2) + '%</td>' +
         '<td>' +
-        '<button class="btn btn-sm btn-outline-primary me-1" onclick="etfSignalsManager.editPosition(' + position.id + ')">Edit</button>' +
-        '<button class="btn btn-sm btn-outline-danger" onclick="etfSignalsManager.deletePosition(' + position.id + ')">Delete</button>' +
+        '<button class="btn btn-sm btn-outline-primary me-1" onclick="etfSignalsManager.editPosition(' + (position.id || 0) + ')">Edit</button>' +
+        '<button class="btn btn-sm btn-outline-danger" onclick="etfSignalsManager.deletePosition(' + (position.id || 0) + ')">Delete</button>' +
         '</td>';
     
     return row;
@@ -216,15 +241,22 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
     if (countElement) {
         countElement.textContent = this.positions.length;
     }
+    
+    var visibleSignalsCount = document.getElementById('visibleSignalsCount');
+    if (visibleSignalsCount) {
+        visibleSignalsCount.textContent = this.positions.length;
+    }
 };
 
 ETFSignalsManager.prototype.startAutoRefresh = function() {
     var self = this;
     this.stopAutoRefresh();
     
-    this.liveDataInterval = setInterval(function() {
-        self.loadPositions();
-    }, this.autoRefreshInterval);
+    if (this.autoRefreshInterval > 0) {
+        this.liveDataInterval = setInterval(function() {
+            self.loadPositions();
+        }, this.autoRefreshInterval);
+    }
 };
 
 ETFSignalsManager.prototype.stopAutoRefresh = function() {
@@ -277,6 +309,27 @@ ETFSignalsManager.prototype.exportToCSV = function() {
 ETFSignalsManager.prototype.exportToPDF = function() {
     console.log('Export to PDF');
 };
+
+// Global functions for button onclick handlers
+function refreshSignals() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.loadPositions();
+    }
+}
+
+function setRefreshInterval(interval, text) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.autoRefreshInterval = interval;
+        window.etfSignalsManager.startAutoRefresh();
+        document.getElementById('currentInterval').textContent = text;
+    }
+}
+
+function exportSignals() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.exportToCSV();
+    }
+}
 
 // Initialize ETF Signals Manager when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
