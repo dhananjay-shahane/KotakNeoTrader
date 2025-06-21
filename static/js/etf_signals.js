@@ -184,8 +184,11 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var pnlClass = (position.pl || 0) >= 0 ? 'profit' : 'loss';
     var changeClass = (position.change_pct || 0) >= 0 ? 'profit' : 'loss';
     
+    // Ensure symbol is properly displayed
+    var symbolDisplay = position.symbol || position.etf || '';
+    
     row.innerHTML = 
-        '<td><strong>' + (position.etf || position.symbol || '') + '</strong></td>' +
+        '<td><strong>' + symbolDisplay + '</strong></td>' +
         '<td>' + (position.thirty || '0%') + '</td>' +
         '<td>' + (position.dh || '0') + '</td>' +
         '<td>' + (position.date || '') + '</td>' +
