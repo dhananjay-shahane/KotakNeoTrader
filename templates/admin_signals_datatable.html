@@ -86,7 +86,7 @@
                             <table id="adminSignalsTable" class="table table-striped table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>target_user_id</th>
+                                        <th>user_target_id</th>
                                         <th>Symbol</th>
                                         <th>30</th>
                                         <th>DH</th>
@@ -169,30 +169,30 @@
                     }
                 },
                 columns: [
-                    { data: 'target_user_id', name: 'target_user_id' },
-                    { data: 'symbol', name: 'symbol' },
-                    { data: 'field_30', name: 'field_30', defaultContent: '-' },
-                    { data: 'day_high', name: 'day_high', defaultContent: '-' },
-                    { data: 'created_date', name: 'created_date' },
-                    { data: 'position_type', name: 'position_type' },
-                    { data: 'quantity', name: 'quantity' },
-                    { data: 'entry_price', name: 'entry_price' },
-                    { data: 'current_price', name: 'current_price' },
-                    { data: 'change_percent', name: 'change_percent' },
-                    { data: 'investment', name: 'investment' },
-                    { data: 'target_price', name: 'target_price' },
-                    { data: 'target_value_achieved', name: 'target_value_achieved', defaultContent: '-' },
-                    { data: 'target_percent_return', name: 'target_percent_return', defaultContent: '-' },
-                    { data: 'pnl', name: 'pnl' },
-                    { data: 'exit_date', name: 'exit_date', defaultContent: '-' },
-                    { data: 'profit_ratio', name: 'profit_ratio', defaultContent: '-' },
-                    { data: 'profit_percent', name: 'profit_percent', defaultContent: '-' },
-                    { data: 'initial_value', name: 'initial_value', defaultContent: '-' },
-                    { data: 'initial_percent', name: 'initial_percent', defaultContent: '-' },
-                    { data: 'net_total', name: 'net_total', defaultContent: '-' },
-                    { data: 'quote', name: 'quote', defaultContent: '-' },
-                    { data: 'field_7', name: 'field_7', defaultContent: '-' },
-                    { data: 'percent_change', name: 'percent_change', defaultContent: '-' }
+                    { data: 'user_target_id', name: 'user_target_id' },
+                    { data: 'Symbol', name: 'Symbol' },
+                    { data: '30', name: '30', defaultContent: '-' },
+                    { data: 'DH', name: 'DH', defaultContent: '-' },
+                    { data: 'Date', name: 'Date' },
+                    { data: 'Pos', name: 'Pos' },
+                    { data: 'Qty', name: 'Qty' },
+                    { data: 'EP', name: 'EP' },
+                    { data: 'CMP', name: 'CMP' },
+                    { data: '%Chan', name: '%Chan' },
+                    { data: 'Inv.', name: 'Inv.' },
+                    { data: 'TP', name: 'TP' },
+                    { data: 'TVA', name: 'TVA', defaultContent: '-' },
+                    { data: 'TPR', name: 'TPR', defaultContent: '-' },
+                    { data: 'PL', name: 'PL' },
+                    { data: 'ED', name: 'ED', defaultContent: '-' },
+                    { data: 'PR', name: 'PR', defaultContent: '-' },
+                    { data: 'PP', name: 'PP', defaultContent: '-' },
+                    { data: 'IV', name: 'IV', defaultContent: '-' },
+                    { data: 'IP', name: 'IP', defaultContent: '-' },
+                    { data: 'NT', name: 'NT', defaultContent: '-' },
+                    { data: 'Qt', name: 'Qt', defaultContent: '-' },
+                    { data: '7', name: '7', defaultContent: '-' },
+                    { data: '%Ch', name: '%Ch', defaultContent: '-' }
                 ],
                 pageLength: 25,
                 responsive: true,
