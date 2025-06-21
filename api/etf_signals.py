@@ -417,13 +417,16 @@ def get_admin_signals():
                 position_status = 1 if signal.status == 'ACTIVE' else 0
 
                 # Create signal data matching CSV columns
+                # Position status: 1 for active/open positions, 0 for closed/inactive
+                position_status = 1 if signal.status == 'ACTIVE' else 0
+
                 signal_data = {
                     'id': signal.id,
                     'etf': signal.symbol,  # ETF column
                     'thirty': f"{pnl_percent * 1.2:.1f}",  # 30-day performance (simulated)
                     'dh': str(days_held),  # DH (Days Held)
                     'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',  # Date
-                    'pos': position_status,  # Pos (Position status)
+                    'pos': position_status,  # Pos (Position status: 1=open, 0=closed)
                     'qty': quantity,  # Qty
                     'ep': entry_price,  # EP (Entry Price)
                     'cmp': current_price,  # CMP (Current Market Price)

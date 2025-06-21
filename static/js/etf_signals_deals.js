@@ -147,9 +147,9 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
                     break;
                 case 'pos':
                     if (signal.pos === 1) {
-                        cellContent = '<span class="badge bg-success">LONG</span>';
+                        cellContent = '<span class="badge bg-success">1 (OPEN)</span>';
                     } else {
-                        cellContent = '<span class="badge bg-danger">SHORT</span>';
+                        cellContent = '<span class="badge bg-secondary">0 (CLOSED)</span>';
                     }
                     break;
                 case 'qty':
@@ -230,7 +230,7 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
                     break;
                 case 'actions':
                     cellContent = 
-                        '<button class="btn btn-sm btn-primary me-1" onclick="addDeal(\'' + 
+                        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + 
                         (signal.symbol || signal.etf || '') + '\', ' + (signal.cmp || signal.ep || 0) + ')">' +
                         'Add Deal</button>';
                     break;
@@ -424,8 +424,19 @@ function exportSignals() {
 }
 
 function addDeal(symbol, price) {
-    alert('Add Deal functionality for ' + symbol + ' at ₹' + price.toFixed(2));
-    // You can implement the actual add deal functionality here
+    // Create a simple modal or redirect to deals page with pre-filled data
+    var dealUrl = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price;
+    
+    // Option 1: Open in new tab
+    // window.open(dealUrl, '_blank');
+    
+    // Option 2: Navigate to deals page
+    window.location.href = dealUrl;
+    
+    // Option 3: Show a simple confirmation
+    // if (confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + '?')) {
+    //     window.location.href = dealUrl;
+    // }
 }
 
 // Initialize when DOM is ready

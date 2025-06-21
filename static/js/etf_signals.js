@@ -192,7 +192,7 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>' + (position.thirty || '0%') + '</td>' +
         '<td>' + (position.dh || '0') + '</td>' +
         '<td>' + (position.date || '') + '</td>' +
-        '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-danger') + '">' + (position.pos == 1 ? 'LONG' : 'SHORT') + '</span></td>' +
+        '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-secondary') + '">' + (position.pos == 1 ? '1 (OPEN)' : '0 (CLOSED)') + '</span></td>' +
         '<td>' + (position.qty || 0) + '</td>' +
         '<td>₹' + (position.ep || 0).toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">₹' + (position.cmp || 0).toFixed(2) + '</td>' +
@@ -213,8 +213,7 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td class="' + changeClass + '">' + (position.seven || '0%') + '</td>' +
         '<td class="' + changeClass + '">' + (position.change2 || 0).toFixed(2) + '%</td>' +
         '<td>' +
-        '<button class="btn btn-sm btn-outline-primary me-1" onclick="etfSignalsManager.editPosition(' + (position.id || 0) + ')">Edit</button>' +
-        '<button class="btn btn-sm btn-outline-danger" onclick="etfSignalsManager.deletePosition(' + (position.id || 0) + ')">Delete</button>' +
+        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + (position.symbol || position.etf || '') + '\', ' + (position.cmp || position.ep || 0) + ')">Add Deal</button>' +
         '</td>';
     
     return row;
