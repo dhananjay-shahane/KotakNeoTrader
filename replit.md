@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 21, 2025** - Redesigned ETF signals page to match deals page UI and functionality
+  - Implemented professional card-based layout with advanced filtering system
+  - Added column visibility controls and pagination for large datasets  
+  - Built auto-refresh functionality with configurable intervals (5s to 10m)
+  - Created export functionality and action buttons for signal execution
+  - Enhanced table design with color-coded P&L indicators and status badges
+  - Converted all JavaScript to ES5 for maximum browser compatibility
+  - Fixed "Unexpected token 'class'" errors by removing ES6 syntax
+
 - **June 20, 2025** - Implemented Kotak Neo incremental data collection system
   - Built 5-minute interval data collector storing 1 row per update in admin_trade_signals table
   - Enhanced database schema with additional trading fields (investment_amount, current_value, pnl, pnl_percentage)
