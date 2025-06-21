@@ -1,47 +1,89 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Trade Signals DataTable</title>
+    <title>Admin Trade Signals - DataTable</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        .signals-table {
-            font-size: 12px;
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-bottom: 1rem;
         }
-        .signals-table th,
-        .signals-table td {
-            padding: 4px 6px;
-            vertical-align: middle;
-            text-align: center;
+        
+        .table-responsive {
+            border-radius: 0.375rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
-        .table-container {
-            overflow-x: auto;
-        }
+        
         .badge {
-            font-size: 10px;
+            font-size: 0.75rem;
         }
-        .text-success { color: #28a745 !important; }
+        
+        .text-success { color: #198754 !important; }
         .text-danger { color: #dc3545 !important; }
-        .text-warning { color: #ffc107 !important; }
+        .text-warning { color: #fd7e14 !important; }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container-fluid py-3">
+<body>
+    <div class="container-fluid mt-4">
         <div class="row">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-signal me-2"></i>Admin Trade Signals
-                            <span class="badge bg-info ms-2" id="signalsCount">Loading...</span>
-                        </h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>
+                        Admin Trade Signals
+                    </h2>
+                    <div class="d-flex gap-2">
+                        <button id="refreshBtn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <span class="badge bg-info" id="signalsCount">Loading...</span>
                     </div>
+                </div>
+                
+                <div class="card">
                     <div class="card-body p-0">
-                        <div class="table-container">
-                            <table class="table table-hover signals-table mb-0" id="adminSignalsTable">
+                        <div class="table-responsive">
+                            <table id="adminSignalsTable" class="table table-striped table-hover mb-0">
                                 <thead>
                                     <tr>
                                         <th>target_user_id</th>
@@ -71,7 +113,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Data will be loaded via DataTables -->
+                                    <!-- Data will be loaded via AJAX -->
                                 </tbody>
                             </table>
                         </div>
@@ -81,23 +123,49 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            const table = $('#adminSignalsTable').DataTable({
+            let table = $('#adminSignalsTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: '/api/datatable/admin-signals',
+                    url: '/api/admin-signals',
                     type: 'POST',
-                    contentType: 'application/json',
                     data: function(d) {
                         return JSON.stringify(d);
+                    },
+                    contentType: 'application/json',
+                    beforeSend: function() {
+                        $('#loadingOverlay').show();
+                    },
+                    complete: function() {
+                        $('#loadingOverlay').hide();
+                    },
+                    error: function(xhr, error, thrown) {
+                        console.error('DataTable AJAX Error:', error, thrown);
+                        alert('Error loading data. Please try again.');
+                        $('#loadingOverlay').hide();
                     }
                 },
                 columns: [
@@ -108,14 +176,14 @@
                     { data: 'created_date', name: 'created_date' },
                     { data: 'position_type', name: 'position_type' },
                     { data: 'quantity', name: 'quantity' },
-                    { data: 'entry_price_formatted', name: 'entry_price' },
-                    { data: 'current_price_formatted', name: 'current_price' },
-                    { data: 'change_percent_formatted', name: 'change_percent' },
-                    { data: 'investment_formatted', name: 'investment' },
-                    { data: 'target_price_formatted', name: 'target_price' },
+                    { data: 'entry_price', name: 'entry_price' },
+                    { data: 'current_price', name: 'current_price' },
+                    { data: 'change_percent', name: 'change_percent' },
+                    { data: 'investment', name: 'investment' },
+                    { data: 'target_price', name: 'target_price' },
                     { data: 'target_value_achieved', name: 'target_value_achieved', defaultContent: '-' },
                     { data: 'target_percent_return', name: 'target_percent_return', defaultContent: '-' },
-                    { data: 'pnl_formatted', name: 'pnl' },
+                    { data: 'pnl', name: 'pnl' },
                     { data: 'exit_date', name: 'exit_date', defaultContent: '-' },
                     { data: 'profit_ratio', name: 'profit_ratio', defaultContent: '-' },
                     { data: 'profit_percent', name: 'profit_percent', defaultContent: '-' },
@@ -139,11 +207,20 @@
                 language: {
                     processing: '<i class="fas fa-spinner fa-spin"></i> Loading signals...',
                     emptyTable: 'No admin trade signals found',
-                    zeroRecords: 'No matching signals found'
+                    zeroRecords: 'No matching signals found',
+                    info: 'Showing _START_ to _END_ of _TOTAL_ signals',
+                    infoEmpty: 'Showing 0 to 0 of 0 signals',
+                    infoFiltered: '(filtered from _MAX_ total signals)',
+                    search: 'Search signals:'
                 }
             });
 
-            // Auto refresh every 30 seconds
+            // Refresh button
+            $('#refreshBtn').click(function() {
+                table.ajax.reload();
+            });
+
+            // Auto-refresh every 30 seconds
             setInterval(function() {
                 table.ajax.reload(null, false);
             }, 30000);

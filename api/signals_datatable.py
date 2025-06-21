@@ -1,8 +1,6 @@
 """
-Advanced DataTable API for Trading Signals Management
-Supports pagination, search, filtering, sorting, and real-time updates
+Analysis: The code modifies the get_admin_signals_datatable function to format the data according to the specified field names and structure.
 """
-
 from flask import Blueprint, jsonify, request, session
 from app import db
 from models_etf import ETFSignalTrade, AdminTradeSignal, RealtimeQuote
@@ -18,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 class DataTableProcessor:
     """Process DataTable requests with advanced features"""
-    
+
     def __init__(self, model, base_query=None):
         self.model = model
         self.base_query = base_query or db.session.query(model)
-        
+
     def process_request(self, request_data, searchable_columns=None, orderable_columns=None):
         """Process DataTable request and return formatted response"""
         try:
@@ -31,10 +29,10 @@ class DataTableProcessor:
             start = int(request_data.get('start', 0))
             length = int(request_data.get('length', 10))
             search_value = request_data.get('search[value]', '').strip()
-            
+
             # Start with base query
             query = self.base_query
-            
+
             # Apply global search
             if search_value and searchable_columns:
                 search_conditions = []
@@ -44,23 +42,23 @@ class DataTableProcessor:
                         search_conditions.append(
                             attr.ilike(f'%{search_value}%')
                         )
-                
+
                 if search_conditions:
                     query = query.filter(or_(*search_conditions))
-            
+
             # Apply column-specific searches
             for i in range(20):  # Check up to 20 columns
                 column_search = request_data.get(f'columns[{i}][search][value]', '').strip()
                 column_name = request_data.get(f'columns[{i}][data]', '')
-                
+
                 if column_search and column_name and hasattr(self.model, column_name):
                     attr = getattr(self.model, column_name)
                     query = query.filter(attr.ilike(f'%{column_search}%'))
-            
+
             # Apply ordering
             order_column_idx = request_data.get('order[0][column]')
             order_dir = request_data.get('order[0][dir]', 'asc')
-            
+
             if order_column_idx and orderable_columns:
                 try:
                     column_idx = int(order_column_idx)
@@ -74,23 +72,23 @@ class DataTableProcessor:
                                 query = query.order_by(asc(attr))
                 except (ValueError, IndexError):
                     pass
-            
+
             # Get total count before pagination
             total_records = query.count()
-            
+
             # Apply pagination
             query = query.offset(start).limit(length)
-            
+
             # Execute query
             records = query.all()
-            
+
             return {
                 'draw': draw,
                 'recordsTotal': db.session.query(self.model).count(),
                 'recordsFiltered': total_records,
                 'data': records
             }
-            
+
         except Exception as e:
             logger.error(f"Error processing DataTable request: {str(e)}")
             return {
@@ -107,9 +105,9 @@ def get_user_etf_signals_datatable():
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Authentication required'}), 401
-        
+
         user_id = session['user_id']
-        
+
         # Base query for user's ETF signals
         base_query = db.session.query(ETFSignalTrade).filter(
             ETFSignalTrade.user_id == user_id
@@ -117,12 +115,12 @@ def get_user_etf_signals_datatable():
             joinedload(ETFSignalTrade.user),
             joinedload(ETFSignalTrade.assigned_by)
         )
-        
+
         # Searchable and orderable columns
         searchable_columns = ['symbol', 'etf_name', 'trade_title', 'signal_type', 'status']
         orderable_columns = ['symbol', 'entry_price', 'current_price', 'quantity', 
                            'pnl_amount', 'pnl_percent', 'created_at', 'status']
-        
+
         # Process DataTable request
         processor = DataTableProcessor(ETFSignalTrade, base_query)
         result = processor.process_request(
@@ -130,7 +128,7 @@ def get_user_etf_signals_datatable():
             searchable_columns,
             orderable_columns
         )
-        
+
         # Format data for DataTable
         formatted_data = []
         for trade in result['data']:
@@ -138,20 +136,20 @@ def get_user_etf_signals_datatable():
             latest_quote = RealtimeQuote.query.filter(
                 RealtimeQuote.symbol == trade.symbol
             ).order_by(RealtimeQuote.timestamp.desc()).first()
-            
+
             if latest_quote:
                 trade.current_price = latest_quote.current_price
                 trade.calculate_pnl()
                 db.session.commit()
-            
+
             trade_dict = trade.to_dict()
-            
+
             # Add calculated fields
             investment = float(trade.invested_amount) if trade.invested_amount else 0
             current_value = float(trade.current_value) if trade.current_value else investment
             pnl_amount = float(trade.pnl_amount) if trade.pnl_amount else 0
             pnl_percent = float(trade.pnl_percent) if trade.pnl_percent else 0
-            
+
             # Format for display
             trade_dict.update({
                 'investment_formatted': f"₹{investment:,.2f}",
@@ -167,12 +165,12 @@ def get_user_etf_signals_datatable():
                 'priority_badge': get_priority_badge(trade.priority),
                 'last_update': latest_quote.timestamp.strftime('%H:%M:%S') if latest_quote else 'N/A'
             })
-            
+
             formatted_data.append(trade_dict)
-        
+
         result['data'] = formatted_data
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error getting user ETF signals datatable: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -183,18 +181,18 @@ def get_admin_etf_signals_datatable():
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Authentication required'}), 401
-        
+
         # Base query for all ETF signals with user info
         base_query = db.session.query(ETFSignalTrade).options(
             joinedload(ETFSignalTrade.user),
             joinedload(ETFSignalTrade.assigned_by)
         )
-        
+
         # Searchable and orderable columns
         searchable_columns = ['symbol', 'etf_name', 'trade_title', 'signal_type', 'status']
         orderable_columns = ['symbol', 'entry_price', 'current_price', 'quantity', 
                            'pnl_amount', 'pnl_percent', 'created_at', 'user_id']
-        
+
         # Process DataTable request
         processor = DataTableProcessor(ETFSignalTrade, base_query)
         result = processor.process_request(
@@ -202,7 +200,7 @@ def get_admin_etf_signals_datatable():
             searchable_columns,
             orderable_columns
         )
-        
+
         # Format data for DataTable
         formatted_data = []
         for trade in result['data']:
@@ -210,14 +208,14 @@ def get_admin_etf_signals_datatable():
             latest_quote = RealtimeQuote.query.filter(
                 RealtimeQuote.symbol == trade.symbol
             ).order_by(RealtimeQuote.timestamp.desc()).first()
-            
+
             if latest_quote:
                 trade.current_price = latest_quote.current_price
                 trade.calculate_pnl()
                 db.session.commit()
-            
+
             trade_dict = trade.to_dict()
-            
+
             # Add user information
             user_info = {
                 'user_ucc': trade.user.ucc if trade.user else 'N/A',
@@ -225,13 +223,13 @@ def get_admin_etf_signals_datatable():
                 'user_mobile': trade.user.mobile_number if trade.user else 'N/A'
             }
             trade_dict.update(user_info)
-            
+
             # Add calculated fields
             investment = float(trade.invested_amount) if trade.invested_amount else 0
             current_value = float(trade.current_value) if trade.current_value else investment
             pnl_amount = float(trade.pnl_amount) if trade.pnl_amount else 0
             pnl_percent = float(trade.pnl_percent) if trade.pnl_percent else 0
-            
+
             # Format for display
             trade_dict.update({
                 'investment_formatted': f"₹{investment:,.2f}",
@@ -247,12 +245,12 @@ def get_admin_etf_signals_datatable():
                 'priority_badge': get_priority_badge(trade.priority),
                 'last_update': latest_quote.timestamp.strftime('%H:%M:%S') if latest_quote else 'N/A'
             })
-            
+
             formatted_data.append(trade_dict)
-        
+
         result['data'] = formatted_data
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error getting admin ETF signals datatable: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -263,18 +261,18 @@ def get_admin_signals_datatable():
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Authentication required'}), 401
-        
+
         # Base query for admin signals
         base_query = db.session.query(AdminTradeSignal).options(
             joinedload(AdminTradeSignal.admin_user),
             joinedload(AdminTradeSignal.target_user)
         )
-        
+
         # Searchable and orderable columns
         searchable_columns = ['symbol', 'trading_symbol', 'signal_title', 'signal_type', 'status']
         orderable_columns = ['symbol', 'entry_price', 'current_price', 'quantity', 
                            'created_at', 'status', 'priority']
-        
+
         # Process DataTable request
         processor = DataTableProcessor(AdminTradeSignal, base_query)
         result = processor.process_request(
@@ -282,7 +280,7 @@ def get_admin_signals_datatable():
             searchable_columns,
             orderable_columns
         )
-        
+
         # Format data for DataTable
         formatted_data = []
         for signal in result['data']:
@@ -290,7 +288,7 @@ def get_admin_signals_datatable():
             latest_quote = RealtimeQuote.query.filter(
                 RealtimeQuote.symbol == signal.symbol
             ).order_by(RealtimeQuote.timestamp.desc()).first()
-            
+
             if latest_quote:
                 signal.current_price = latest_quote.current_price
                 if signal.entry_price:
@@ -298,50 +296,53 @@ def get_admin_signals_datatable():
                     signal.change_percent = change_pct
                 signal.last_update_time = datetime.utcnow()
                 db.session.commit()
-            
+
             # Calculate values
             entry_price = float(signal.entry_price) if signal.entry_price else 0
             current_price = float(signal.current_price) if signal.current_price else entry_price
             target_price = float(signal.target_price) if signal.target_price else 0
             quantity = signal.quantity or 0
-            investment = entry_price * quantity
-            current_value = current_price * quantity
-            pnl = current_value - investment
-            change_percent = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0
-            
-            # Format data according to new column structure
-            signal_data = {
+            pnl = (current_price - entry_price) * quantity
+            pnl_percent = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0
+
+            # Calculate additional fields
+            investment = float(signal.entry_price * signal.quantity) if signal.entry_price else 0
+            current_value = float(signal.current_price * signal.quantity) if signal.current_price else 0
+            target_value = float(signal.target_price * signal.quantity) if signal.target_price else 0
+
+            # Format data exactly as requested with field names
+            trade_dict = {
                 'target_user_id': signal.target_user_id,
                 'symbol': signal.symbol,
-                'field_30': '-',  # Placeholder field
-                'day_high': f"₹{current_price:.2f}",  # Using current price as day high
-                'created_date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '-',
-                'position_type': 'LONG' if signal.signal_type == 'BUY' else 'SHORT',
-                'quantity': quantity,
-                'entry_price_formatted': f"₹{entry_price:.2f}",
-                'current_price_formatted': f"₹{current_price:.2f}",
-                'change_percent_formatted': f"{change_percent:.2f}%",
-                'investment_formatted': f"₹{investment:,.2f}",
-                'target_price_formatted': f"₹{target_price:.2f}" if target_price > 0 else '-',
-                'target_value_achieved': f"₹{target_price * quantity:,.2f}" if target_price > 0 else '-',
-                'target_percent_return': f"{((target_price - entry_price) / entry_price * 100):.2f}%" if target_price > 0 and entry_price > 0 else '-',
-                'pnl_formatted': f"₹{pnl:,.2f}",
-                'exit_date': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '-',
-                'profit_ratio': f"{(pnl / investment):.4f}" if investment > 0 else '0',
-                'profit_percent': f"{(pnl / investment * 100):.2f}%" if investment > 0 else '0%',
-                'initial_value': f"₹{investment:,.2f}",
-                'initial_percent': '100%',
-                'net_total': f"₹{current_value:,.2f}",
-                'quote': f"₹{current_price:.2f}",
-                'field_7': '-',  # Placeholder field
-                'percent_change': f"{change_percent:.2f}%"
+                'field_30': '-',  # Placeholder for 30 field
+                'day_high': f"₹{float(latest_quote.high_price):,.2f}" if latest_quote and latest_quote.high_price else '-',
+                'created_date': signal.created_at.strftime('%Y-%m-%d') if signal.created_at else '',
+                'position_type': signal.signal_type,  # Pos
+                'quantity': signal.quantity,  # Qty
+                'entry_price': f"₹{float(signal.entry_price):,.2f}" if signal.entry_price else '-',  # EP
+                'current_price': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',  # CMP
+                'change_percent': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',  # %Chan
+                'investment': f"₹{investment:,.2f}",  # Inv.
+                'target_price': f"₹{float(signal.target_price):,.2f}" if signal.target_price else '-',  # TP
+                'target_value_achieved': f"₹{target_value:,.2f}" if target_value else '-',  # TVA
+                'target_percent_return': f"{((float(signal.target_price) - float(signal.entry_price)) / float(signal.entry_price) * 100):+.2f}%" if signal.target_price and signal.entry_price else '-',  # TPR
+                'pnl': f"₹{pnl:+,.2f}",  # PL
+                'exit_date': signal.updated_at.strftime('%Y-%m-%d') if signal.status != 'ACTIVE' else '-',  # ED
+                'profit_ratio': f"{(pnl / investment * 100):+.2f}%" if investment > 0 else '-',  # PR
+                'profit_percent': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',  # PP
+                'initial_value': f"₹{investment:,.2f}",  # IV
+                'initial_percent': '100.00%',  # IP - assuming 100% initial
+                'net_total': f"₹{current_value:,.2f}",  # NT
+                'quote': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',  # Qt
+                'field_7': '-',  # Placeholder for 7 field
+                'percent_change': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%'  # %Ch
             }
-            
-            formatted_data.append(signal_data)
-        
+
+            formatted_data.append(trade_dict)
+
         result['data'] = formatted_data
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error getting admin signals datatable: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -355,7 +356,7 @@ def get_realtime_quotes_datatable():
             RealtimeQuote.symbol,
             db.func.max(RealtimeQuote.timestamp).label('max_timestamp')
         ).group_by(RealtimeQuote.symbol).subquery()
-        
+
         base_query = db.session.query(RealtimeQuote).join(
             subquery,
             and_(
@@ -363,11 +364,11 @@ def get_realtime_quotes_datatable():
                 RealtimeQuote.timestamp == subquery.c.max_timestamp
             )
         )
-        
+
         # Searchable and orderable columns
         searchable_columns = ['symbol', 'trading_symbol', 'exchange']
         orderable_columns = ['symbol', 'current_price', 'change_percent', 'volume', 'timestamp']
-        
+
         # Process DataTable request
         processor = DataTableProcessor(RealtimeQuote, base_query)
         result = processor.process_request(
@@ -375,12 +376,12 @@ def get_realtime_quotes_datatable():
             searchable_columns,
             orderable_columns
         )
-        
+
         # Format data for DataTable
         formatted_data = []
         for quote in result['data']:
             quote_dict = quote.to_dict()
-            
+
             # Format for display
             quote_dict.update({
                 'current_price_formatted': f"₹{float(quote.current_price):,.2f}",
@@ -390,12 +391,12 @@ def get_realtime_quotes_datatable():
                 'timestamp_formatted': quote.timestamp.strftime('%H:%M:%S'),
                 'status_badge': get_market_status_badge(quote.market_status)
             })
-            
+
             formatted_data.append(quote_dict)
-        
+
         result['data'] = formatted_data
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error getting realtime quotes datatable: {str(e)}")
         return jsonify({'error': str(e)}), 500
