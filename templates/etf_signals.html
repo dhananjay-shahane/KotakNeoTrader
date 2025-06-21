@@ -1,380 +1,211 @@
-function ETFSignalsManager() {
-            this.positions = [];
-            this.liveDataInterval = null;
-            this.autoRefreshInterval = 10000; // 10 seconds
-            this.searchTimeout = null;
-            this.init();
-        }
+{% extends "base.html" %}
 
-        ETFSignalsManager.prototype.init = function() {
-            this.setupEventListeners();
-            this.loadPositions();
-            this.startAutoRefresh();
-            this.initLiveDataConnection();
-        };
+{% block title %}ETF Trading Signals{% endblock %}
 
-        ETFSignalsManager.prototype.setupEventListeners = function() {
-            var self = this;
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Portfolio Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="portfolio-summary">
+                <h4 class="mb-3"><i class="fas fa-chart-line me-2"></i>ETF Portfolio Summary</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="summary-card p-3">
+                            <h6>Total Positions</h6>
+                            <h4 id="totalPositions" class="text-info">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card p-3">
+                            <h6>Total Investment</h6>
+                            <h4 id="totalValue" class="text-warning">₹0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card p-3">
+                            <h6>Current Value</h6>
+                            <h4 id="currentValue" class="text-primary">₹0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card p-3">
+                            <h6>Total P&L</h6>
+                            <h4 id="totalPnl" class="text-success">₹0.00</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            // Add deal button
-            document.getElementById('addDealBtn').addEventListener('click', function() {
-                self.showAddDealModal();
-            });
+    <!-- Controls -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <button id="addDealBtn" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i>Add Position
+                </button>
+                <button id="refreshBtn" class="btn btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <div class="form-check form-switch ms-3">
+                    <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                    <label class="form-check-label" for="autoRefreshToggle">Auto Refresh</label>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2 justify-content-end">
+                <select id="autoRefreshInterval" class="form-select form-select-sm" style="width: auto;">
+                    <option value="5">5 seconds</option>
+                    <option value="10" selected>10 seconds</option>
+                    <option value="30">30 seconds</option>
+                    <option value="60">1 minute</option>
+                </select>
+                <button id="exportCsvBtn" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-file-csv me-1"></i>CSV
+                </button>
+                <button id="exportPdfBtn" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-file-pdf me-1"></i>PDF
+                </button>
+            </div>
+        </div>
+    </div>
 
-            // Save position button
-            document.getElementById('savePositionBtn').addEventListener('click', function() {
-                self.savePosition();
-            });
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <select id="positionFilter" class="form-select form-select-sm">
+                <option value="">All Positions</option>
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select id="statusFilter" class="form-select form-select-sm">
+                <option value="">All Status</option>
+                <option value="BUY">Buy Signals</option>
+                <option value="SELL">Sell Signals</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="text-end">
+                <small class="text-muted">
+                    Showing <span id="visibleCount">0</span> positions
+                </small>
+            </div>
+        </div>
+    </div>
 
-            // Refresh button
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                self.loadPositions();
-            });
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="text-center mb-3" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 
-            // Auto refresh interval change
-            document.getElementById('autoRefreshInterval').addEventListener('change', function(e) {
-                self.autoRefreshInterval = parseInt(e.target.value) * 1000;
-                self.startAutoRefresh();
-            });
+    <!-- ETF Positions Table -->
+    <div class="table-container">
+        <table class="table table-dark table-striped signals-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Signal</th>
+                    <th>Entry Price</th>
+                    <th>Current Price</th>
+                    <th>P&L</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="positionsTableBody">
+                <!-- Dynamic content will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+</div>
 
-            // ETF symbol search
-            document.getElementById('etfSymbol').addEventListener('input', function(e) {
-                clearTimeout(self.searchTimeout);
-                self.searchTimeout = setTimeout(function() {
-                    self.searchETFSymbols(e.target.value);
-                }, 300);
-            });
+<!-- Add Deal Modal -->
+<div class="modal fade" id="addDealModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">Add ETF Position</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPositionForm">
+                    <div class="mb-3">
+                        <label for="etfSymbol" class="form-label">ETF Symbol</label>
+                        <input type="text" class="form-control" id="etfSymbol" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="signalType" class="form-label">Signal Type</label>
+                        <select class="form-select" id="signalType" required>
+                            <option value="BUY">Buy</option>
+                            <option value="SELL">Sell</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="entryPrice" class="form-label">Entry Price</label>
+                        <input type="number" step="0.01" class="form-control" id="entryPrice" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePositionBtn">Save Position</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            // Position filters
-            document.getElementById('positionFilter').addEventListener('change', function() {
-                self.filterPositions();
-            });
+<style>
+.portfolio-summary {
+    background: #2d2d2d;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.summary-card {
+    background: #1a1a1a;
+    border-radius: 6px;
+    text-align: center;
+}
+.signals-table {
+    font-size: 0.85rem;
+    background: #1a1a1a;
+}
+.signals-table th {
+    background: #2d2d2d;
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #444;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.signals-table td {
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid #444;
+    vertical-align: middle;
+}
+.table-container {
+    height: 60vh;
+    overflow: auto;
+    border: 1px solid #444;
+    border-radius: 6px;
+}
+</style>
 
-            document.getElementById('statusFilter').addEventListener('change', function() {
-                self.filterPositions();
-            });
-
-            // Auto refresh toggle
-            document.getElementById('autoRefreshToggle').addEventListener('change', function(e) {
-                if (e.target.checked) {
-                    self.startAutoRefresh();
-                } else {
-                    self.stopAutoRefresh();
-                }
-            });
-
-            // Export buttons
-            document.getElementById('exportCsvBtn').addEventListener('click', function() {
-                self.exportToCSV();
-            });
-
-            document.getElementById('exportPdfBtn').addEventListener('click', function() {
-                self.exportToPDF();
-            });
-        };
-
-        ETFSignalsManager.prototype.loadPositions = function() {
-            var self = this;
-            this.showLoading(true);
-
-            fetch('/api/etf/signals')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        self.positions = data.signals || [];
-                        self.renderPositionsTable();
-                        self.updateSummaryCards(data.portfolio || {});
-                        self.updateVisibleCount();
-                    } else {
-                        self.showAlert('Error loading positions: ' + (data.message || 'Unknown error'), 'error');
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Error:', error);
-                    self.showAlert('Error loading positions: ' + error.message, 'error');
-                })
-                .finally(function() {
-                    self.showLoading(false);
-                });
-        };
-
-        ETFSignalsManager.prototype.showLoading = function(show) {
-            var loadingEl = document.getElementById('loadingSpinner');
-            if (loadingEl) {
-                loadingEl.style.display = show ? 'flex' : 'none';
-            }
-        };
-
-        ETFSignalsManager.prototype.renderPositionsTable = function() {
-            var tbody = document.querySelector('#etfSignalsTable tbody');
-            if (!tbody) return;
-
-            if (!this.positions || this.positions.length === 0) {
-                tbody.innerHTML = 
-                    '<tr>' +
-                        '<td colspan="11" class="text-center text-muted py-4">' +
-                            '<i class="fas fa-chart-line fa-3x mb-3 d-block"></i>' +
-                            'No ETF positions found. Add your first position to get started.' +
-                        '</td>' +
-                    '</tr>';
-                return;
-            }
-
-            var rows = [];
-            for (var i = 0; i < this.positions.length; i++) {
-                var position = this.positions[i];
-                var pnlClass = position.pl >= 0 ? 'text-success' : 'text-danger';
-                var pnlIcon = position.pl >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-                var statusClass = position.status === 'ACTIVE' ? 'success' : 'secondary';
-
-                rows.push(
-                    '<tr class="table-row-hover">' +
-                        '<td class="fw-bold text-primary">' + (position.etf || position.symbol || '-') + '</td>' +
-                        '<td>' + (position.date || new Date().toLocaleDateString()) + '</td>' +
-                        '<td>' +
-                            '<span class="badge bg-' + (position.pos === 'LONG' || position.pos === 1 ? 'success' : 'danger') + '">' +
-                                (position.pos === 'LONG' || position.pos === 1 ? 'LONG' : 'SHORT') +
-                            '</span>' +
-                        '</td>' +
-                        '<td class="text-end">' + (position.qty || 0) + '</td>' +
-                        '<td class="text-end">₹' + parseFloat(position.ep || 0).toFixed(2) + '</td>' +
-                        '<td class="text-end">₹' + parseFloat(position.cmp || position.ep || 0).toFixed(2) + '</td>' +
-                        '<td class="text-end ' + pnlClass + '">' +
-                            '<i class="fas ' + pnlIcon + ' me-1"></i>' +
-                            '₹' + parseFloat(position.pl || 0).toFixed(2) +
-                        '</td>' +
-                        '<td class="text-end ' + pnlClass + '">' +
-                            parseFloat(position.chg || 0).toFixed(2) + '%' +
-                        '</td>' +
-                        '<td class="text-end">₹' + parseFloat(position.inv || 0).toFixed(2) + '</td>' +
-                        '<td class="text-end">₹' + parseFloat(position.tp || 0).toFixed(2) + '</td>' +
-                        '<td>' +
-                            '<span class="badge bg-' + statusClass + '">' + (position.status || 'ACTIVE') + '</span>' +
-                        '</td>' +
-                    '</tr>'
-                );
-            }
-            tbody.innerHTML = rows.join('');
-        };
-
-        ETFSignalsManager.prototype.updateSummaryCards = function(portfolio) {
-            // Update portfolio summary cards
-            var totalPositions = document.getElementById('totalPositions');
-            var totalInvestment = document.getElementById('totalInvestment');
-            var totalPnL = document.getElementById('totalPnL');
-            var totalReturn = document.getElementById('totalReturn');
-
-            if (totalPositions) totalPositions.textContent = portfolio.total_positions || 0;
-            if (totalInvestment) totalInvestment.textContent = '₹' + (portfolio.total_investment || 0).toFixed(2);
-            if (totalPnL) {
-                var pnl = portfolio.total_pnl || 0;
-                var pnlEl = document.getElementById('totalPnL');
-                if (pnlEl) {
-                    pnlEl.textContent = '₹' + pnl.toFixed(2);
-                    pnlEl.className = pnl >= 0 ? 'text-success' : 'text-danger';
-                }
-            }
-            if (totalReturn) {
-                var returnPct = portfolio.return_percent || 0;
-                var returnEl = document.getElementById('totalReturn');
-                if (returnEl) {
-                    returnEl.textContent = returnPct.toFixed(2) + '%';
-                    returnEl.className = returnPct >= 0 ? 'text-success' : 'text-danger';
-                }
-            }
-        };
-
-        ETFSignalsManager.prototype.updateVisibleCount = function() {
-            var visibleRows = document.querySelectorAll('#etfSignalsTable tbody tr:not([style*="display: none"])');
-            var countEl = document.getElementById('visibleSignalsCount');
-            if (countEl) {
-                countEl.textContent = visibleRows.length;
-            }
-        };
-
-        ETFSignalsManager.prototype.startAutoRefresh = function() {
-            var self = this;
-            this.stopAutoRefresh();
-            if (this.autoRefreshInterval > 0) {
-                this.liveDataInterval = setInterval(function() {
-                    self.loadPositions();
-                }, this.autoRefreshInterval);
-            }
-        };
-
-        ETFSignalsManager.prototype.stopAutoRefresh = function() {
-            if (this.liveDataInterval) {
-                clearInterval(this.liveDataInterval);
-                this.liveDataInterval = null;
-            }
-        };
-
-        ETFSignalsManager.prototype.initLiveDataConnection = function() {
-            // Initialize WebSocket or SSE connection for live updates if needed
-            console.log('Live data connection initialized');
-        };
-
-        ETFSignalsManager.prototype.filterPositions = function() {
-            var positionFilter = document.getElementById('positionFilter').value;
-            var statusFilter = document.getElementById('statusFilter').value;
-
-            var rows = document.querySelectorAll('#etfSignalsTable tbody tr');
-
-            for (var i = 0; i < rows.length; i++) {
-                var row = rows[i];
-                var cells = row.querySelectorAll('td');
-                if (cells.length < 3) continue;
-
-                var positionType = cells[2].textContent.trim();
-                var status = cells[10].textContent.trim();
-
-                var showRow = true;
-
-                if (positionFilter !== 'all' && positionType.toLowerCase().indexOf(positionFilter.toLowerCase()) === -1) {
-                    showRow = false;
-                }
-
-                if (statusFilter !== 'all' && status.toLowerCase().indexOf(statusFilter.toLowerCase()) === -1) {
-                    showRow = false;
-                }
-
-                row.style.display = showRow ? '' : 'none';
-            }
-
-            this.updateVisibleCount();
-        };
-
-        ETFSignalsManager.prototype.showAddDealModal = function() {
-            var modal = new bootstrap.Modal(document.getElementById('addPositionModal'));
-            modal.show();
-        };
-
-        ETFSignalsManager.prototype.savePosition = function() {
-            var self = this;
-            var formData = {
-                etf_symbol: document.getElementById('etfSymbol').value,
-                quantity: parseInt(document.getElementById('quantity').value),
-                entry_price: parseFloat(document.getElementById('entryPrice').value),
-                target_price: parseFloat(document.getElementById('targetPrice').value),
-                position_type: document.getElementById('positionType').value,
-                notes: document.getElementById('notes').value
-            };
-
-            fetch('/api/etf/signals', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    self.showAlert('Position added successfully!', 'success');
-                    self.loadPositions();
-                    bootstrap.Modal.getInstance(document.getElementById('addPositionModal')).hide();
-                    document.getElementById('addPositionForm').reset();
-                } else {
-                    self.showAlert('Error adding position: ' + (data.message || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function(error) {
-                console.error('Error:', error);
-                self.showAlert('Error adding position: ' + error.message, 'error');
-            });
-        };
-
-        ETFSignalsManager.prototype.searchETFSymbols = function(query) {
-            // Implement ETF symbol search if needed
-            console.log('Searching ETF symbols:', query);
-        };
-
-        ETFSignalsManager.prototype.exportToCSV = function() {
-            if (!this.positions || this.positions.length === 0) {
-                this.showAlert('No data to export', 'warning');
-                return;
-            }
-
-            var csv = this.convertToCSV(this.positions);
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
-            var url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'etf_positions_' + new Date().toISOString().split('T')[0] + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-        ETFSignalsManager.prototype.exportToPDF = function() {
-            this.showAlert('PDF export feature coming soon!', 'info');
-        };
-
-        ETFSignalsManager.prototype.convertToCSV = function(data) {
-            var headers = ['ETF Symbol', 'Date', 'Position', 'Quantity', 'Entry Price', 'Current Price', 'P&L', 'Change %', 'Investment', 'Target Price', 'Status'];
-            var csvContent = [headers.join(',')];
-
-            for (var i = 0; i < data.length; i++) {
-                var row = data[i];
-                var csvRow = [
-                    row.etf || row.symbol || '',
-                    row.date || '',
-                    row.pos === 'LONG' || row.pos === 1 ? 'LONG' : 'SHORT',
-                    row.qty || 0,
-                    row.ep || 0,
-                    row.cmp || row.ep || 0,
-                    row.pl || 0,
-                    row.chg || 0,
-                    row.inv || 0,
-                    row.tp || 0,
-                    row.status || 'ACTIVE'
-                ].join(',');
-                csvContent.push(csvRow);
-            }
-
-            return csvContent.join('\n');
-        };
-
-        ETFSignalsManager.prototype.showAlert = function(message, type) {
-            // Create a simple alert
-            var alertClass = type === 'success' ? 'alert-success' : 
-                           type === 'error' ? 'alert-danger' : 
-                           type === 'warning' ? 'alert-warning' : 'alert-info';
-
-            var alertHtml = 
-                '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" ' +
-                     'style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
-                    message +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
-                '</div>';
-
-            document.body.insertAdjacentHTML('beforeend', alertHtml);
-
-            // Auto remove after 5 seconds
-            setTimeout(function() {
-                var alert = document.querySelector('.alert:last-of-type');
-                if (alert) {
-                    bootstrap.Alert.getOrCreateInstance(alert).close();
-                }
-            }, 5000);
-        };
-
-// Initialize the ETF Signals Manager when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            window.etfSignalsManager = new ETFSignalsManager();
-        });
-
-        // Ensure DOM is fully loaded before initialization
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                if (!window.etfSignalsManager) {
-                    window.etfSignalsManager = new ETFSignalsManager();
-                }
-            });
-        } else {
-            // DOM is already loaded
-            if (!window.etfSignalsManager) {
-                window.etfSignalsManager = new ETFSignalsManager();
-            }
-        }
+<script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
+{% endblock %}

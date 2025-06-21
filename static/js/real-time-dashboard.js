@@ -1,303 +1,320 @@
 // Real-time Dashboard Updates - No Page Refresh System
-class RealTimeDashboard {
-    constructor() {
+function RealTimeDashboard() {
+    this.refreshInterval = null;
+    this.isRefreshing = false;
+    this.init();
+}
+
+RealTimeDashboard.prototype.init = function() {
+    this.setupEventListeners();
+    this.startAutoRefresh();
+    this.addCustomCSS();
+    console.log('Real-time dashboard initialized');
+};
+
+RealTimeDashboard.prototype.addCustomCSS = function() {
+    var style = document.createElement('style');
+    style.textContent = 
+        '.data-updated {' +
+        '    animation: dataUpdate 1.5s ease-in-out;' +
+        '}' +
+        '@keyframes dataUpdate {' +
+        '    0% { background-color: rgba(40, 167, 69, 0.3); }' +
+        '    50% { background-color: rgba(40, 167, 69, 0.1); }' +
+        '    100% { background-color: transparent; }' +
+        '}' +
+        '.refresh-loading {' +
+        '    opacity: 0.7;' +
+        '    pointer-events: none;' +
+        '}' +
+        '.refresh-loading::after {' +
+        '    content: "";' +
+        '    position: absolute;' +
+        '    top: 50%;' +
+        '    left: 50%;' +
+        '    transform: translate(-50%, -50%);' +
+        '    width: 20px;' +
+        '    height: 20px;' +
+        '    border: 2px solid #f3f3f3;' +
+        '    border-top: 2px solid #007bff;' +
+        '    border-radius: 50%;' +
+        '    animation: spin 1s linear infinite;' +
+        '}' +
+        '@keyframes spin {' +
+        '    0% { transform: translate(-50%, -50%) rotate(0deg); }' +
+        '    100% { transform: translate(-50%, -50%) rotate(360deg); }' +
+        '}';
+    
+    document.head.appendChild(style);
+};
+
+RealTimeDashboard.prototype.setupEventListeners = function() {
+    var self = this;
+    
+    // Refresh buttons
+    var refreshButtons = document.querySelectorAll('.btn-refresh, [data-action="refresh"]');
+    for (var i = 0; i < refreshButtons.length; i++) {
+        refreshButtons[i].addEventListener('click', function(e) {
+            e.preventDefault();
+            self.manualRefresh();
+        });
+    }
+    
+    // Auto-refresh toggle
+    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                self.startAutoRefresh();
+            } else {
+                self.stopAutoRefresh();
+            }
+        });
+    }
+    
+    // Refresh interval selector
+    var refreshIntervalSelect = document.getElementById('refreshInterval');
+    if (refreshIntervalSelect) {
+        refreshIntervalSelect.addEventListener('change', function(e) {
+            var interval = parseInt(e.target.value) * 1000;
+            self.setRefreshInterval(interval);
+        });
+    }
+};
+
+RealTimeDashboard.prototype.startAutoRefresh = function() {
+    var self = this;
+    this.stopAutoRefresh();
+    
+    this.refreshInterval = setInterval(function() {
+        self.refreshData();
+    }, 30000); // 30 seconds default
+};
+
+RealTimeDashboard.prototype.stopAutoRefresh = function() {
+    if (this.refreshInterval) {
+        clearInterval(this.refreshInterval);
         this.refreshInterval = null;
-        this.isRefreshing = false;
-        this.init();
     }
+};
 
-    init() {
-        this.setupEventListeners();
-        this.startAutoRefresh();
-        this.addCustomCSS();
-        console.log('Real-time dashboard initialized');
+RealTimeDashboard.prototype.setRefreshInterval = function(interval) {
+    this.stopAutoRefresh();
+    var self = this;
+    
+    this.refreshInterval = setInterval(function() {
+        self.refreshData();
+    }, interval);
+};
+
+RealTimeDashboard.prototype.manualRefresh = function() {
+    this.refreshData(true);
+};
+
+RealTimeDashboard.prototype.refreshData = function(isManual) {
+    if (this.isRefreshing && !isManual) {
+        return;
     }
-
-    addCustomCSS() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .data-updated {
-                animation: dataUpdate 1.5s ease-in-out;
-            }
-            
-            @keyframes dataUpdate {
-                0% { background-color: rgba(40, 167, 69, 0.3); }
-                50% { background-color: rgba(40, 167, 69, 0.1); }
-                100% { background-color: transparent; }
-            }
-            
-            .refresh-loading {
-                opacity: 0.7;
-                pointer-events: none;
-            }
-            
-            .refresh-loading::after {
-                content: '';
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 20px;
-                height: 20px;
-                border: 2px solid #f3f3f3;
-                border-top: 2px solid #007bff;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
-            
-            @keyframes spin {
-                0% { transform: translate(-50%, -50%) rotate(0deg); }
-                100% { transform: translate(-50%, -50%) rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    setupEventListeners() {
-        // Override refresh button clicks to use AJAX
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('[onclick*="refreshDashboard"]')) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.manualRefresh();
-            }
+    
+    var self = this;
+    this.isRefreshing = true;
+    
+    // Show loading state
+    this.showLoadingState(true);
+    
+    // Fetch dashboard data
+    fetch('/api/dashboard-data')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            self.updateDashboardData(data);
+            self.showUpdateAnimation();
+        })
+        .catch(function(error) {
+            console.warn('Dashboard refresh failed:', error);
+            self.showError('Failed to refresh data');
+        })
+        .finally(function() {
+            self.isRefreshing = false;
+            self.showLoadingState(false);
         });
+};
 
-        // Prevent default refresh behaviors
-        const refreshButtons = document.querySelectorAll('[onclick*="refresh"]');
-        refreshButtons.forEach(btn => {
-            btn.removeAttribute('onclick');
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.manualRefresh();
-            });
-        });
+RealTimeDashboard.prototype.updateDashboardData = function(data) {
+    if (data.positions) {
+        this.updatePositionsTable(data.positions);
     }
-
-    startAutoRefresh() {
-        // Auto-refresh every 30 seconds for real-time feel
-        this.refreshInterval = setInterval(() => {
-            if (!this.isRefreshing) {
-                this.refreshData();
-            }
-        }, 30000);
+    
+    if (data.holdings) {
+        this.updateHoldingsTable(data.holdings);
     }
-
-    stopAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
+    
+    if (data.summary) {
+        this.updateSummaryCards(data.summary);
     }
-
-    async manualRefresh() {
-        // Find refresh buttons using valid CSS selectors
-        const refreshBtn = document.querySelector('[onclick*="refreshDashboard"]') || 
-                          document.querySelector('button[onclick*="refresh"]') ||
-                          Array.from(document.querySelectorAll('.btn')).find(btn => 
-                              btn.textContent.toLowerCase().includes('refresh')
-                          );
-        
-        if (refreshBtn) {
-            refreshBtn.classList.add('refresh-loading');
-        }
-        
-        await this.refreshData();
-        
-        if (refreshBtn) {
-            refreshBtn.classList.remove('refresh-loading');
-        }
+    
+    if (data.recent_orders) {
+        this.updateRecentOrders(data.recent_orders);
     }
+};
 
-    async refreshData() {
-        if (this.isRefreshing) return;
-        
-        this.isRefreshing = true;
-        
-        try {
-            const response = await fetch('/api/dashboard_data', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            this.updateDashboardElements(data);
-            this.showSuccessIndicator();
-
-        } catch (error) {
-            console.error('Dashboard refresh error:', error);
-            this.showErrorNotification(error.message);
-        } finally {
-            this.isRefreshing = false;
-        }
+RealTimeDashboard.prototype.updatePositionsTable = function(positions) {
+    var tbody = document.querySelector('#positionsTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    for (var i = 0; i < positions.length; i++) {
+        var position = positions[i];
+        var row = this.createPositionRow(position);
+        tbody.appendChild(row);
     }
+};
 
-    updateDashboardElements(data) {
-        // Update total positions
-        this.updateElement('totalPositions', data.total_positions || 0);
-        
-        // Update total holdings
-        this.updateElement('totalHoldings', data.total_holdings || 0);
-        
-        // Update available margin
-        if (data.limits) {
-            const margin = data.limits.Net || data.limits.net || data.limits.Collateral || 0;
-            this.updateElement('availableMargin', `₹${this.formatCurrency(margin)}`);
-            
-            const marginUsed = data.limits.MarginUsed || data.limits.marginUsed || data.limits.MarginUsedPrsnt || 0;
-            const marginUsedEl = document.getElementById('marginUsed');
-            if (marginUsedEl) {
-                marginUsedEl.innerHTML = `<i class="fas fa-rupee-sign me-1"></i>Used: ₹${this.formatCurrency(marginUsed)}`;
-                this.addUpdateAnimation(marginUsedEl);
+RealTimeDashboard.prototype.createPositionRow = function(position) {
+    var row = document.createElement('tr');
+    var pnlClass = (position.pnl || 0) >= 0 ? 'text-success' : 'text-danger';
+    
+    row.innerHTML = 
+        '<td>' + (position.symbol || '') + '</td>' +
+        '<td>' + (position.quantity || 0) + '</td>' +
+        '<td>₹' + (position.avg_price || 0).toFixed(2) + '</td>' +
+        '<td>₹' + (position.ltp || 0).toFixed(2) + '</td>' +
+        '<td class="' + pnlClass + '">₹' + (position.pnl || 0).toFixed(2) + '</td>';
+    
+    return row;
+};
+
+RealTimeDashboard.prototype.updateHoldingsTable = function(holdings) {
+    var tbody = document.querySelector('#holdingsTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    for (var i = 0; i < holdings.length; i++) {
+        var holding = holdings[i];
+        var row = this.createHoldingRow(holding);
+        tbody.appendChild(row);
+    }
+};
+
+RealTimeDashboard.prototype.createHoldingRow = function(holding) {
+    var row = document.createElement('tr');
+    var pnlClass = (holding.pnl || 0) >= 0 ? 'text-success' : 'text-danger';
+    
+    row.innerHTML = 
+        '<td>' + (holding.symbol || '') + '</td>' +
+        '<td>' + (holding.quantity || 0) + '</td>' +
+        '<td>₹' + (holding.avg_price || 0).toFixed(2) + '</td>' +
+        '<td>₹' + (holding.ltp || 0).toFixed(2) + '</td>' +
+        '<td class="' + pnlClass + '">₹' + (holding.pnl || 0).toFixed(2) + '</td>';
+    
+    return row;
+};
+
+RealTimeDashboard.prototype.updateSummaryCards = function(summary) {
+    var elements = {
+        totalPnl: document.querySelector('#totalPnl'),
+        totalValue: document.querySelector('#totalValue'),
+        todayPnl: document.querySelector('#todayPnl'),
+        totalPositions: document.querySelector('#totalPositions'),
+        totalHoldings: document.querySelector('#totalHoldings')
+    };
+    
+    for (var key in elements) {
+        if (elements[key] && summary[key] !== undefined) {
+            if (key.includes('Pnl')) {
+                elements[key].textContent = '₹' + summary[key].toFixed(2);
+                elements[key].className = summary[key] >= 0 ? 'text-success' : 'text-danger';
+            } else if (key.includes('Value')) {
+                elements[key].textContent = '₹' + summary[key].toFixed(2);
+            } else {
+                elements[key].textContent = summary[key];
             }
         }
+    }
+};
 
-        // Update holdings value
-        if (data.holdings && Array.isArray(data.holdings)) {
-            const totalValue = data.holdings.reduce((sum, holding) => {
-                // Handle different API response formats for holdings
-                const value = parseFloat(
-                    holding.LastPrice || 
-                    holding.ltp || 
-                    holding.marketPrice || 
-                    holding.mktPrice || 
-                    holding.marketValue || 
-                    0
-                );
-                const qty = parseFloat(
-                    holding.Quantity || 
-                    holding.quantity || 
-                    holding.holdingQty || 
-                    holding.NetQuantity || 
-                    0
-                );
-                return sum + (value * qty);
-            }, 0);
-            
-            const holdingsValueEl = document.getElementById('holdingsValue');
-            if (holdingsValueEl) {
-                holdingsValueEl.innerHTML = `<i class="fas fa-wallet me-1"></i>₹${this.formatCurrency(totalValue)}`;
-                this.addUpdateAnimation(holdingsValueEl);
+RealTimeDashboard.prototype.updateRecentOrders = function(orders) {
+    var tbody = document.querySelector('#recentOrdersTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    for (var i = 0; i < Math.min(orders.length, 10); i++) {
+        var order = orders[i];
+        var row = this.createOrderRow(order);
+        tbody.appendChild(row);
+    }
+};
+
+RealTimeDashboard.prototype.createOrderRow = function(order) {
+    var row = document.createElement('tr');
+    var statusClass = order.status === 'COMPLETE' ? 'text-success' : 
+                     order.status === 'REJECTED' ? 'text-danger' : 'text-warning';
+    
+    row.innerHTML = 
+        '<td>' + (order.symbol || '') + '</td>' +
+        '<td>' + (order.side || '') + '</td>' +
+        '<td>' + (order.quantity || 0) + '</td>' +
+        '<td>₹' + (order.price || 0).toFixed(2) + '</td>' +
+        '<td class="' + statusClass + '">' + (order.status || '') + '</td>';
+    
+    return row;
+};
+
+RealTimeDashboard.prototype.showLoadingState = function(show) {
+    var containers = document.querySelectorAll('.data-container, .card-body');
+    for (var i = 0; i < containers.length; i++) {
+        if (show) {
+            containers[i].classList.add('refresh-loading');
+        } else {
+            containers[i].classList.remove('refresh-loading');
+        }
+    }
+};
+
+RealTimeDashboard.prototype.showUpdateAnimation = function() {
+    var containers = document.querySelectorAll('.data-container, .card-body');
+    for (var i = 0; i < containers.length; i++) {
+        containers[i].classList.add('data-updated');
+        setTimeout(function(container) {
+            container.classList.remove('data-updated');
+        }, 1500, containers[i]);
+    }
+};
+
+RealTimeDashboard.prototype.showError = function(message) {
+    var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>';
+    
+    var container = document.querySelector('.container, .container-fluid');
+    if (container) {
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        setTimeout(function() {
+            var alert = document.querySelector('.alert-danger');
+            if (alert) {
+                alert.remove();
             }
-        }
-
-        // Update last refresh time
-        this.updateLastRefreshTime();
-        
-        console.log('Dashboard updated successfully');
+        }, 5000);
     }
+};
 
-    updateElement(elementId, value) {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.textContent = value;
-            this.addUpdateAnimation(element);
-        }
-    }
-
-    addUpdateAnimation(element) {
-        element.classList.remove('data-updated');
-        // Force reflow
-        element.offsetHeight;
-        element.classList.add('data-updated');
-    }
-
-    formatCurrency(amount) {
-        const number = parseFloat(amount) || 0;
-        return number.toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-
-    updateLastRefreshTime() {
-        const lastLoginEl = document.getElementById('lastLoginTime');
-        if (lastLoginEl) {
-            const now = new Date();
-            lastLoginEl.textContent = now.toLocaleTimeString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-    }
-
-    showSuccessIndicator() {
-        // Brief success indicator
-        const indicator = document.createElement('div');
-        indicator.className = 'position-fixed bg-success text-white px-3 py-2 rounded';
-        indicator.style.cssText = 'top: 20px; right: 20px; z-index: 9999; font-size: 0.9rem;';
-        indicator.innerHTML = '<i class="fas fa-check me-1"></i>Updated';
-        
-        document.body.appendChild(indicator);
-        
-        setTimeout(() => {
-            indicator.style.opacity = '0';
-            indicator.style.transition = 'opacity 0.3s ease';
-            setTimeout(() => indicator.remove(), 300);
-        }, 2000);
-    }
-
-    showErrorNotification(message) {
-        const notification = document.createElement('div');
-        notification.className = 'alert alert-warning position-fixed shadow-lg';
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 400px;';
-        notification.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <div class="flex-grow-1">
-                    <strong>Refresh Failed</strong><br>
-                    <small>${message}</small>
-                </div>
-                <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 8 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.style.opacity = '0';
-                notification.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, 8000);
-    }
-
-    destroy() {
-        this.stopAutoRefresh();
-        console.log('Real-time dashboard destroyed');
-    }
-}
-
-// Global function for backward compatibility
-function refreshDashboard() {
-    if (window.realTimeDashboard) {
-        window.realTimeDashboard.manualRefresh();
-    }
-}
+RealTimeDashboard.prototype.destroy = function() {
+    this.stopAutoRefresh();
+};
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    window.realTimeDashboard = new RealTimeDashboard();
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (window.realTimeDashboard) {
-        window.realTimeDashboard.destroy();
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.realTimeDashboard === 'undefined') {
+        window.realTimeDashboard = new RealTimeDashboard();
     }
 });
+
+// Fallback initialization
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    if (typeof window.realTimeDashboard === 'undefined') {
+        window.realTimeDashboard = new RealTimeDashboard();
+    }
+}
