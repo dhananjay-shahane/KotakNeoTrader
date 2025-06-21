@@ -312,7 +312,7 @@ def get_admin_signals_datatable():
 
             # Format data exactly as requested with field names
             trade_dict = {
-                'user_traget_id': signal.target_user_id,  # Keep original typo as requested
+                'user_target_id': signal.target_user_id,
                 'Symbol': signal.symbol,
                 '30': '-',
                 'DH': f"₹{float(latest_quote.high_price):,.2f}" if latest_quote and latest_quote.high_price else '-',

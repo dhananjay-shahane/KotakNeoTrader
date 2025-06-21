@@ -114,10 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadTokensFromLocalStorage() {
-    const accessToken = localStorage.getItem('kotak_access_token');
-    const sessionToken = localStorage.getItem('kotak_session_token');
-    const ucc = localStorage.getItem('kotak_ucc');
-    const sid = localStorage.getItem('kotak_sid');
+    var accessToken = localStorage.getItem('kotak_access_token');
+    var sessionToken = localStorage.getItem('kotak_session_token');
+    var ucc = localStorage.getItem('kotak_ucc');
+    var sid = localStorage.getItem('kotak_sid');
     
     if (accessToken) document.getElementById('access_token').value = accessToken;
     if (sessionToken) document.getElementById('session_token').value = sessionToken;
@@ -126,10 +126,10 @@ function loadTokensFromLocalStorage() {
 }
 
 function saveTokensToLocalStorage() {
-    const accessToken = document.getElementById('access_token').value;
-    const sessionToken = document.getElementById('session_token').value;
-    const ucc = document.getElementById('ucc').value;
-    const sid = document.getElementById('sid').value;
+    var accessToken = document.getElementById('access_token').value;
+    var sessionToken = document.getElementById('session_token').value;
+    var ucc = document.getElementById('ucc').value;
+    var sid = document.getElementById('sid').value;
     
     if (accessToken) localStorage.setItem('kotak_access_token', accessToken);
     if (sessionToken) localStorage.setItem('kotak_session_token', sessionToken);

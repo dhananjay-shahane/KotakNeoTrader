@@ -148,11 +148,11 @@ function checkSupabaseStatus() {
                 addLog('Supabase not configured', 'error');
             }
         })
-        .catch(error => {
-            const statusAlert = document.getElementById('status-alert');
+        .catch(function(error) {
+            var statusAlert = document.getElementById('status-alert');
             statusAlert.className = 'alert alert-danger';
             statusAlert.innerHTML = '<i class="fas fa-times-circle"></i> Connection error';
-            addLog(`Connection error: ${error.message}`, 'error');
+            addLog('Connection error: ' + error.message, 'error');
         });
 }
 
@@ -163,13 +163,13 @@ function syncUsers() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                addLog(`User sync completed: ${data.stats.synced} synced, ${data.stats.errors} errors`, 'success');
+                addLog('User sync completed: ' + data.stats.synced + ' synced, ' + data.stats.errors + ' errors', 'success');
             } else {
-                addLog(`User sync failed: ${data.error}`, 'error');
+                addLog('User sync failed: ' + data.error, 'error');
             }
         })
-        .catch(error => {
-            addLog(`User sync error: ${error.message}`, 'error');
+        .catch(function(error) {
+            addLog('User sync error: ' + error.message, 'error');
         });
 }
 
