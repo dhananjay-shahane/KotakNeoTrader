@@ -3,7 +3,7 @@ from flask import request, jsonify, session, Blueprint
 from app import db
 from etf_trading_signals import ETFTradingSignals
 from user_manager import UserManager
-from models_etf import ETFSignalTrade
+# ETFSignalTrade model removed
 import logging
 from datetime import datetime
 
@@ -747,104 +747,7 @@ def create_deal():
         logging.error(f"Error creating deal: {str(e)}")
         return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
 
-@etf_bp.route('/add-position', methods=['POST'])
-def add_etf_position():
-    """Add new ETF position"""
-    try:
-        # Check authentication - use db_user_id which is set during login
-        if 'db_user_id' not in session and 'user_id' not in session:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-
-        user_id = session.get('db_user_id') or session.get('user_id')
-        etf_manager = ETFTradingSignals()
-
-        # Validate required fields
-        required_fields = ['etf_symbol', 'trading_symbol', 'token', 'quantity', 'entry_price']
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
-
-        position = etf_manager.add_etf_position(user_id, data)
-
-        return jsonify({
-            'success': True,
-            'message': 'ETF position added successfully',
-            'position': position
-        })
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        logger.error(f"Error adding ETF position: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@etf_bp.route('/update-position', methods=['PUT'])
-def update_etf_position():
-    """Update existing ETF position"""
-    try:
-        # Check authentication - use db_user_id which is set during login
-        if 'db_user_id' not in session and 'user_id' not in session:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-
-        position_id = data.get('id') or data.get('position_id')
-        if not position_id:
-            return jsonify({'error': 'Position ID required'}), 400
-
-        user_id = session.get('db_user_id') or session.get('user_id')
-        etf_manager = ETFTradingSignals()
-
-        position = etf_manager.update_etf_position(position_id, user_id, data)
-
-        return jsonify({
-            'success': True,
-            'message': 'ETF position updated successfully',
-            'position': position
-        })
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        logger.error(f"Error updating ETF position: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@etf_bp.route('/delete-position', methods=['DELETE'])
-def delete_etf_position():
-    """Delete ETF position"""
-    try:
-        # Check authentication - use db_user_id which is set during login
-        if 'db_user_id' not in session and 'user_id' not in session:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        position_id = request.args.get('id') or request.json.get('id') if request.json else None
-        if not position_id:
-            return jsonify({'error': 'Position ID required'}), 400
-
-        user_id = session.get('db_user_id') or session.get('user_id')
-        etf_manager = ETFTradingSignals()
-
-        success = etf_manager.delete_etf_position(position_id, user_id)
-
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'ETF position deleted successfully'
-            })
-        else:
-            return jsonify({'error': 'Failed to delete position'}), 500
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        logger.error(f"Error deleting ETF position: {e}")
-        return jsonify({'error': str(e)}), 500
+# ETF position management endpoints removed as ETFPosition model no longer exists
 
 @etf_bp.route('/search-instruments', methods=['GET'])
 def search_etf_instruments():
@@ -962,71 +865,7 @@ def bulk_update_positions():
         logger.error(f"Error bulk updating positions: {e}")
         return jsonify({'error': str(e)}), 500
 
-@etf_bp.route('/signal-trades', methods=['GET'])
-def get_user_etf_signal_trades():
-    """Get ETF signal trades for current user"""
-    try:
-        # Check authentication - use db_user_id which is set during login
-        if 'db_user_id' not in session and 'user_id' not in session:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        user_id = session.get('db_user_id') or session.get('user_id')
-        trades = ETFSignalTrade.query.filter_by(user_id=user_id).order_by(ETFSignalTrade.created_at.desc()).all()
-
-        return jsonify({
-            'success': True,
-            'trades': [trade.to_dict() for trade in trades],
-            'count': len(trades)
-        })
-
-    except Exception as e:
-        logger.error(f"Error getting user ETF signal trades: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@etf_bp.route('/update-signal-trade', methods=['PUT'])
-def update_etf_signal_trade():
-    """Update ETF signal trade status"""
-    try:
-        # Check authentication - use db_user_id which is set during login
-        if 'db_user_id' not in session and 'user_id' not in session:
-            return jsonify({'error': 'Not authenticated'}), 401
-
-        data = request.get_json()
-        trade_id = data.get('trade_id')
-
-        if not trade_id:
-            return jsonify({'error': 'Trade ID required'}), 400
-
-        user_id = session.get('db_user_id') or session.get('user_id')
-        trade = ETFSignalTrade.query.filter_by(id=trade_id, user_id=user_id).first()
-
-        if not trade:
-            return jsonify({'error': 'Trade not found'}), 404
-
-        # Update trade fields
-        if 'current_price' in data:
-            trade.current_price = float(data['current_price'])
-            trade.calculate_pnl()
-            trade.last_price_update = datetime.utcnow()
-
-        if 'status' in data:
-            trade.status = data['status'].upper()
-            if trade.status == 'CLOSED':
-                trade.exit_date = datetime.utcnow()
-
-        trade.updated_at = datetime.utcnow()
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Trade updated successfully',
-            'trade': trade.to_dict()
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error updating ETF signal trade: {e}")
-        return jsonify({'error': str(e)}), 500
+# ETF signal trades endpoints removed as ETFSignalTrade model no longer exists
 
 @etf_bp.route('/api/etf-signals-data')
 def get_etf_signals_data():

@@ -1,5 +1,5 @@
 from app import db
-from models_etf import ETFPosition
+from models_etf import RealtimeQuote
 from neo_client import NeoClient
 from session_helper import SessionHelper
 from datetime import datetime, timedelta

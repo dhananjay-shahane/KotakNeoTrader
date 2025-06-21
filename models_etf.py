@@ -40,7 +40,7 @@ class AdminTradeSignal(db.Model):
     current_price = db.Column(db.Numeric(10, 2), nullable=True)
     change_percent = db.Column(db.Numeric(5, 2), nullable=True)
     last_update_time = db.Column(db.DateTime, nullable=True)
-    
+
     # Additional Trading Data
     investment_amount = db.Column(db.Numeric(12, 2), nullable=True)
     current_value = db.Column(db.Numeric(12, 2), nullable=True)
@@ -85,7 +85,7 @@ class KotakNeoQuote(db.Model):
     __tablename__ = 'kotak_neo_quotes'
 
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Instrument Identification
     symbol = db.Column(db.String(50), nullable=False, index=True)
     trading_symbol = db.Column(db.String(100), nullable=True)
@@ -93,57 +93,57 @@ class KotakNeoQuote(db.Model):
     exchange = db.Column(db.String(20), default='NSE')
     segment = db.Column(db.String(20), nullable=True)  # EQ, FO, CD, etc.
     instrument_type = db.Column(db.String(20), nullable=True)  # EQ, FUT, OPT, etc.
-    
+
     # Price Data (from Kotak Neo Quotes API)
     ltp = db.Column(db.Numeric(12, 4), nullable=False)  # Last Traded Price
     open_price = db.Column(db.Numeric(12, 4), nullable=True)
     high_price = db.Column(db.Numeric(12, 4), nullable=True)
     low_price = db.Column(db.Numeric(12, 4), nullable=True)
     close_price = db.Column(db.Numeric(12, 4), nullable=True)  # Previous close
-    
+
     # Change Calculations
     net_change = db.Column(db.Numeric(12, 4), nullable=True)  # Price change
     percentage_change = db.Column(db.Numeric(8, 4), nullable=True)  # % change
-    
+
     # Volume Data
     volume = db.Column(db.BigInteger, nullable=True)  # Today's volume
     value = db.Column(db.Numeric(15, 2), nullable=True)  # Turnover value
-    
+
     # Bid/Ask Data
     bid_price = db.Column(db.Numeric(12, 4), nullable=True)
     ask_price = db.Column(db.Numeric(12, 4), nullable=True)
     bid_size = db.Column(db.Integer, nullable=True)
     ask_size = db.Column(db.Integer, nullable=True)
-    
+
     # Circuit Limits
     upper_circuit = db.Column(db.Numeric(12, 4), nullable=True)
     lower_circuit = db.Column(db.Numeric(12, 4), nullable=True)
-    
+
     # 52-week Data
     week_52_high = db.Column(db.Numeric(12, 4), nullable=True)
     week_52_low = db.Column(db.Numeric(12, 4), nullable=True)
-    
+
     # Average Prices
     avg_price = db.Column(db.Numeric(12, 4), nullable=True)  # VWAP
-    
+
     # Timestamps
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
     last_trade_time = db.Column(db.DateTime, nullable=True)
-    
+
     # Market Status
     market_status = db.Column(db.String(20), default='OPEN')  # OPEN, CLOSED, PRE_OPEN
-    
+
     # Data Quality
     data_source = db.Column(db.String(50), default='KOTAK_NEO_API')
     fetch_status = db.Column(db.String(20), default='SUCCESS')  # SUCCESS, ERROR, STALE
-    
+
     # Additional Meta Data
     lot_size = db.Column(db.Integer, nullable=True)
     tick_size = db.Column(db.Numeric(8, 4), nullable=True)
-    
+
     def __repr__(self):
         return f'<KotakNeoQuote {self.symbol} @ ₹{self.ltp}>'
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -189,33 +189,33 @@ class RealtimeQuote(db.Model):
     trading_symbol = db.Column(db.String(100), nullable=True)
     token = db.Column(db.String(50), nullable=True)
     exchange = db.Column(db.String(20), default='NSE')
-    
+
     # Market Data
     current_price = db.Column(db.Numeric(10, 2), nullable=False)
     open_price = db.Column(db.Numeric(10, 2), nullable=True)
     high_price = db.Column(db.Numeric(10, 2), nullable=True)
     low_price = db.Column(db.Numeric(10, 2), nullable=True)
     close_price = db.Column(db.Numeric(10, 2), nullable=True)
-    
+
     # Change Calculations
     change_amount = db.Column(db.Numeric(10, 2), nullable=True)
     change_percent = db.Column(db.Numeric(5, 2), nullable=True)
-    
+
     # Volume and Liquidity
     volume = db.Column(db.BigInteger, nullable=True)
     avg_volume = db.Column(db.BigInteger, nullable=True)
-    
+
     # Timestamp
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
     market_status = db.Column(db.String(20), default='OPEN')  # OPEN, CLOSED, PRE_OPEN
-    
+
     # Data Source
     data_source = db.Column(db.String(50), default='KOTAK_NEO')
     fetch_status = db.Column(db.String(20), default='SUCCESS')  # SUCCESS, ERROR, STALE
-    
+
     def __repr__(self):
         return f'<RealtimeQuote {self.symbol} @ {self.current_price}>'
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -375,207 +375,4 @@ class UserDeal(db.Model):
             'last_price_update': self.last_price_update.isoformat() if self.last_price_update else None
         }
 
-class ETFPosition(db.Model):
-    __tablename__ = 'etf_positions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    # ETF Information
-    symbol = db.Column(db.String(50), nullable=False)
-    etf_name = db.Column(db.String(200), nullable=True)
-    exchange = db.Column(db.String(20), default='NSE')
-
-    # Position Details
-    quantity = db.Column(db.Integer, nullable=False)
-    entry_price = db.Column(db.Numeric(10, 2), nullable=False)
-    current_price = db.Column(db.Numeric(10, 2), nullable=True)
-
-    # Status
-    status = db.Column(db.String(20), default='ACTIVE')  # ACTIVE, CLOSED
-    position_type = db.Column(db.String(10), default='LONG')  # LONG, SHORT
-
-    # Timestamps
-    entry_date = db.Column(db.DateTime, default=datetime.utcnow)
-    exit_date = db.Column(db.DateTime, nullable=True)
-    last_update_time = db.Column(db.DateTime, nullable=True)
-
-    # Relationship
-    user = db.relationship('User', backref='etf_positions')
-
-    def __repr__(self):
-        return f'<ETFPosition {self.symbol}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'symbol': self.symbol,
-            'etf_name': self.etf_name,
-            'exchange': self.exchange,
-            'quantity': self.quantity,
-            'entry_price': float(self.entry_price) if self.entry_price else None,
-            'current_price': float(self.current_price) if self.current_price else None,
-            'status': self.status,
-            'position_type': self.position_type,
-            'entry_date': self.entry_date.isoformat() if self.entry_date else None,
-            'exit_date': self.exit_date.isoformat() if self.exit_date else None,
-            'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
-        }
-
-class ETFSignalTrade(db.Model):
-    __tablename__ = 'etf_signal_trades'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    assigned_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Admin who assigned
-
-    # ETF Information
-    symbol = db.Column(db.String(50), nullable=False)
-    etf_name = db.Column(db.String(200), nullable=True)
-    trading_symbol = db.Column(db.String(100), nullable=True)
-    token = db.Column(db.String(50), nullable=True)
-    exchange = db.Column(db.String(20), default='NSE')
-
-    # Trade Details
-    signal_type = db.Column(db.String(20), nullable=False)  # BUY, SELL
-    quantity = db.Column(db.Integer, nullable=False)
-    entry_price = db.Column(db.Numeric(10, 2), nullable=False)
-    current_price = db.Column(db.Numeric(10, 2), nullable=True)
-    target_price = db.Column(db.Numeric(10, 2), nullable=True)
-    stop_loss = db.Column(db.Numeric(10, 2), nullable=True)
-
-    # P&L Calculations
-    invested_amount = db.Column(db.Numeric(12, 2), nullable=False)
-    current_value = db.Column(db.Numeric(12, 2), nullable=True)
-    pnl_amount = db.Column(db.Numeric(12, 2), nullable=True)
-    pnl_percent = db.Column(db.Numeric(5, 2), nullable=True)
-
-    # Trade Metadata
-    trade_title = db.Column(db.String(200), nullable=False)
-    trade_description = db.Column(db.Text, nullable=True)
-    priority = db.Column(db.String(20), default='MEDIUM')  # HIGH, MEDIUM, LOW
-    
-    # Status and Tracking
-    status = db.Column(db.String(20), default='ACTIVE')  # ACTIVE, CLOSED, CANCELLED
-    position_type = db.Column(db.String(10), default='LONG')  # LONG, SHORT
-    
-    # Additional CSV-like fields for compatibility
-    change_pct = db.Column(db.String(20), nullable=True)
-    tp_value = db.Column(db.Numeric(12, 2), nullable=True)  # Target profit value
-    tp_return = db.Column(db.String(50), nullable=True)  # Target profit return
-    
-    # Timestamps
-    entry_date = db.Column(db.DateTime, default=datetime.utcnow)
-    exit_date = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    last_price_update = db.Column(db.DateTime, nullable=True)
-
-    # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref='etf_signal_trades')
-    assigned_by = db.relationship('User', foreign_keys=[assigned_by_user_id], backref='assigned_etf_trades')
-
-    def __repr__(self):
-        return f'<ETFSignalTrade {self.symbol} - {self.signal_type}>'
-
-    def calculate_pnl(self):
-        """Calculate current P&L"""
-        if self.current_price and self.entry_price:
-            if self.position_type == 'LONG':
-                self.pnl_amount = (self.current_price - self.entry_price) * self.quantity
-            else:  # SHORT
-                self.pnl_amount = (self.entry_price - self.current_price) * self.quantity
-
-            if self.invested_amount and self.invested_amount > 0:
-                self.pnl_percent = (self.pnl_amount / self.invested_amount) * 100
-                self.current_value = self.invested_amount + self.pnl_amount
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'assigned_by_user_id': self.assigned_by_user_id,
-            'symbol': self.symbol,
-            'etf_name': self.etf_name,
-            'trading_symbol': self.trading_symbol,
-            'token': self.token,
-            'exchange': self.exchange,
-            'signal_type': self.signal_type,
-            'quantity': self.quantity,
-            'entry_price': float(self.entry_price) if self.entry_price else None,
-            'current_price': float(self.current_price) if self.current_price else None,
-            'target_price': float(self.target_price) if self.target_price else None,
-            'stop_loss': float(self.stop_loss) if self.stop_loss else None,
-            'invested_amount': float(self.invested_amount) if self.invested_amount else None,
-            'current_value': float(self.current_value) if self.current_value else None,
-            'pnl_amount': float(self.pnl_amount) if self.pnl_amount else None,
-            'pnl_percent': float(self.pnl_percent) if self.pnl_percent else None,
-            'trade_title': self.trade_title,
-            'trade_description': self.trade_description,
-            'priority': self.priority,
-            'status': self.status,
-            'position_type': self.position_type,
-            'change_pct': self.change_pct,
-            'tp_value': float(self.tp_value) if self.tp_value else None,
-            'tp_return': self.tp_return,
-            'entry_date': self.entry_date.isoformat() if self.entry_date else None,
-            'exit_date': self.exit_date.isoformat() if self.exit_date else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'last_price_update': self.last_price_update.isoformat() if self.last_price_update else None
-        }
-
-class ETFWatchlist(db.Model):
-    __tablename__ = 'etf_watchlist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    # ETF Information
-    symbol = db.Column(db.String(50), nullable=False)
-    etf_name = db.Column(db.String(200), nullable=True)
-    trading_symbol = db.Column(db.String(100), nullable=True)
-    token = db.Column(db.String(50), nullable=True)
-    exchange = db.Column(db.String(20), default='NSE')
-
-    # Market Data
-    current_price = db.Column(db.Numeric(10, 2), nullable=True)
-    change_percent = db.Column(db.Numeric(5, 2), nullable=True)
-    last_update_time = db.Column(db.DateTime, nullable=True)
-
-    # Settings
-    price_alert_enabled = db.Column(db.Boolean, default=False)
-    target_price = db.Column(db.Numeric(10, 2), nullable=True)
-    alert_price_above = db.Column(db.Numeric(10, 2), nullable=True)
-    alert_price_below = db.Column(db.Numeric(10, 2), nullable=True)
-
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationship
-    user = db.relationship('User', backref='etf_watchlist')
-
-    def __repr__(self):
-        return f'<ETFWatchlist {self.symbol}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'symbol': self.symbol,
-            'etf_name': self.etf_name,
-            'trading_symbol': self.trading_symbol,
-            'token': self.token,
-            'exchange': self.exchange,
-            'current_price': float(self.current_price) if self.current_price else None,
-            'change_percent': float(self.change_percent) if self.change_percent else None,
-            'price_alert_enabled': self.price_alert_enabled,
-            'target_price': float(self.target_price) if self.target_price else None,
-            'alert_price_above': float(self.alert_price_above) if self.alert_price_above else None,
-            'alert_price_below': float(self.alert_price_below) if self.alert_price_below else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
-        }
+# ETF Position, Signal Trade, and Watchlist models removed as per user request
