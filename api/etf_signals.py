@@ -54,7 +54,7 @@ def get_admin_signals():
                 {'etf': 'PHARMABEES', 'pos': 1, 'qty': 4500, 'ep': 22.7, 'tp': 25.42, 'date': '16-Dec-2024'},
                 {'etf': 'INFRABEES', 'pos': 1, 'qty': 120, 'ep': 880.51, 'tp': 986.17, 'date': '24-Dec-2024'},
                 {'etf': 'HDFCSML250', 'pos': 0, 'qty': 600, 'ep': 178.27, 'tp': 149.26, 'date': '30-Dec-2024'},
-                {'etf': 'NEXT50IETF', 'pos': 1, 'qty': 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
+                {'etf': 'NEXT50IETF', 'pos': 1, 'qty: 1400, 'ep': 70.9, 'tp': 79.41, 'date': '30-Dec-2024'},
                 {'etf': 'NIF100BEES', 'pos': 1, 'qty': 400, 'ep': 259.64, 'tp': 290.80, 'date': '30-Dec-2024'},
                 {'etf': 'FINIETF', 'pos': 1, 'qty': 4000, 'ep': 26.63, 'tp': 29.83, 'date': '3-Jan-2025'},
                 {'etf': 'TNIDETF', 'pos': 1, 'qty': 20, 'ep': 101.03, 'tp': 113.15, 'date': '6-Jan-2025'},
@@ -106,11 +106,16 @@ def get_admin_signals():
             db.session.commit()
             logger.info(f"Created {len(csv_etf_data)} initial ETF signals in admin_trade_signals table")
 
-        # Fetch all admin trade signals for the target user
-        signals = AdminTradeSignal.query.filter_by(
-            target_user_id=target_user.id,
-            status='ACTIVE'
-        ).order_by(AdminTradeSignal.created_at.desc()).all()
+        # Get all admin trade signals for the current user (or all if admin)
+        if hasattr(current_user, 'id'):
+            signals = AdminTradeSignal.query.filter_by(
+                target_user_id=target_user.id
+            ).order_by(AdminTradeSignal.created_at.desc()).all()
+        else:
+            # Fallback: get all signals if user check fails
+            signals = AdminTradeSignal.query.filter_by(
+                status='ACTIVE'
+            ).order_by(AdminTradeSignal.created_at.desc()).limit(50).all()
 
         if not signals:
             logger.warning("No admin trade signals found")
@@ -294,59 +299,28 @@ def get_admin_signals():
             # Calculate days held
             days_held = (datetime.now() - signal.created_at).days if signal.created_at else 0
 
-            # Format signal data with comprehensive market data
+            # Calculate values
+            qty = signal.quantity or 0
+            ep = signal.entry_price or 0
+            cmp = signal.current_price or ep
+            inv = signal.investment_amount or (qty * ep)
+            pl = signal.pnl or ((cmp - ep) * qty)
+            chg = signal.pnl_percentage or (((cmp - ep) / ep * 100) if ep > 0 else 0)
+
             signal_data = {
                 'id': signal.id,
-                'etf': signal.symbol,  # ETF column
+                'etf': signal.symbol,
                 'symbol': signal.symbol,
-                'thirty': f"{change_percent * 1.2:.1f}%",  # 30-day performance (simulated)
-                'dh': days_held,  # DH (Days Held)
-                'date': signal.created_at.strftime('%d-%b-%Y') if signal.created_at else '',  # Date
-                'pos': 1 if signal.signal_type == 'BUY' else 0,  # Pos (Position: 1=Long, 0=Short)
-                'qty': quantity,  # Qty
-                'ep': entry_price,  # EP (Entry Price)
-                'cmp': current_price,  # CMP (Current Market Price) - REAL-TIME
-                'change_pct': change_percent,  # %Chan (Change %)
-                'inv': invested_amount,  # Inv. (Investment)
-                'tp': target_price,  # TP (Target Price)
-                'tva': target_value_amount,  # TVA (Target Value Amount)
-                'tpr': f"₹{target_profit_return:.0f}",  # TPR (Target Profit Return)
-                'pl': pnl_amount,  # PL (Profit/Loss)
-                'ed': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # ED (Expiry Date)
-                'exp': signal.expires_at.strftime('%d-%b-%Y') if signal.expires_at else '',  # EXP (Expiry field)
-                'pr': f"{change_percent:.1f}%",  # PR (Profit Return %)
-                'pp': '★★★' if change_percent > 5 else '★★' if change_percent > 2 else '★' if change_percent > 0 else '☆',  # PP (Performance Points)
-                'iv': invested_amount,  # IV (Investment Value)
-                'ip': f"{change_percent:.2f}%",  # IP (Investment Performance %)
-                'nt': signal.signal_description or f"Admin signal for {signal.symbol} - Real-time CMP: ₹{current_price:.2f}",  # NT (Notes)
-                'qt': datetime.now().strftime('%H:%M'),  # Qt (Quote time) - REAL-TIME
-                'seven': f"{change_percent * 0.8:.1f}%",  # 7-day performance (simulated)
-                'change2': change_percent,  # Alternative change field
-
-                # Comprehensive market data from Kotak Neo API
-                'open_price': round(open_price, 2),
-                'high_price': round(high_price, 2),
-                'low_price': round(low_price, 2),
-                'volume': volume,
-                'bid_price': round(bid_price, 2),
-                'ask_price': round(ask_price, 2),
-                'week_52_high': round(week_52_high, 2),
-                'week_52_low': round(week_52_low, 2),
-                'data_source': data_source,
-
-                # Additional fields for compatibility
-                'signal_type': signal.signal_type,
-                'status': signal.status,
-                'trading_symbol': signal.trading_symbol or f"{signal.symbol}-EQ",
-                'priority': signal.priority,
-                'created_at': signal.created_at.isoformat() if signal.created_at else None,
-                'last_updated': datetime.now().strftime('%H:%M:%S'),
-
-                # DataTable display fields
-                'display_price': f"₹{current_price:.2f}",
-                'display_change': f"{change_percent:+.2f}%",
-                'display_pnl': f"₹{pnl_amount:+,.2f}",
-                'display_volume': f"{volume:,}" if volume > 0 else "N/A"
+                'date': signal.signal_date.strftime('%d-%b-%Y') if signal.signal_date else datetime.now().strftime('%d-%b-%Y'),
+                'pos': 1 if signal.signal_type == 'BUY' else 0,  # 1 for LONG, 0 for SHORT
+                'qty': qty,
+                'ep': round(ep, 2),
+                'cmp': round(cmp, 2),
+                'pl': round(pl, 2),
+                'chg': round(chg, 2),
+                'inv': round(inv, 2),
+                'tp': signal.target_price or 0,
+                'status': signal.status or 'ACTIVE'
             }
 
             signals_data.append(signal_data)

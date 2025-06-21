@@ -27,7 +27,7 @@ function ETFSignalsManager() {
             });
 
             // Refresh button
-            document.getElementById('refreshBtn').addEventListener('click', function() {
+            document.getElementById('refreshBtn').addEventListener('click, function() {
                 self.loadPositions();
             });
 
@@ -359,3 +359,22 @@ function ETFSignalsManager() {
                 }
             }, 5000);
         };
+
+// Initialize the ETF Signals Manager when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            window.etfSignalsManager = new ETFSignalsManager();
+        });
+
+        // Ensure DOM is fully loaded before initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!window.etfSignalsManager) {
+                    window.etfSignalsManager = new ETFSignalsManager();
+                }
+            });
+        } else {
+            // DOM is already loaded
+            if (!window.etfSignalsManager) {
+                window.etfSignalsManager = new ETFSignalsManager();
+            }
+        }
