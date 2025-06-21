@@ -574,45 +574,53 @@
                 document.getElementById('notes').value = position.notes || '';
             }
 
-            async deletePosition(id) {
-                if (confirm('Are you sure you want to delete this position?')) {
-                    try {
-                        const response = await fetch(`/api/etf/positions/${id}`, { method: 'DELETE' });
-                        const result = await response.json();
+        ETFSignalsManager.prototype.deletePosition = function(id) {
+            var self = this;
+            if (confirm('Are you sure you want to delete this position?')) {
+                fetch('/api/etf/positions/' + id, { method: 'DELETE' })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(result) {
                         if (result.success) {
-                            this.loadPositions();
-                            this.showAlert('Position deleted successfully', 'success');
+                            self.loadPositions();
+                            self.showAlert('Position deleted successfully', 'success');
                         } else {
-                            this.showAlert('Error: ' + result.error, 'danger');
+                            self.showAlert('Error: ' + result.error, 'danger');
                         }
-                    } catch (error) {
+                    })
+                    .catch(function(error) {
                         console.error('Error deleting position:', error);
-                        this.showAlert('Failed to delete position', 'danger');
-                    }
-                }
+                        self.showAlert('Failed to delete position', 'danger');
+                    });
+            }
+        };
+
+        ETFSignalsManager.prototype.searchETFs = function(query) {
+            var self = this;
+            if (this.searchTimeout) clearTimeout(this.searchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
             }
 
-            async searchETFs(query) {
-                if (this.searchTimeout) clearTimeout(this.searchTimeout);
-                
-                if (query.length < 2) {
-                    document.getElementById('searchResults').style.display = 'none';
-                    return;
-                }
-
-                this.searchTimeout = setTimeout(async () => {
-                    try {
-                        const response = await fetch(`/api/etf/search?q=${encodeURIComponent(query)}`);
-                        const data = await response.json();
-                        this.displaySearchResults(data.results || []);
-                    } catch (error) {
+            this.searchTimeout = setTimeout(function() {
+                fetch('/api/etf/search?q=' + encodeURIComponent(query))
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        self.displaySearchResults(data.results || []);
+                    })
+                    .catch(function(error) {
                         console.error('Error searching ETFs:', error);
-                    }
-                }, 300);
-            }
+                    });
+            }, 300);
+        };
 
-            displaySearchResults(results) {
-                const resultsDiv = document.getElementById('searchResults');
+        ETFSignalsManager.prototype.displaySearchResults = function(results) {
+            var resultsDiv = document.getElementById('searchResults');
                 resultsDiv.innerHTML = '';
 
                 if (results.length === 0) {
@@ -620,56 +628,59 @@
                     return;
                 }
 
-                results.forEach(result => {
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    item.textContent = `${result.symbol} - ${result.name || result.trading_symbol}`;
-                    item.onclick = () => {
-                        document.getElementById('etfSymbol').value = result.symbol;
-                        document.getElementById('tradingSymbol').value = result.trading_symbol;
-                        document.getElementById('instrumentToken').value = result.token;
-                        resultsDiv.style.display = 'none';
-                    };
-                    resultsDiv.appendChild(item);
-                });
+            var self = this;
+            results.forEach(function(result) {
+                var item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.textContent = result.symbol + ' - ' + (result.name || result.trading_symbol);
+                item.onclick = function() {
+                    document.getElementById('etfSymbol').value = result.symbol;
+                    document.getElementById('tradingSymbol').value = result.trading_symbol;
+                    document.getElementById('instrumentToken').value = result.token;
+                    resultsDiv.style.display = 'none';
+                };
+                resultsDiv.appendChild(item);
+            });
 
-                resultsDiv.style.display = 'block';
+            resultsDiv.style.display = 'block';
+        };
+
+        ETFSignalsManager.prototype.startAutoRefresh = function() {
+            var self = this;
+            if (this.liveDataInterval) clearInterval(this.liveDataInterval);
+            
+            if (this.autoRefreshInterval > 0) {
+                this.liveDataInterval = setInterval(function() {
+                    self.loadPositions();
+                }, this.autoRefreshInterval);
+            }
+        };
+
+        ETFSignalsManager.prototype.initLiveDataConnection = function() {
+            // Initialize live data connection if needed
+            document.getElementById('liveIndicator').className = 'live-indicator connected';
+        };
+
+        ETFSignalsManager.prototype.exportData = function() {
+            if (!this.positions || this.positions.length === 0) {
+                this.showAlert('No data to export', 'warning');
+                return;
             }
 
-            startAutoRefresh() {
-                if (this.liveDataInterval) clearInterval(this.liveDataInterval);
-                
-                if (this.autoRefreshInterval > 0) {
-                    this.liveDataInterval = setInterval(() => {
-                        this.loadPositions();
-                    }, this.autoRefreshInterval);
-                }
-            }
+            var csv = this.convertToCSV(this.positions);
+            var blob = new Blob([csv], { type: 'text/csv' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'etf_positions_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
 
-            initLiveDataConnection() {
-                // Initialize live data connection if needed
-                document.getElementById('liveIndicator').className = 'live-indicator connected';
-            }
-
-            exportData() {
-                if (!this.positions || this.positions.length === 0) {
-                    this.showAlert('No data to export', 'warning');
-                    return;
-                }
-
-                const csv = this.convertToCSV(this.positions);
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `etf_positions_${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                window.URL.revokeObjectURL(url);
-            }
-
-            convertToCSV(data) {
-                const headers = ['ETF', 'Entry Date', 'Position', 'Quantity', 'Entry Price', 'Current Price', 'P&L', 'Percentage Change', 'Investment', 'Target Price', 'Notes'];
-                const rows = data.map(position => [
+        ETFSignalsManager.prototype.convertToCSV = function(data) {
+            var headers = ['ETF', 'Entry Date', 'Position', 'Quantity', 'Entry Price', 'Current Price', 'P&L', 'Percentage Change', 'Investment', 'Target Price', 'Notes'];
+            var rows = data.map(function(position) {
+                return [
                     position.etf_symbol,
                     position.entry_date,
                     position.position_type,
@@ -681,14 +692,15 @@
                     position.investment_amount || 0,
                     position.target_price || '',
                     position.notes || ''
-                ]);
+                ];
+            });
 
-                var csvRows = [headers].concat(rows);
-                return csvRows.map(function(row) {
-                    return row.map(function(field) {
-                        return '"' + field + '"';
-                    }).join(',');
-                }).join('\n');
+            var csvRows = [headers].concat(rows);
+            return csvRows.map(function(row) {
+                return row.map(function(field) {
+                    return '"' + field + '"';
+                }).join(',');
+            }).join('\n');
         };
 
         ETFSignalsManager.prototype.showAlert = function(message, type) {
