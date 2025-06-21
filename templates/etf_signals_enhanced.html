@@ -349,121 +349,124 @@
 
             // Auto refresh interval change
             document.getElementById('autoRefreshInterval').addEventListener('change', function(e) {
-                    this.autoRefreshInterval = parseInt(e.target.value) * 1000;
-                    this.startAutoRefresh();
-                });
+                self.autoRefreshInterval = parseInt(e.target.value) * 1000;
+                self.startAutoRefresh();
+            });
 
-                // ETF symbol search
-                document.getElementById('etfSymbol').addEventListener('input', (e) => {
-                    this.searchETFs(e.target.value);
-                });
+            // ETF symbol search
+            document.getElementById('etfSymbol').addEventListener('input', function(e) {
+                self.searchETFs(e.target.value);
+            });
 
-                // Export button
-                document.getElementById('exportBtn').addEventListener('click', () => {
-                    this.exportData();
-                });
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                self.exportData();
+            });
 
-                // Set today's date as default
-                document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-            }
+            // Set today's date as default
+            document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+        };
 
-            async loadPositions() {
-                try {
-                    const response = await fetch('/api/etf/positions');
-                    const data = await response.json();
-
+        ETFSignalsManager.prototype.loadPositions = function() {
+            var self = this;
+            fetch('/api/etf/positions')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
                     if (data.success) {
-                        this.positions = data.positions || [];
-                        this.updatePositionsTable();
-                        this.updateSummaryCards(data.summary || {});
-                        console.log('Loaded', this.positions.length, 'ETF positions');
+                        self.positions = data.positions || [];
+                        self.updatePositionsTable();
+                        self.updateSummaryCards(data.summary || {});
+                        console.log('Loaded', self.positions.length, 'ETF positions');
                     } else {
-                        this.showAlert('Error loading positions: ' + (data.error || 'Unknown error'), 'danger');
+                        self.showAlert('Error loading positions: ' + (data.error || 'Unknown error'), 'danger');
                     }
-                } catch (error) {
+                })
+                .catch(function(error) {
                     console.error('Error loading positions:', error);
-                    this.showAlert('Failed to load positions', 'danger');
-                }
-            }
-
-            updatePositionsTable() {
-                const tbody = document.getElementById('signalsTableBody');
-                tbody.innerHTML = '';
-
-                if (!this.positions || this.positions.length === 0) {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `<td colspan="25" class="text-center text-muted">No ETF positions found</td>`;
-                    return;
-                }
-
-                this.positions.forEach(position => {
-                    const row = document.createElement('tr');
-                    const percentChange = position.percentage_change || 0;
-                    const pnl = position.profit_loss || 0;
-
-                    const percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
-                    const pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
-
-                    // Format entry date
-                    const entryDate = new Date(position.entry_date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: '2-digit'
-                    });
-
-                    // Calculate days held
-                    const daysHeld = Math.floor((new Date() - new Date(position.entry_date)) / (1000 * 60 * 60 * 24));
-                    
-                    // Calculate performance metrics
-                    const currentPrice = position.current_price || position.entry_price;
-                    const priceRange = currentPrice ? `${(currentPrice * 0.95).toFixed(1)}-${(currentPrice * 1.05).toFixed(1)}` : '-';
-                    const performancePoints = percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-';
-                    const impliedVolatility = Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low';
-                    const intradayPerf = percentChange > 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`;
-                    const quoteTime = position.last_update_time ? new Date(position.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '-';
-
-                    row.innerHTML = `
-                        <td><strong>${position.etf_symbol}</strong></td>
-                        <td class="${percentClass}">-</td>
-                        <td>${daysHeld}d</td>
-                        <td>${entryDate}</td>
-                        <td><span class="badge ${position.position_type === 'LONG' ? 'bg-success' : 'bg-danger'}">${position.position_type}</span></td>
-                        <td>${position.quantity}</td>
-                        <td>₹${position.entry_price.toFixed(2)}</td>
-                        <td class="${pnlClass}">₹${currentPrice.toFixed(2)}</td>
-                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                        <td>₹${(position.investment_amount || 0).toFixed(0)}</td>
-                        <td>₹${(position.target_price || 0).toFixed(2)}</td>
-                        <td>₹${(position.target_value_amount || 0).toFixed(0)}</td>
-                        <td class="profit">₹${(position.target_profit_return || 0).toFixed(0)}</td>
-                        <td class="${pnlClass}">₹${pnl.toFixed(0)}</td>
-                        <td>${entryDate}</td>
-                        <td>-</td>
-                        <td>${priceRange}</td>
-                        <td>${performancePoints}</td>
-                        <td><span class="badge bg-info">${impliedVolatility}</span></td>
-                        <td class="${percentClass}">${intradayPerf}</td>
-                        <td><small>${position.notes || '-'}</small></td>
-                        <td><small>${quoteTime}</small></td>
-                        <td class="${percentClass}">-</td>
-                        <td class="${percentClass}">${percentChange.toFixed(2)}%</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="etfManager.editPosition(${position.id})" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger ms-1" onclick="etfManager.deletePosition(${position.id})" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
+                    self.showAlert('Failed to load positions', 'danger');
                 });
+        };
+
+        ETFSignalsManager.prototype.updatePositionsTable = function() {
+            var tbody = document.getElementById('signalsTableBody');
+            tbody.innerHTML = '';
+
+            if (!this.positions || this.positions.length === 0) {
+                var row = tbody.insertRow();
+                row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF positions found</td>';
+                return;
             }
 
-            updateSummaryCards(summary) {
-                if (!summary) summary = {};
+            var self = this;
+            this.positions.forEach(function(position) {
+                var row = document.createElement('tr');
+                var percentChange = position.percentage_change || 0;
+                var pnl = position.profit_loss || 0;
 
-                document.getElementById('totalPositions').textContent = summary.total_positions || 0;
+                var percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
+                var pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+
+                // Format entry date
+                var entryDate = new Date(position.entry_date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: '2-digit'
+                });
+
+                // Calculate days held
+                var daysHeld = Math.floor((new Date() - new Date(position.entry_date)) / (1000 * 60 * 60 * 24));
+                
+                // Calculate performance metrics
+                var currentPrice = position.current_price || position.entry_price;
+                var priceRange = currentPrice ? (currentPrice * 0.95).toFixed(1) + '-' + (currentPrice * 1.05).toFixed(1) : '-';
+                var performancePoints = percentChange > 5 ? '★★★' : percentChange > 2 ? '★★' : percentChange > 0 ? '★' : '-';
+                var impliedVolatility = Math.abs(percentChange) > 3 ? 'High' : Math.abs(percentChange) > 1 ? 'Med' : 'Low';
+                var intradayPerf = percentChange > 0 ? '+' + percentChange.toFixed(1) + '%' : percentChange.toFixed(1) + '%';
+                var quoteTime = position.last_update_time ? new Date(position.last_update_time).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : '-';
+
+                row.innerHTML = 
+                    '<td><strong>' + position.etf_symbol + '</strong></td>' +
+                    '<td class="' + percentClass + '">-</td>' +
+                    '<td>' + daysHeld + 'd</td>' +
+                    '<td>' + entryDate + '</td>' +
+                    '<td><span class="badge ' + (position.position_type === 'LONG' ? 'bg-success' : 'bg-danger') + '">' + position.position_type + '</span></td>' +
+                    '<td>' + position.quantity + '</td>' +
+                    '<td>₹' + position.entry_price.toFixed(2) + '</td>' +
+                    '<td class="' + pnlClass + '">₹' + currentPrice.toFixed(2) + '</td>' +
+                    '<td class="' + percentClass + '">' + percentChange.toFixed(2) + '%</td>' +
+                    '<td>₹' + (position.investment_amount || 0).toFixed(0) + '</td>' +
+                    '<td>₹' + (position.target_price || 0).toFixed(2) + '</td>' +
+                    '<td>₹' + (position.target_value_amount || 0).toFixed(0) + '</td>' +
+                    '<td class="profit">₹' + (position.target_profit_return || 0).toFixed(0) + '</td>' +
+                    '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
+                    '<td>' + entryDate + '</td>' +
+                    '<td>-</td>' +
+                    '<td>' + priceRange + '</td>' +
+                    '<td>' + performancePoints + '</td>' +
+                    '<td><span class="badge bg-info">' + impliedVolatility + '</span></td>' +
+                    '<td class="' + percentClass + '">' + intradayPerf + '</td>' +
+                    '<td><small>' + (position.notes || '-') + '</small></td>' +
+                    '<td><small>' + quoteTime + '</small></td>' +
+                    '<td class="' + percentClass + '">-</td>' +
+                    '<td class="' + percentClass + '">' + percentChange.toFixed(2) + '%</td>' +
+                    '<td>' +
+                        '<button class="btn btn-sm btn-outline-primary" onclick="etfManager.editPosition(' + position.id + ')" title="Edit">' +
+                            '<i class="fas fa-edit"></i>' +
+                        '</button>' +
+                        '<button class="btn btn-sm btn-outline-danger ms-1" onclick="etfManager.deletePosition(' + position.id + ')" title="Delete">' +
+                            '<i class="fas fa-trash"></i>' +
+                        '</button>' +
+                    '</td>';
+                tbody.appendChild(row);
+            });
+        };
+
+        ETFSignalsManager.prototype.updateSummaryCards = function(summary) {
+            if (!summary) summary = {};
+
+            document.getElementById('totalPositions').textContent = summary.total_positions || 0;
                 document.getElementById('totalInvestment').textContent = '₹' + (summary.total_investment || 0).toLocaleString('en-IN');
                 document.getElementById('currentValue').textContent = '₹' + (summary.current_value || 0).toLocaleString('en-IN');
                 document.getElementById('totalPnL').textContent = '₹' + (summary.total_pnl || 0).toLocaleString('en-IN');
@@ -472,26 +475,26 @@
                 document.getElementById('lossPositions').textContent = summary.loss_positions || 0;
 
                 // Update P&L color
-                const pnlElement = document.getElementById('totalPnL');
-                const pnl = summary.total_pnl || 0;
+                var pnlElement = document.getElementById('totalPnL');
+                var pnl = summary.total_pnl || 0;
                 pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
 
                 // Update return % color
-                const returnElement = document.getElementById('returnPercent');
-                const returnPercent = summary.return_percent || 0;
+                var returnElement = document.getElementById('returnPercent');
+                var returnPercent = summary.return_percent || 0;
                 returnElement.className = returnPercent >= 0 ? 'text-success' : 'text-danger';
-            }
+        };
 
-            showAddDealModal() {
-                const modal = new bootstrap.Modal(document.getElementById('positionModal'));
-                const modalTitle = document.getElementById('modalTitle');
+        ETFSignalsManager.prototype.showAddDealModal = function() {
+            var modal = new bootstrap.Modal(document.getElementById('positionModal'));
+            var modalTitle = document.getElementById('modalTitle');
 
-                modalTitle.textContent = 'Add New Deal';
-                this.clearPositionForm();
-                modal.show();
-            }
+            modalTitle.textContent = 'Add New Deal';
+            this.clearPositionForm();
+            modal.show();
+        };
 
-            clearPositionForm() {
+        ETFSignalsManager.prototype.clearPositionForm = function() {
                 document.getElementById('positionId').value = '';
                 document.getElementById('etfSymbol').value = '';
                 document.getElementById('tradingSymbol').value = '';
@@ -503,58 +506,61 @@
                 document.getElementById('positionType').value = 'LONG';
                 document.getElementById('notes').value = '';
                 document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-            }
+        };
 
-            async savePosition() {
-                const formData = {
-                    id: document.getElementById('positionId').value,
-                    etf_symbol: document.getElementById('etfSymbol').value,
-                    trading_symbol: document.getElementById('tradingSymbol').value,
-                    token: document.getElementById('instrumentToken').value,
-                    entry_date: document.getElementById('entryDate').value,
-                    quantity: parseInt(document.getElementById('quantity').value),
-                    entry_price: parseFloat(document.getElementById('entryPrice').value),
-                    target_price: parseFloat(document.getElementById('targetPrice').value) || null,
-                    stop_loss: parseFloat(document.getElementById('stopLoss').value) || null,
-                    position_type: document.getElementById('positionType').value,
-                    notes: document.getElementById('notes').value
-                };
+        ETFSignalsManager.prototype.savePosition = function() {
+            var self = this;
+            var formData = {
+                id: document.getElementById('positionId').value,
+                etf_symbol: document.getElementById('etfSymbol').value,
+                trading_symbol: document.getElementById('tradingSymbol').value,
+                token: document.getElementById('instrumentToken').value,
+                entry_date: document.getElementById('entryDate').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                entry_price: parseFloat(document.getElementById('entryPrice').value),
+                target_price: parseFloat(document.getElementById('targetPrice').value) || null,
+                stop_loss: parseFloat(document.getElementById('stopLoss').value) || null,
+                position_type: document.getElementById('positionType').value,
+                notes: document.getElementById('notes').value
+            };
 
-                try {
-                    const url = formData.id ? `/api/etf/positions/${formData.id}` : '/api/etf/positions';
-                    const method = formData.id ? 'PUT' : 'POST';
+            var url = formData.id ? '/api/etf/positions/' + formData.id : '/api/etf/positions';
+            var method = formData.id ? 'PUT' : 'POST';
 
-                    const response = await fetch(url, {
-                        method: method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
-                    });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('positionModal')).hide();
-                        this.loadPositions();
-                        this.showAlert('Position saved successfully', 'success');
-                    } else {
-                        this.showAlert('Error: ' + result.error, 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error saving position:', error);
-                    this.showAlert('Failed to save position', 'danger');
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(result) {
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('positionModal')).hide();
+                    self.loadPositions();
+                    self.showAlert('Position saved successfully', 'success');
+                } else {
+                    self.showAlert('Error: ' + result.error, 'danger');
                 }
-            }
+            })
+            .catch(function(error) {
+                console.error('Error saving position:', error);
+                self.showAlert('Failed to save position', 'danger');
+            });
+        };
 
-            async editPosition(id) {
-                const position = this.positions.find(p => p.id === id);
-                if (position) {
-                    this.fillPositionForm(position);
-                    const modal = new bootstrap.Modal(document.getElementById('positionModal'));
-                    document.getElementById('modalTitle').textContent = 'Edit Position';
-                    modal.show();
-                }
+        ETFSignalsManager.prototype.editPosition = function(id) {
+            var position = this.positions.find(function(p) { return p.id === id; });
+            if (position) {
+                this.fillPositionForm(position);
+                var modal = new bootstrap.Modal(document.getElementById('positionModal'));
+                document.getElementById('modalTitle').textContent = 'Edit Position';
+                modal.show();
             }
+        };
 
-            fillPositionForm(position) {
+        ETFSignalsManager.prototype.fillPositionForm = function(position) {
                 document.getElementById('positionId').value = position.id;
                 document.getElementById('etfSymbol').value = position.etf_symbol;
                 document.getElementById('tradingSymbol').value = position.trading_symbol;
@@ -677,17 +683,21 @@
                     position.notes || ''
                 ]);
 
-                return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
-            }
+                var csvRows = [headers].concat(rows);
+                return csvRows.map(function(row) {
+                    return row.map(function(field) {
+                        return '"' + field + '"';
+                    }).join(',');
+                }).join('\n');
+        };
 
-            showAlert(message, type) {
-                // Simple alert for now - could be enhanced with better UI
-                alert(message);
-            }
-        }
+        ETFSignalsManager.prototype.showAlert = function(message, type) {
+            // Simple alert for now - could be enhanced with better UI
+            alert(message);
+        };
 
         // Initialize the ETF Signals Manager
-        const etfManager = new ETFSignalsManager();
+        var etfManager = new ETFSignalsManager();
     </script>
 </body>
 </html>
