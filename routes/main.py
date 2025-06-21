@@ -376,7 +376,7 @@ def api_live_quotes():
 def etf_signals():
     """ETF Signals page"""
     try:
-        return render_template('etf_signals.html')ignals.html')
+        return render_template('etf_signals.html')
     except Exception as e:
         logging.error(f"ETF signals page error: {str(e)}")
         flash('Error loading ETF signals page', 'error')
