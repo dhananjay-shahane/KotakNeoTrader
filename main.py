@@ -15,10 +15,15 @@ setup_library_paths()
 
 from app import app  # noqa: F401
 
-# Register blueprints
+# Register blueprints only if not already registered
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.signals_datatable import datatable_bp
-app.register_blueprint(auth_bp)
-app.register_blueprint(main_bp)
-app.register_blueprint(datatable_bp)
+
+# Check if blueprints are already registered before registering them
+if 'auth' not in [bp.name for bp in app.blueprints.values()]:
+    app.register_blueprint(auth_bp)
+if 'main' not in [bp.name for bp in app.blueprints.values()]:
+    app.register_blueprint(main_bp)
+if 'datatable_bp' not in [bp.name for bp in app.blueprints.values()]:
+    app.register_blueprint(datatable_bp)
