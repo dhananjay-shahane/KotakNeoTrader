@@ -216,12 +216,20 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
     var targetPrice = parseFloat(position.tp || position.target_price || 0);
 
-    // Ensure current price is realistic - reject ₹100 fallback values
-    if (!currentPrice || currentPrice <= 0 || currentPrice === 100) {
-        currentPrice = entryPrice; // Use actual entry price instead of generic ₹100
-        changePct = 0; // Set change to 0% when using entry price
-        console.log('Using entry price for', symbol, ':', currentPrice);
+    // Ensure we have a valid current price for calculations
+    if (!currentPrice || currentPrice <= 0) {
+        currentPrice = entryPrice; // Fallback to entry price if no CMP available
+        changePct = 0; // No change when using entry price
+        console.log('Using entry price fallback for', symbol, ':', currentPrice);
+    } else {
+        // Recalculate change percentage based on actual CMP vs entry price
+        changePct = ((currentPrice - entryPrice) / entryPrice) * 100;
+        console.log('Using calculated CMP for', symbol, ':', currentPrice, 'Change:', changePct.toFixed(2) + '%');
     }
+
+    // Recalculate P&L based on current price
+    var currentValue = currentPrice * quantity;
+    pnl = currentValue - investment;
 
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
     var changeClass = changePct >= 0 ? 'profit' : 'loss';
@@ -236,13 +244,14 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>₹' + entryPrice.toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + 
         (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">LIVE</span>' : 
-         position.data_source && position.data_source.includes('SIMULATED') ? ' <span class="badge bg-info badge-sm">SIM</span>' : 
+         position.data_source && position.data_source.includes('MARKET_SIMULATION') ? ' <span class="badge bg-info badge-sm">SIM</span>' :
+         position.data_source && position.data_source.includes('SIMULATION') ? ' <span class="badge bg-warning badge-sm">CALC</span>' :
          ' <span class="badge bg-secondary badge-sm">EP</span>') + '</td>' +
         '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>₹' + investment.toFixed(0) + '</td>' +
         '<td>₹' + targetPrice.toFixed(2) + '</td>' +
-        '<td>₹' + (position.tva || 0).toFixed(0) + '</td>' +
-        '<td class="profit">₹' + (position.tpr || 0).toFixed(0) + '</td>' +
+        '<td>₹' + (currentValue || (currentPrice * quantity)).toFixed(0) + '</td>' +
+        '<td class="profit">' + ((targetPrice > entryPrice ? '+' : '') + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2)) + '%</td>' +
         '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
         '<td>' + (position.ed || '') + '</td>' +
         '<td>' + (position.exp || '') + '</td>' +
