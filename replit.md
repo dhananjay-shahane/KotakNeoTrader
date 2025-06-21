@@ -151,5 +151,6 @@ The application follows a modern Flask architecture with clear separation of con
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
-UI Preferences: Keep original ETF signals page UI unchanged - user prefers existing design.
+UI Preferences: ETF signals page should match deals page UI exactly with same table structure and fields.
+Action Preferences: Only "Add Deal" button in actions column for ETF signals page.
 Data Preferences: No demo data - fetch and display real data from database only.
