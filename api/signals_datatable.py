@@ -312,30 +312,30 @@ def get_admin_signals_datatable():
 
             # Format data exactly as requested with field names
             trade_dict = {
-                'user_target_id': signal.target_user_id,
+                'user_traget_id': signal.target_user_id,  # Keep original typo as requested
                 'Symbol': signal.symbol,
-                '30': '-',  # Placeholder for 30 field
+                '30': '-',
                 'DH': f"₹{float(latest_quote.high_price):,.2f}" if latest_quote and latest_quote.high_price else '-',
                 'Date': signal.created_at.strftime('%Y-%m-%d') if signal.created_at else '',
-                'Pos': signal.signal_type,  # Pos
-                'Qty': signal.quantity,  # Qty
-                'EP': f"₹{float(signal.entry_price):,.2f}" if signal.entry_price else '-',  # EP
-                'CMP': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',  # CMP
-                '%Chan': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',  # %Chan
-                'Inv.': f"₹{investment:,.2f}",  # Inv.
-                'TP': f"₹{float(signal.target_price):,.2f}" if signal.target_price else '-',  # TP
-                'TVA': f"₹{target_value:,.2f}" if target_value else '-',  # TVA
-                'TPR': f"{((float(signal.target_price) - float(signal.entry_price)) / float(signal.entry_price) * 100):+.2f}%" if signal.target_price and signal.entry_price else '-',  # TPR
-                'PL': f"₹{pnl:+,.2f}",  # PL
-                'ED': signal.updated_at.strftime('%Y-%m-%d') if signal.status != 'ACTIVE' else '-',  # ED
-                'PR': f"{(pnl / investment * 100):+.2f}%" if investment > 0 else '-',  # PR
-                'PP': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',  # PP
-                'IV': f"₹{investment:,.2f}",  # IV
-                'IP': '100.00%',  # IP - assuming 100% initial
-                'NT': f"₹{current_value:,.2f}",  # NT
-                'Qt': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',  # Qt
-                '7': '-',  # Placeholder for 7 field
-                '%Ch': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%'  # %Ch
+                'Pos': signal.signal_type,
+                'Qty': signal.quantity,
+                'EP': f"₹{float(signal.entry_price):,.2f}" if signal.entry_price else '-',
+                'CMP': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',
+                '%Chan': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',
+                'Inv.': f"₹{investment:,.2f}",
+                'TP': f"₹{float(signal.target_price):,.2f}" if signal.target_price else '-',
+                'TVA': f"₹{target_value:,.2f}" if target_value else '-',
+                'TPR': f"{((float(signal.target_price) - float(signal.entry_price)) / float(signal.entry_price) * 100):+.2f}%" if signal.target_price and signal.entry_price else '-',
+                'PL': f"₹{pnl:+,.2f}",
+                'ED': signal.updated_at.strftime('%Y-%m-%d') if signal.status != 'ACTIVE' else '-',
+                'PR': f"{(pnl / investment * 100):+.2f}%" if investment > 0 else '-',
+                'PP': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%',
+                'IV': f"₹{investment:,.2f}",
+                'IP': '100.00%',
+                'NT': f"₹{current_value:,.2f}",
+                'Qt': f"₹{float(signal.current_price):,.2f}" if signal.current_price else '-',
+                '7': '-',
+                '%Ch': f"{pnl_percent:+.2f}%" if pnl_percent else '0.00%'
             }
 
             formatted_data.append(trade_dict)

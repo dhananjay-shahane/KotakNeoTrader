@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 
@@ -15,3 +14,11 @@ def setup_library_paths():
 setup_library_paths()
 
 from app import app  # noqa: F401
+
+# Register blueprints
+from routes.auth import auth_bp
+from routes.main import main_bp
+from api.signals_datatable import datatable_bp
+app.register_blueprint(auth_bp)
+app.register_blueprint(main_bp)
+app.register_blueprint(datatable_bp)
