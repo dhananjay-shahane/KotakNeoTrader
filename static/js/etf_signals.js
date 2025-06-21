@@ -195,7 +195,8 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-secondary') + '">' + (position.pos == 1 ? '1 (OPEN)' : '0 (CLOSED)') + '</span></td>' +
         '<td>' + (position.qty || 0) + '</td>' +
         '<td>₹' + (position.ep || 0).toFixed(2) + '</td>' +
-        '<td class="' + changeClass + '">₹' + (position.cmp || 0).toFixed(2) + '</td>' +
+        '<td class="' + changeClass + '">₹' + (position.cmp || 0).toFixed(2) + 
+        (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">KN</span>' : '') + '</td>' +
         '<td class="' + changeClass + '">' + (position.change_pct || 0).toFixed(2) + '%</td>' +
         '<td>₹' + (position.inv || 0).toFixed(0) + '</td>' +
         '<td>₹' + (position.tp || 0).toFixed(2) + '</td>' +

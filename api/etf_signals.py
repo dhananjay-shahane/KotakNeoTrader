@@ -134,7 +134,7 @@ def get_admin_signals():
                 'message': 'No signals found'
             })
 
-        # Get comprehensive market data from KotakNeoQuote table with fallback to RealtimeQuote
+        # Get comprehensive market data - PRIORITIZE Kotak Neo quotes for CMP
         latest_quotes = {}
         try:
             from models_etf import KotakNeoQuote
@@ -144,49 +144,25 @@ def get_admin_signals():
             # Get unique symbols from signals
             signal_symbols = list(set([signal.symbol for signal in signals]))
 
-            # Try to get fresh quotes from Kotak Neo API
-            trading_functions = TradingFunctions()
-            if hasattr(trading_functions, 'get_quotes_for_symbols'):
-                try:
-                    fresh_quotes = trading_functions.get_quotes_for_symbols(signal_symbols)
-                    for symbol, quote_data in fresh_quotes.items():
-                        latest_quotes[symbol] = {
-                            'current_price': float(quote_data.get('ltp', 0)),
-                            'change_percent': float(quote_data.get('percentage_change', 0)),
-                            'open_price': float(quote_data.get('open_price', 0)),
-                            'high_price': float(quote_data.get('high_price', 0)),
-                            'low_price': float(quote_data.get('low_price', 0)),
-                            'volume': quote_data.get('volume', 0),
-                            'bid_price': float(quote_data.get('bid_price', 0)),
-                            'ask_price': float(quote_data.get('ask_price', 0)),
-                            'week_52_high': float(quote_data.get('week_52_high', 0)),
-                            'week_52_low': float(quote_data.get('week_52_low', 0)),
-                            'last_update': datetime.now(),
-                            'data_source': 'KOTAK_NEO_API_LIVE'
-                        }
-                    logger.info(f"✅ Retrieved {len(fresh_quotes)} fresh quotes from Kotak Neo API")
-                except Exception as api_error:
-                    logger.warning(f"⚠️ Could not fetch fresh quotes from API: {api_error}")
+            # STEP 1: Get latest Kotak Neo quotes data (HIGHEST PRIORITY for CMP)
+            kotak_subquery = db.session.query(
+                KotakNeoQuote.symbol,
+                func.max(KotakNeoQuote.timestamp).label('max_timestamp')
+            ).group_by(KotakNeoQuote.symbol).subquery()
 
-            # Fallback to database quotes if API fails
-            if not latest_quotes:
-                # First try to get comprehensive data from KotakNeoQuote
-                kotak_subquery = db.session.query(
-                    KotakNeoQuote.symbol,
-                    func.max(KotakNeoQuote.timestamp).label('max_timestamp')
-                ).group_by(KotakNeoQuote.symbol).subquery()
+            kotak_quotes = db.session.query(KotakNeoQuote).join(
+                kotak_subquery,
+                db.and_(
+                    KotakNeoQuote.symbol == kotak_subquery.c.symbol,
+                    KotakNeoQuote.timestamp == kotak_subquery.c.max_timestamp
+                )
+            ).filter(KotakNeoQuote.symbol.in_(signal_symbols)).all()
 
-                kotak_quotes = db.session.query(KotakNeoQuote).join(
-                    kotak_subquery,
-                    db.and_(
-                        KotakNeoQuote.symbol == kotak_subquery.c.symbol,
-                        KotakNeoQuote.timestamp == kotak_subquery.c.max_timestamp
-                    )
-                ).all()
-
-                for quote in kotak_quotes:
+            # Process Kotak Neo quotes with PRIORITY
+            for quote in kotak_quotes:
+                if quote.ltp and float(quote.ltp) > 0:  # Only use if valid price exists
                     latest_quotes[quote.symbol] = {
-                        'current_price': float(quote.ltp),
+                        'current_price': float(quote.ltp),  # KOTAK NEO CMP
                         'change_percent': float(quote.percentage_change) if quote.percentage_change else 0,
                         'open_price': float(quote.open_price) if quote.open_price else 0,
                         'high_price': float(quote.high_price) if quote.high_price else 0,
@@ -197,10 +173,41 @@ def get_admin_signals():
                         'week_52_high': float(quote.week_52_high) if quote.week_52_high else 0,
                         'week_52_low': float(quote.week_52_low) if quote.week_52_low else 0,
                         'last_update': quote.timestamp,
-                        'data_source': 'KOTAK_NEO_API'
+                        'data_source': 'KOTAK_NEO_DB'
                     }
+                    logger.info(f"🎯 Using Kotak Neo CMP for {quote.symbol}: ₹{float(quote.ltp)}")
 
-                # Fallback to RealtimeQuote for symbols not in KotakNeoQuote
+            # STEP 2: Try to get fresh quotes from Kotak Neo API for missing symbols
+            missing_symbols = [s for s in signal_symbols if s not in latest_quotes]
+            if missing_symbols:
+                trading_functions = TradingFunctions()
+                if hasattr(trading_functions, 'get_quotes_for_symbols'):
+                    try:
+                        fresh_quotes = trading_functions.get_quotes_for_symbols(missing_symbols)
+                        for symbol, quote_data in fresh_quotes.items():
+                            if quote_data.get('ltp', 0) > 0:  # Only use if valid price
+                                latest_quotes[symbol] = {
+                                    'current_price': float(quote_data.get('ltp', 0)),  # LIVE KOTAK NEO CMP
+                                    'change_percent': float(quote_data.get('percentage_change', 0)),
+                                    'open_price': float(quote_data.get('open_price', 0)),
+                                    'high_price': float(quote_data.get('high_price', 0)),
+                                    'low_price': float(quote_data.get('low_price', 0)),
+                                    'volume': quote_data.get('volume', 0),
+                                    'bid_price': float(quote_data.get('bid_price', 0)),
+                                    'ask_price': float(quote_data.get('ask_price', 0)),
+                                    'week_52_high': float(quote_data.get('week_52_high', 0)),
+                                    'week_52_low': float(quote_data.get('week_52_low', 0)),
+                                    'last_update': datetime.now(),
+                                    'data_source': 'KOTAK_NEO_API_LIVE'
+                                }
+                                logger.info(f"🔥 Using LIVE Kotak Neo CMP for {symbol}: ₹{float(quote_data.get('ltp', 0))}")
+                        logger.info(f"✅ Retrieved {len(fresh_quotes)} fresh quotes from Kotak Neo API")
+                    except Exception as api_error:
+                        logger.warning(f"⚠️ Could not fetch fresh quotes from API: {api_error}")
+
+            # STEP 3: Fallback to RealtimeQuote ONLY for symbols not found in Kotak Neo data
+            still_missing_symbols = [s for s in signal_symbols if s not in latest_quotes]
+            if still_missing_symbols:
                 realtime_subquery = db.session.query(
                     RealtimeQuote.symbol,
                     func.max(RealtimeQuote.timestamp).label('max_timestamp')
@@ -212,26 +219,26 @@ def get_admin_signals():
                         RealtimeQuote.symbol == realtime_subquery.c.symbol,
                         RealtimeQuote.timestamp == realtime_subquery.c.max_timestamp
                     )
-                ).all()
+                ).filter(RealtimeQuote.symbol.in_(still_missing_symbols)).all()
 
                 for quote in realtime_quotes:
-                    if quote.symbol not in latest_quotes:  # Only add if not already from KotakNeoQuote
-                        latest_quotes[quote.symbol] = {
-                            'current_price': float(quote.current_price),
-                            'change_percent': float(quote.change_percent) if quote.change_percent else 0,
-                            'open_price': float(quote.open_price) if quote.open_price else 0,
-                            'high_price': float(quote.high_price) if quote.high_price else 0,
-                            'low_price': float(quote.low_price) if quote.low_price else 0,
-                            'volume': quote.volume or 0,
-                            'bid_price': 0,
-                            'ask_price': 0,
-                            'week_52_high': 0,
-                            'week_52_low': 0,
-                            'last_update': quote.timestamp,
-                            'data_source': 'REALTIME_QUOTES'
-                        }
+                    latest_quotes[quote.symbol] = {
+                        'current_price': float(quote.current_price),
+                        'change_percent': float(quote.change_percent) if quote.change_percent else 0,
+                        'open_price': float(quote.open_price) if quote.open_price else 0,
+                        'high_price': float(quote.high_price) if quote.high_price else 0,
+                        'low_price': float(quote.low_price) if quote.low_price else 0,
+                        'volume': quote.volume or 0,
+                        'bid_price': 0,
+                        'ask_price': 0,
+                        'week_52_high': 0,
+                        'week_52_low': 0,
+                        'last_update': quote.timestamp,
+                        'data_source': 'REALTIME_QUOTES_FALLBACK'
+                    }
+                    logger.info(f"⚡ Using RealtimeQuote CMP for {quote.symbol}: ₹{float(quote.current_price)}")
 
-                logger.info(f"✅ Retrieved {len(latest_quotes)} latest quotes from database")
+            logger.info(f"📊 Total quotes retrieved: {len(latest_quotes)} | Kotak Neo priority enforced")
 
         except Exception as quote_error:
             logger.warning(f"⚠️ Could not fetch latest quotes: {quote_error}")
@@ -241,9 +248,9 @@ def get_admin_signals():
         total_current_value = 0
         total_pnl = 0
 
-        # Process each admin trade signal with real-time CMP calculations
+        # Process each admin trade signal with KOTAK NEO CMP PRIORITY
         for idx, signal in enumerate(signals):
-            # Get real-time CMP from Kotak Neo quotes or fallback to signal price
+            # Get entry price and basic details
             entry_price = float(signal.entry_price)
             current_price = float(signal.current_price) if signal.current_price else entry_price
             quantity = signal.quantity
@@ -257,30 +264,39 @@ def get_admin_signals():
             volume = 0
             bid_price = ask_price = 0
             week_52_high = week_52_low = 0
-            data_source = 'SIGNAL_DATA'
+            data_source = 'SIGNAL_DATA_DEFAULT'
 
-            # Override with real-time quote data if available
+            # 🎯 PRIORITY: Replace CMP with Kotak Neo quotes if symbol matches
             if signal.symbol in latest_quotes:
                 quote_data = latest_quotes[signal.symbol]
-                current_price = quote_data['current_price'] or current_price
-                change_percent = quote_data['change_percent']
-                open_price = quote_data['open_price'] or current_price
-                high_price = quote_data['high_price'] or current_price
-                low_price = quote_data['low_price'] or current_price
-                volume = quote_data['volume']
-                bid_price = quote_data['bid_price']
-                ask_price = quote_data['ask_price']
-                week_52_high = quote_data['week_52_high']
-                week_52_low = quote_data['week_52_low']
-                data_source = quote_data['data_source']
+                
+                # REPLACE CMP with Kotak Neo data
+                kotak_cmp = quote_data['current_price']
+                if kotak_cmp and kotak_cmp > 0:
+                    current_price = kotak_cmp  # 🔥 KOTAK NEO CMP REPLACEMENT
+                    change_percent = quote_data['change_percent']
+                    open_price = quote_data['open_price'] or current_price
+                    high_price = quote_data['high_price'] or current_price
+                    low_price = quote_data['low_price'] or current_price
+                    volume = quote_data['volume']
+                    bid_price = quote_data['bid_price']
+                    ask_price = quote_data['ask_price']
+                    week_52_high = quote_data['week_52_high']
+                    week_52_low = quote_data['week_52_low']
+                    data_source = quote_data['data_source']
 
-                # Update signal with latest price
-                signal.current_price = current_price
-                signal.change_percent = change_percent
-                signal.last_update_time = datetime.now()
+                    # Update signal in database with Kotak Neo CMP
+                    signal.current_price = current_price
+                    signal.change_percent = change_percent
+                    signal.last_update_time = datetime.now()
+                    
+                    logger.debug(f"✅ {signal.symbol}: CMP replaced with Kotak Neo ₹{current_price} (from {data_source})")
+                else:
+                    logger.warning(f"⚠️ {signal.symbol}: Invalid Kotak Neo CMP, using fallback")
             else:
-                # Calculate change percent from entry price
+                # Calculate change percent from entry price (fallback only)
                 change_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+                logger.warning(f"⚠️ {signal.symbol}: No Kotak Neo data found, using signal CMP ₹{current_price}")
 
             # Investment calculation
             invested_amount = entry_price * quantity
@@ -429,7 +445,8 @@ def get_admin_signals():
                     'pos': position_status,  # Pos (Position status: 1=open, 0=closed)
                     'qty': quantity,  # Qty
                     'ep': entry_price,  # EP (Entry Price)
-                    'cmp': current_price,  # CMP (Current Market Price)
+                    'cmp': current_price,  # CMP (Current Market Price) - KOTAK NEO PRIORITY
+                    'data_source': data_source,  # Data source indicator
                     'change_pct': change_percent,  # %Chan (Change %)
                     'inv': invested_amount,  # Inv. (Investment)
                     'tp': target_price,  # TP (Target Price)

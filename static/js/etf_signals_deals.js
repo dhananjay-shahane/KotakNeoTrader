@@ -159,10 +159,10 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
                     cellContent = '₹' + (signal.ep || 0).toFixed(2);
                     break;
                 case 'cmp':
-                    cellContent = '₹' + (signal.cmp || 0).toFixed(2);
-                    var changePct = signal.change_pct || 0;
-                    if (changePct > 0) cell.className += ' profit';
-                    else if (changePct < 0) cell.className += ' loss';
+                    cellContent = '₹' + (signal.cmp || signal.ep || 0).toFixed(2);
+                    if (signal.data_source && signal.data_source.includes('KOTAK_NEO')) {
+                        cellContent += ' <span class="badge bg-success badge-sm">KN</span>';
+                    }
                     break;
                 case 'change_pct':
                     var changePct = signal.change_pct || 0;
@@ -426,13 +426,13 @@ function exportSignals() {
 function addDeal(symbol, price) {
     // Create a simple modal or redirect to deals page with pre-filled data
     var dealUrl = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price;
-    
+
     // Option 1: Open in new tab
     // window.open(dealUrl, '_blank');
-    
+
     // Option 2: Navigate to deals page
     window.location.href = dealUrl;
-    
+
     // Option 3: Show a simple confirmation
     // if (confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + '?')) {
     //     window.location.href = dealUrl;
