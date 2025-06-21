@@ -314,40 +314,41 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        class ETFSignalsManager {
-            constructor() {
-                this.positions = [];
-                this.liveDataInterval = null;
-                this.autoRefreshInterval = 10000; // 10 seconds
-                this.searchTimeout = null;
-                this.init();
-            }
+        function ETFSignalsManager() {
+            var self = this;
+            this.positions = [];
+            this.liveDataInterval = null;
+            this.autoRefreshInterval = 10000; // 10 seconds
+            this.searchTimeout = null;
+            this.init();
+        }
 
-            init() {
-                this.setupEventListeners();
-                this.loadPositions();
-                this.startAutoRefresh();
-                this.initLiveDataConnection();
-            }
+        ETFSignalsManager.prototype.init = function() {
+            this.setupEventListeners();
+            this.loadPositions();
+            this.startAutoRefresh();
+            this.initLiveDataConnection();
+        };
 
-            setupEventListeners() {
-                // Add deal button
-                document.getElementById('addDealBtn').addEventListener('click', () => {
-                    this.showAddDealModal();
-                });
+        ETFSignalsManager.prototype.setupEventListeners = function() {
+            var self = this;
+            // Add deal button
+            document.getElementById('addDealBtn').addEventListener('click', function() {
+                self.showAddDealModal();
+            });
 
-                // Save position button
-                document.getElementById('savePositionBtn').addEventListener('click', () => {
-                    this.savePosition();
-                });
+            // Save position button
+            document.getElementById('savePositionBtn').addEventListener('click', function() {
+                self.savePosition();
+            });
 
-                // Refresh button
-                document.getElementById('refreshBtn').addEventListener('click', () => {
-                    this.loadPositions();
-                });
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                self.loadPositions();
+            });
 
-                // Auto refresh interval change
-                document.getElementById('autoRefreshInterval').addEventListener('change', (e) => {
+            // Auto refresh interval change
+            document.getElementById('autoRefreshInterval').addEventListener('change', function(e) {
                     this.autoRefreshInterval = parseInt(e.target.value) * 1000;
                     this.startAutoRefresh();
                 });
