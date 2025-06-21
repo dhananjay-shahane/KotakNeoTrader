@@ -208,6 +208,11 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
     var targetPrice = parseFloat(position.tp || position.target_price || 0);
     
+    // Ensure current price is never 0 or undefined
+    if (!currentPrice || currentPrice <= 0) {
+        currentPrice = entryPrice || 100; // Use entry price or default fallback
+    }
+    
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
     var changeClass = changePct >= 0 ? 'profit' : 'loss';
     
@@ -220,7 +225,7 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>' + quantity + '</td>' +
         '<td>₹' + entryPrice.toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + 
-        (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">KN</span>' : '') + '</td>' +
+        (position.data_source && position.data_source.includes('KOTAK_NEO') ? ' <span class="badge bg-success badge-sm">KN</span>' : ' <span class="badge bg-warning badge-sm">EP</span>') + '</td>' +
         '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>₹' + investment.toFixed(0) + '</td>' +
         '<td>₹' + targetPrice.toFixed(2) + '</td>' +

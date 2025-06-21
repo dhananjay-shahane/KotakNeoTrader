@@ -269,7 +269,7 @@ def get_admin_signals():
             # 🎯 PRIORITY: Replace CMP with Kotak Neo quotes if symbol matches
             if signal.symbol in latest_quotes:
                 quote_data = latest_quotes[signal.symbol]
-                
+
                 # REPLACE CMP with Kotak Neo data
                 kotak_cmp = quote_data['current_price']
                 if kotak_cmp and kotak_cmp > 0:
@@ -289,7 +289,7 @@ def get_admin_signals():
                     signal.current_price = current_price
                     signal.change_percent = change_percent
                     signal.last_update_time = datetime.now()
-                    
+
                     logger.debug(f"✅ {signal.symbol}: CMP replaced with Kotak Neo ₹{current_price} (from {data_source})")
                 else:
                     logger.warning(f"⚠️ {signal.symbol}: Invalid Kotak Neo CMP, using fallback")
@@ -298,11 +298,20 @@ def get_admin_signals():
                 if not current_price or current_price <= 0:
                     current_price = entry_price
                     logger.info(f"📊 {signal.symbol}: Using entry price as CMP fallback ₹{current_price}")
-                
+
                 # Calculate change percent from entry price (fallback only)
                 change_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
-                data_source = 'SIGNAL_DATA_FALLBACK'
-                logger.warning(f"⚠️ {signal.symbol}: No live data found, using signal/entry price ₹{current_price}")
+                data_source = 'ENTRY_PRICE_FALLBACK'
+                logger.info(f"📊 {signal.symbol}: Using entry price as CMP ₹{current_price}")
+
+                # Update signal with current price in database
+                try:
+                    signal.current_price = current_price
+                    signal.change_percent = change_percent
+                    signal.last_update_time = datetime.now()
+                    logger.debug(f"✅ Updated {signal.symbol} CMP to ₹{current_price}")
+                except Exception as update_error:
+                    logger.warning(f"⚠️ Could not update signal {signal.symbol}: {update_error}")
 
             # Investment calculation
             invested_amount = entry_price * quantity
