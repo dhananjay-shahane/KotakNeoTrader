@@ -104,6 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 21, 2025** - Successfully imported real ETF trading data from CSV file into database
+  - Imported 14 ETF trading signals from user's CSV file into admin_trade_signals table
+  - Portfolio data for user ZHZ3J shows ₹11,51,984 total investment with +1.69% returns
+  - ETF positions span from November 2024 to January 2025 across multiple sectors
+  - Top performers: FINIETF (+14.42%), INFRABEES (+6.07%), HDFCSML250 (+4.13%)
+  - All requested datatable fields populated with authentic trading data
+  - Real-time price updates integrated with Kotak Neo API for current market values
+
 - **June 21, 2025** - Successfully completed migration from Replit Agent to standard Replit environment
   - Created PostgreSQL database and configured environment variables
   - Generated secure session secret for Flask application security
