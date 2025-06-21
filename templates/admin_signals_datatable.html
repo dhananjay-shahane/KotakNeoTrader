@@ -198,29 +198,35 @@
             <table class="table table-hover signals-table mb-0" id="adminSignalsTable">
                 <thead>
                     <tr>
+                        <th>target_user_id</th>
                         <th>Symbol</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Entry Price</th>
-                        <th>Current Price</th>
-                        <th>Target</th>
-                        <th>Stop Loss</th>
-                        <th>Quantity</th>
-                        <th>Investment</th>
-                        <th>Current Value</th>
-                        <th>P&L</th>
-                        <th>P&L %</th>
-                        <th>Day Change</th>
-                        <th>Volume</th>
-                        <th>Bid/Ask</th>
-                        <th>52W Range</th>
-                        <th>Data Source</th>
-                        <th>Last Update</th>
+                        <th>30</th>
+                        <th>DH</th>
+                        <th>Date</th>
+                        <th>Pos</th>
+                        <th>Qty</th>
+                        <th>EP</th>
+                        <th>CMP</th>
+                        <th>%Chan</th>
+                        <th>Inv.</th>
+                        <th>TP</th>
+                        <th>TVA</th>
+                        <th>TPR</th>
+                        <th>PL</th>
+                        <th>ED</th>
+                        <th>PR</th>
+                        <th>PP</th>
+                        <th>IV</th>
+                        <th>IP</th>
+                        <th>NT</th>
+                        <th>Qt</th>
+                        <th>7</th>
+                        <th>%Ch</th>
                     </tr>
                 </thead>
                 <tbody id="signalsTableBody">
                     <tr>
-                        <td colspan="18" class="text-center py-4">
+                        <td colspan="24" class="text-center py-4">
                             <div class="spinner-border text-primary me-2" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
@@ -318,7 +324,7 @@ function updateSignalsTable(signals) {
     const tbody = document.getElementById('signalsTableBody');
     
     if (!signals || signals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="text-center py-4">No admin trade signals found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="24" class="text-center py-4">No admin trade signals found</td></tr>';
         return;
     }
     
@@ -326,26 +332,40 @@ function updateSignalsTable(signals) {
         const pnlClass = signal.pnl > 0 ? 'profit' : signal.pnl < 0 ? 'loss' : 'neutral';
         const changeClass = signal.day_change_percent > 0 ? 'profit' : signal.day_change_percent < 0 ? 'loss' : 'neutral';
         
+        // Calculate fields according to your specification
+        var createdDate = new Date(signal.created_at || signal.signal_date);
+        var today = new Date();
+        var daysHeld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+        var targetValue = signal.target_price * signal.quantity;
+        var targetProfit = targetValue - signal.investment;
+        var changePct = signal.entry_price > 0 ? ((signal.current_price - signal.entry_price) / signal.entry_price) * 100 : 0;
+        
         return `
             <tr>
+                <td>${signal.target_user_id || 'zhz3j'}</td>
                 <td><strong>${signal.symbol}</strong></td>
-                <td><span class="signal-badge signal-${signal.signal_type_badge}">${signal.signal_type}</span></td>
-                <td><span class="signal-badge status-${signal.status_badge}">${signal.status}</span></td>
-                <td>₹${signal.entry_price}</td>
-                <td class="price-highlight">₹${signal.current_price}</td>
-                <td>₹${signal.target_price}</td>
-                <td>₹${signal.stop_loss}</td>
+                <td>-</td>
+                <td>${daysHeld}</td>
+                <td>${createdDate.toLocaleDateString('en-GB')}</td>
+                <td>${signal.signal_type === 'BUY' ? 1 : 0}</td>
                 <td>${signal.quantity}</td>
+                <td>${signal.entry_price}</td>
+                <td class="price-highlight">${signal.current_price}</td>
+                <td class="${changeClass}">${changePct.toFixed(1)}%</td>
                 <td>₹${signal.investment.toLocaleString()}</td>
-                <td>₹${signal.current_value.toLocaleString()}</td>
+                <td>${signal.target_price}</td>
+                <td>₹${targetValue.toLocaleString()}</td>
+                <td class="${pnlClass}">₹${targetProfit >= 0 ? '+' : ''}${targetProfit.toLocaleString()}</td>
                 <td class="${pnlClass}">₹${signal.pnl >= 0 ? '+' : ''}${signal.pnl.toLocaleString()}</td>
-                <td class="${pnlClass}">${signal.pnl_percent >= 0 ? '+' : ''}${signal.pnl_percent}%</td>
-                <td class="${changeClass}">${signal.day_change_percent >= 0 ? '+' : ''}${signal.day_change_percent}%</td>
-                <td>${signal.display_volume}</td>
-                <td>₹${signal.bid_price}/₹${signal.ask_price}</td>
-                <td>₹${signal.week_52_low} - ₹${signal.week_52_high}</td>
-                <td><span class="data-source-badge">${signal.data_source}</span></td>
-                <td>${new Date(signal.last_update).toLocaleString()}</td>
+                <td>${createdDate.toLocaleDateString('en-GB')}</td>
+                <td>${signal.entry_price.toFixed(2)}-${signal.current_price.toFixed(2)}</td>
+                <td>${Math.abs(changePct).toFixed(1)}</td>
+                <td>${changePct > 5 ? 'High' : changePct < -5 ? 'Low' : 'Medium'}</td>
+                <td>${changePct >= 0 ? '+' + changePct.toFixed(1) + '%' : changePct.toFixed(1) + '%'}</td>
+                <td>${signal.signal_description || '-'}</td>
+                <td>${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}</td>
+                <td>-</td>
+                <td class="${changeClass}">${changePct.toFixed(1)}%</td>
             </tr>
         `;
     }).join('');
