@@ -1,4 +1,3 @@
-
 // ETF Signals Manager - ES5 Compatible
 function ETFSignalsManager() {
     this.positions = [];
@@ -143,7 +142,7 @@ ETFSignalsManager.prototype.showLoading = function(show) {
     if (loader) {
         loader.style.display = show ? 'block' : 'none';
     }
-    
+
     var tbody = document.getElementById('signalsTableBody');
     if (tbody && show) {
         tbody.innerHTML = '<tr><td colspan="25" class="text-center">Loading ETF signals...</td></tr>';
@@ -156,7 +155,7 @@ ETFSignalsManager.prototype.showAlert = function(message, type) {
         message +
         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
         '</div>';
-    
+
     var container = document.querySelector('.container');
     if (container) {
         container.insertAdjacentHTML('afterbegin', alertHtml);
@@ -179,15 +178,15 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
     }
 
     tbody.innerHTML = '';
-    
+
     if (!this.positions || this.positions.length === 0) {
         var row = tbody.insertRow();
         row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF signals found</td>';
         return;
     }
-    
+
     console.log('Rendering', this.positions.length, 'positions');
-    
+
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
         var row = this.createPositionRow(position);
@@ -197,7 +196,7 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
 ETFSignalsManager.prototype.createPositionRow = function(position) {
     var row = document.createElement('tr');
-    
+
     // Ensure we have valid data with fallbacks
     var symbol = position.symbol || position.etf || 'N/A';
     var entryPrice = parseFloat(position.ep || position.entry_price || 0);
@@ -207,15 +206,15 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var changePct = parseFloat(position.change_pct || position.change_percent || 0);
     var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
     var targetPrice = parseFloat(position.tp || position.target_price || 0);
-    
+
     // Ensure current price is never 0 or undefined
     if (!currentPrice || currentPrice <= 0) {
         currentPrice = entryPrice || 100; // Use entry price or default fallback
     }
-    
+
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
     var changeClass = changePct >= 0 ? 'profit' : 'loss';
-    
+
     row.innerHTML = 
         '<td><strong>' + symbol + '</strong></td>' +
         '<td>' + (position.thirty || '0%') + '</td>' +
@@ -245,7 +244,7 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>' +
         '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')">Add Deal</button>' +
         '</td>';
-    
+
     return row;
 };
 
@@ -273,7 +272,7 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
     if (countElement) {
         countElement.textContent = this.positions.length;
     }
-    
+
     var visibleSignalsCount = document.getElementById('visibleSignalsCount');
     if (visibleSignalsCount) {
         visibleSignalsCount.textContent = this.positions.length;
@@ -283,7 +282,7 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
 ETFSignalsManager.prototype.startAutoRefresh = function() {
     var self = this;
     this.stopAutoRefresh();
-    
+
     if (this.autoRefreshInterval > 0) {
         this.liveDataInterval = setInterval(function() {
             self.loadPositions();

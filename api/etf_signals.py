@@ -106,16 +106,10 @@ def get_admin_signals():
             db.session.commit()
             logger.info(f"Created {len(csv_etf_data)} initial ETF signals in admin_trade_signals table")
 
-        # Get all admin trade signals for the current user (or all if admin)
-        if hasattr(current_user, 'id'):
-            signals = AdminTradeSignal.query.filter_by(
-                target_user_id=target_user.id
-            ).order_by(AdminTradeSignal.created_at.desc()).all()
-        else:
-            # Fallback: get all signals if user check fails
-            signals = AdminTradeSignal.query.filter_by(
-                status='ACTIVE'
-            ).order_by(AdminTradeSignal.created_at.desc()).limit(50).all()
+        # Get all admin trade signals for the target user (zhz3j)
+        signals = AdminTradeSignal.query.filter_by(
+            target_user_id=target_user.id
+        ).order_by(AdminTradeSignal.created_at.desc()).all()
 
         if not signals:
             logger.warning("No admin trade signals found")
@@ -381,7 +375,7 @@ def get_admin_signals():
         # Calculate portfolio summary from processed signals
         try:
             admin_signals = db.session.query(AdminTradeSignal).filter_by(
-                assigned_to_ucc='zhz3j'  # Demo user
+                target_user_id=target_user.id  # Use target_user.id instead of assigned_to_ucc
             ).order_by(AdminTradeSignal.created_at.desc()).limit(50).all()
 
             # Get latest quotes from realtime_quotes table
