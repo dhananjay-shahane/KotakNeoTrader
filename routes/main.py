@@ -647,9 +647,6 @@ def admin_panel():
         flash('Error loading admin panel', 'error')
         return redirect(url_for('main.dashboard'))
 
-if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
 @main_bp.route('/admin-signals-datatable')
 def admin_signals_datatable():
     """Admin Trade Signals DataTable page"""
